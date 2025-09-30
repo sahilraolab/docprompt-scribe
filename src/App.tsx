@@ -15,6 +15,7 @@ import UserProfile from "./pages/profile/UserProfile";
 import EngineeringIndex from "./pages/engineering/index";
 import ProjectsList from "./pages/engineering/ProjectsList";
 import ProjectDetails from "./pages/engineering/ProjectDetails";
+import ProjectForm from "./pages/engineering/ProjectForm";
 import EstimatesList from "./pages/engineering/EstimatesList";
 import EstimateForm from "./pages/engineering/EstimateForm";
 import DocumentsList from "./pages/engineering/DocumentsList";
@@ -39,6 +40,7 @@ import ContractorsList from "./pages/contracts/ContractorsList";
 import ContractorForm from "./pages/contracts/ContractorForm";
 import WorkOrdersList from "./pages/contracts/WorkOrdersList";
 import WorkOrderDetails from "./pages/contracts/WorkOrderDetails";
+import WorkOrderForm from "./pages/contracts/WorkOrderForm";
 import RABillsList from "./pages/contracts/RABillsList";
 import LabourRatesList from "./pages/contracts/LabourRatesList";
 
@@ -110,6 +112,8 @@ const App = () => (
             {/* Engineering */}
             <Route path="/engineering" element={<ProtectedRoute><AppLayout><EngineeringIndex /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/projects" element={<ProtectedRoute><AppLayout><ProjectsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/projects/new" element={<ProtectedRoute><AppLayout><ProjectForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/projects/:id/edit" element={<ProtectedRoute><AppLayout><ProjectForm /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/projects/:id" element={<ProtectedRoute><AppLayout><ProjectDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/estimates" element={<ProtectedRoute><AppLayout><EstimatesList /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/estimates/new" element={<ProtectedRoute><AppLayout><EstimateForm /></AppLayout></ProtectedRoute>} />
@@ -140,6 +144,8 @@ const App = () => (
             <Route path="/contracts/contractors/new" element={<ProtectedRoute><AppLayout><ContractorForm /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/contractors/:id" element={<ProtectedRoute><AppLayout><ContractorForm /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/work-orders" element={<ProtectedRoute><AppLayout><WorkOrdersList /></AppLayout></ProtectedRoute>} />
+            <Route path="/contracts/work-orders/new" element={<ProtectedRoute><AppLayout><WorkOrderForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/contracts/work-orders/:id/edit" element={<ProtectedRoute><AppLayout><WorkOrderForm /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/work-orders/:id" element={<ProtectedRoute><AppLayout><WorkOrderDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/ra-bills" element={<ProtectedRoute><AppLayout><RABillsList /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/labour-rates" element={<ProtectedRoute><AppLayout><LabourRatesList /></AppLayout></ProtectedRoute>} />
