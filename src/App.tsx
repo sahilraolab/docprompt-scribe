@@ -51,10 +51,16 @@ import Settings from "./pages/settings/index";
 import SettingsPage from "./pages/settings/SettingsPage";
 import Accounts from "./pages/accounts/index";
 import AccountsList from "./pages/accounts/AccountsList";
+import JournalsList from "./pages/accounts/JournalsList";
+import LedgersList from "./pages/accounts/LedgersList";
+import ReportsList from "./pages/accounts/ReportsList";
 import Workflow from "./pages/workflow/index";
 import ApprovalsList from "./pages/workflow/ApprovalsList";
+import WorkflowConfigList from "./pages/workflow/WorkflowConfigList";
+import SLAList from "./pages/workflow/SLAList";
 import Admin from "./pages/admin/index";
 import UsersList from "./pages/admin/UsersList";
+import AuditTrailList from "./pages/admin/AuditTrailList";
 
 const queryClient = new QueryClient();
 
@@ -134,10 +140,15 @@ const App = () => (
             {/* Accounts */}
             <Route path="/accounts" element={<ProtectedRoute><AppLayout><Accounts /></AppLayout></ProtectedRoute>} />
             <Route path="/accounts/list" element={<ProtectedRoute><AppLayout><AccountsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/accounts/journals" element={<ProtectedRoute><AppLayout><JournalsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/accounts/ledgers" element={<ProtectedRoute><AppLayout><LedgersList /></AppLayout></ProtectedRoute>} />
+            <Route path="/accounts/reports" element={<ProtectedRoute><AppLayout><ReportsList /></AppLayout></ProtectedRoute>} />
             
             {/* Workflow */}
             <Route path="/workflow" element={<ProtectedRoute><AppLayout><Workflow /></AppLayout></ProtectedRoute>} />
             <Route path="/workflow/approvals" element={<ProtectedRoute><AppLayout><ApprovalsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/workflow/config" element={<ProtectedRoute><AppLayout><WorkflowConfigList /></AppLayout></ProtectedRoute>} />
+            <Route path="/workflow/sla" element={<ProtectedRoute><AppLayout><SLAList /></AppLayout></ProtectedRoute>} />
             
             {/* Notifications */}
             <Route path="/notifications" element={<ProtectedRoute><AppLayout><Notifications /></AppLayout></ProtectedRoute>} />
@@ -146,6 +157,7 @@ const App = () => (
             {/* Admin */}
             <Route path="/admin" element={<ProtectedRoute><AppLayout><Admin /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute><AppLayout><UsersList /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/audit" element={<ProtectedRoute><AppLayout><AuditTrailList /></AppLayout></ProtectedRoute>} />
             
             {/* Settings */}
             <Route path="/settings" element={<ProtectedRoute><AppLayout><Settings /></AppLayout></ProtectedRoute>} />

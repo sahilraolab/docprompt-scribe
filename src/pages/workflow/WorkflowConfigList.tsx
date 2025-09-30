@@ -1,0 +1,188 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { EmptyState } from '@/components/EmptyState';
+import { Plus, Search, Settings } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+
+export default function WorkflowConfigList() {
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Mock data
+  const workflows = [
+    {
+      id: '1',
+      name: 'Material Requisition Approval',
+      module: 'Purchase',
+      levels: 2,
+      approvers: ['Site Manager', 'Project Manager'],
+      isActive: true,
+    },
+    {
+      id: '2',
+      name: 'Purchase Order Approval',
+      module: 'Purchase',
+      levels: 3,
+      approvers: ['Procurement Manager', 'Finance Manager', 'Director'],
+      isActive: true,
+    },
+    {
+      id: '3',
+      name: 'Work Order Approval',
+      module: 'Contracts',
+      levels: 2,
+      approvers: ['Project Manager', 'Director'],
+      isActive: true,
+    },
+    {
+      id: '4',
+      name: 'RA Bill Approval',
+      module: 'Contracts',
+      levels: 3,
+      approvers: ['Site Engineer', 'Project Manager', 'Finance Manager'],
+      isActive: true,
+    },
+    {
+      id: '5',
+      name: 'Journal Entry Approval',
+      module: 'Accounts',
+      levels: 2,
+      approvers: ['Accountant', 'Finance Manager'],
+      isActive: false,
+    },
+  ];
+
+  const filteredWorkflows = workflows.filter((workflow) =>
+    workflow.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    workflow.module.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const getModuleBadgeColor = (module: string) => {
+    switch (module) {
+      case 'Purchase':
+        return 'bg-blue-100 text-blue-800';
+      case 'Contracts':
+        return 'bg-green-100 text-green-800';
+      case 'Accounts':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Workflow Configuration</h1>
+          <p className="text-muted-foreground">Define approval workflows and rules</p>
+        </div>
+        <Button onClick={() => navigate('/workflow/config/new')}>
+          <Plus className="h-4 w-4 mr-2" />
+          New Workflow
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by workflow name or module..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          {filteredWorkflows.length > 0 ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Workflow Name</TableHead>
+                    <TableHead>Module</TableHead>
+                    <TableHead>Approval Levels</TableHead>
+                    <TableHead>Approvers</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredWorkflows.map((workflow) => (
+                    <TableRow key={workflow.id}>
+                      <TableCell className="font-medium">{workflow.name}</TableCell>
+                      <TableCell>
+                        <Badge className={getModuleBadgeColor(workflow.module)} variant="secondary">
+                          {workflow.module}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{workflow.levels} levels</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {workflow.approvers.slice(0, 2).map((approver, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {approver}
+                            </Badge>
+                          ))}
+                          {workflow.approvers.length > 2 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{workflow.approvers.length - 2} more
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Switch checked={workflow.isActive} />
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/workflow/config/${workflow.id}`)}
+                        >
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <EmptyState
+              icon={Settings}
+              title="No workflows found"
+              description={
+                searchQuery
+                  ? "No workflows match your search criteria"
+                  : "Configure approval workflows for your modules"
+              }
+              action={
+                !searchQuery
+                  ? {
+                      label: "Create Workflow",
+                      onClick: () => navigate('/workflow/config/new'),
+                    }
+                  : undefined
+              }
+            />
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
