@@ -36,6 +36,21 @@ const grnSchema = z.object({
   driverName: z.string().optional(),
   remarks: z.string().optional(),
   items: z.array(grnItemSchema).min(1, 'At least one item is required'),
+}).refine((data) => {
+  // Business rule: GRN date cannot be in the future
+  const today = new Date().toISOString().split('T')[0];
+  return data.grnDate <= today;
+}, {
+  message: 'GRN date cannot be in the future',
+  path: ['grnDate'],
+}).refine((data) => {
+  // Business rule: Accepted + Rejected must equal Received
+  return data.items.every(item => 
+    Math.abs((item.acceptedQty + item.rejectedQty) - item.receivedQty) < 0.01
+  );
+}, {
+  message: 'Accepted + Rejected quantities must equal Received quantity for all items',
+  path: ['items'],
 });
 
 type GRNFormData = z.infer<typeof grnSchema>;

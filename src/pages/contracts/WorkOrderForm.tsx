@@ -39,6 +39,25 @@ const workOrderSchema = z.object({
   paymentTerms: z.string().optional(),
   penaltyClause: z.string().optional(),
   items: z.array(workItemSchema).min(1, 'At least one work item is required'),
+}).refine((data) => {
+  // Business rule: End date must be after start date
+  return new Date(data.endDate) > new Date(data.startDate);
+}, {
+  message: 'End date must be after start date',
+  path: ['endDate'],
+}).refine((data) => {
+  // Business rule: Minimum contract duration is 7 days
+  const daysDiff = (new Date(data.endDate).getTime() - new Date(data.startDate).getTime()) / (1000 * 60 * 60 * 24);
+  return daysDiff >= 7;
+}, {
+  message: 'Contract duration must be at least 7 days',
+  path: ['endDate'],
+}).refine((data) => {
+  // Business rule: Advance cannot exceed 30%
+  return data.advancePct <= 30;
+}, {
+  message: 'Advance payment cannot exceed 30% of contract value',
+  path: ['advancePct'],
 });
 
 type WorkOrderFormData = z.infer<typeof workOrderSchema>;

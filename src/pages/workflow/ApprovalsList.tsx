@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { Badge } from '@/components/ui/badge';
+import { ApprovalActions } from '@/components/ApprovalActions';
 import { formatDate } from '@/lib/utils/format';
-import { Search, FileCheck, Loader2, Clock } from 'lucide-react';
+import { Search, FileCheck, Loader2, Clock, Eye } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -93,19 +94,32 @@ export default function ApprovalsList() {
                         <StatusBadge status={approval.status} />
                       </TableCell>
                       <TableCell>
-                        {approval.status === 'Pending' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              // Navigate to entity details
-                              if (approval.entityType === 'PO') {
-                                navigate(`/purchase/pos/${approval.entityId}`);
-                              }
-                            }}
-                          >
-                            Review
-                          </Button>
+                        {approval.status === 'Pending' ? (
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                if (approval.entityType === 'PO') {
+                                  navigate(`/purchase/pos/${approval.entityId}`);
+                                } else if (approval.entityType === 'WO') {
+                                  navigate(`/contracts/work-orders/${approval.entityId}`);
+                                }
+                              }}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                            <ApprovalActions
+                              requestId={approval.id}
+                              entityType={approval.entityType}
+                              entityCode={approval.entityCode || ''}
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">
+                            {approval.status}
+                          </span>
                         )}
                       </TableCell>
                     </TableRow>

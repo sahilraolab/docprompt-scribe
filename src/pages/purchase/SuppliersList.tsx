@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/EmptyState';
-import { Plus, Search, Building, Loader2, Star } from 'lucide-react';
+import { Plus, Search, Building, Loader2, Star, Download } from 'lucide-react';
+import { downloadCSV, prepareDataForExport } from '@/lib/utils/export-enhanced';
 import {
   Table,
   TableBody,
@@ -27,6 +28,17 @@ export default function SuppliersList() {
     supplier.gst?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleExport = () => {
+    if (!filteredSuppliers || filteredSuppliers.length === 0) return;
+    
+    const exportData = prepareDataForExport(filteredSuppliers);
+    downloadCSV(
+      exportData,
+      `suppliers-${new Date().toISOString().split('T')[0]}`,
+      ['name', 'contact', 'phone', 'email', 'gst', 'city', 'state', 'rating']
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -42,10 +54,20 @@ export default function SuppliersList() {
           <h1 className="text-3xl font-bold">Suppliers</h1>
           <p className="text-muted-foreground">Manage supplier database</p>
         </div>
-        <Button onClick={() => navigate('/purchase/suppliers/new')}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Supplier
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleExport}
+            disabled={!filteredSuppliers || filteredSuppliers.length === 0}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <Button onClick={() => navigate('/purchase/suppliers/new')}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Supplier
+          </Button>
+        </div>
       </div>
 
       <Card>

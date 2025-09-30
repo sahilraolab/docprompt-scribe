@@ -30,6 +30,13 @@ const mrItemSchema = z.object({
 const mrSchema = z.object({
   projectId: z.string().min(1, 'Project is required'),
   items: z.array(mrItemSchema).min(1, 'At least one item is required'),
+}).refine((data) => {
+  // Business rule: Check if required dates are in the future
+  const today = new Date().toISOString().split('T')[0];
+  return data.items.every(item => !item.requiredBy || item.requiredBy >= today);
+}, {
+  message: 'Required date must be today or in the future',
+  path: ['items'],
 });
 
 type MRFormData = z.infer<typeof mrSchema>;

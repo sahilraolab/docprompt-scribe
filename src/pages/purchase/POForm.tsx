@@ -35,6 +35,21 @@ const poSchema = z.object({
   deliveryDate: z.string().optional(),
   terms: z.string().optional(),
   items: z.array(poItemSchema).min(1, 'At least one item is required'),
+}).refine((data) => {
+  // Business rule: Delivery date must be in future
+  if (!data.deliveryDate) return true;
+  const today = new Date().toISOString().split('T')[0];
+  return data.deliveryDate >= today;
+}, {
+  message: 'Delivery date must be today or in the future',
+  path: ['deliveryDate'],
+}).refine((data) => {
+  // Business rule: Total amount should not exceed 10 crores without approval
+  const total = data.items.reduce((sum, item) => sum + (item.qty * item.rate * (1 + item.taxPct / 100)), 0);
+  return total <= 100000000;
+}, {
+  message: 'PO amount exceeds ₹10 Cr threshold, approval required',
+  path: ['items'],
 });
 
 type POFormData = z.infer<typeof poSchema>;

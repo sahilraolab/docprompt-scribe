@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { formatDate } from '@/lib/utils/format';
-import { Plus, Search, FileText, Loader2 } from 'lucide-react';
+import { downloadCSV, prepareDataForExport } from '@/lib/utils/export-enhanced';
+import { Plus, Search, FileText, Loader2, Download } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -28,6 +29,17 @@ export default function MRList() {
     mr.requestedByName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleExport = () => {
+    if (!filteredMRs || filteredMRs.length === 0) return;
+    
+    const exportData = prepareDataForExport(filteredMRs);
+    downloadCSV(
+      exportData,
+      `material-requisitions-${new Date().toISOString().split('T')[0]}`,
+      ['code', 'projectName', 'requestedByName', 'requestDate', 'status']
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -43,10 +55,20 @@ export default function MRList() {
           <h1 className="text-3xl font-bold">Material Requisitions</h1>
           <p className="text-muted-foreground">Manage material requests from projects</p>
         </div>
-        <Button onClick={() => navigate('/purchase/mrs/new')}>
-          <Plus className="h-4 w-4 mr-2" />
-          New MR
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleExport}
+            disabled={!filteredMRs || filteredMRs.length === 0}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <Button onClick={() => navigate('/purchase/mrs/new')}>
+            <Plus className="h-4 w-4 mr-2" />
+            New MR
+          </Button>
+        </div>
       </div>
 
       <Card>
