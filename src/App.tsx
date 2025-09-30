@@ -30,6 +30,7 @@ import POForm from "./pages/purchase/POForm";
 import MRList from "./pages/purchase/MRList";
 import MRForm from "./pages/purchase/MRForm";
 import QuotationsList from "./pages/purchase/QuotationsList";
+import QuotationForm from "./pages/purchase/QuotationForm";
 import ComparativeStatementList from "./pages/purchase/ComparativeStatementList";
 import PurchaseBillsList from "./pages/purchase/PurchaseBillsList";
 import PurchaseBillForm from "./pages/purchase/PurchaseBillForm";
@@ -55,6 +56,7 @@ import GRNForm from "./pages/site/GRNForm";
 import IssuesList from "./pages/site/IssuesList";
 import IssueForm from "./pages/site/IssueForm";
 import TransfersList from "./pages/site/TransfersList";
+import TransferForm from "./pages/site/TransferForm";
 import QCList from "./pages/site/QCList";
 
 // Other modules
@@ -65,6 +67,7 @@ import SettingsPage from "./pages/settings/SettingsPage";
 import Accounts from "./pages/accounts/index";
 import AccountsList from "./pages/accounts/AccountsList";
 import JournalsList from "./pages/accounts/JournalsList";
+import JournalForm from "./pages/accounts/JournalForm";
 import LedgersList from "./pages/accounts/LedgersList";
 import ReportsList from "./pages/accounts/ReportsList";
 import Workflow from "./pages/workflow/index";
@@ -132,6 +135,8 @@ const App = () => (
             <Route path="/purchase/mrs/new" element={<ProtectedRoute><AppLayout><MRForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/mrs/:id" element={<ProtectedRoute><AppLayout><MRForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/quotations" element={<ProtectedRoute><AppLayout><QuotationsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/quotations/new" element={<ProtectedRoute><AppLayout><QuotationForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/quotations/:id" element={<ProtectedRoute><AppLayout><QuotationForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/comparative" element={<ProtectedRoute><AppLayout><ComparativeStatementList /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/pos" element={<ProtectedRoute><AppLayout><PurchaseOrdersList /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/pos/new" element={<ProtectedRoute><AppLayout><POForm /></AppLayout></ProtectedRoute>} />
@@ -168,12 +173,16 @@ const App = () => (
             <Route path="/site/issues/new" element={<ProtectedRoute><AppLayout><IssueForm /></AppLayout></ProtectedRoute>} />
             <Route path="/site/issues/:id" element={<ProtectedRoute><AppLayout><IssueForm /></AppLayout></ProtectedRoute>} />
             <Route path="/site/transfers" element={<ProtectedRoute><AppLayout><TransfersList /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/transfers/new" element={<ProtectedRoute><AppLayout><TransferForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/transfers/:id" element={<ProtectedRoute><AppLayout><TransferForm /></AppLayout></ProtectedRoute>} />
             <Route path="/site/qc" element={<ProtectedRoute><AppLayout><QCList /></AppLayout></ProtectedRoute>} />
             
             {/* Accounts */}
             <Route path="/accounts" element={<ProtectedRoute><AppLayout><Accounts /></AppLayout></ProtectedRoute>} />
             <Route path="/accounts/list" element={<ProtectedRoute><AppLayout><AccountsList /></AppLayout></ProtectedRoute>} />
             <Route path="/accounts/journals" element={<ProtectedRoute><AppLayout><JournalsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/accounts/journals/new" element={<ProtectedRoute><AppLayout><JournalForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/accounts/journals/:id" element={<ProtectedRoute><AppLayout><JournalForm /></AppLayout></ProtectedRoute>} />
             <Route path="/accounts/ledgers" element={<ProtectedRoute><AppLayout><LedgersList /></AppLayout></ProtectedRoute>} />
             <Route path="/accounts/reports" element={<ProtectedRoute><AppLayout><ReportsList /></AppLayout></ProtectedRoute>} />
             
