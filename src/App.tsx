@@ -13,6 +13,8 @@ import NotFound from "./pages/NotFound";
 import EngineeringIndex from "./pages/engineering/index";
 import ProjectsList from "./pages/engineering/ProjectsList";
 import ProjectDetails from "./pages/engineering/ProjectDetails";
+import EstimatesList from "./pages/engineering/EstimatesList";
+import DocumentsList from "./pages/engineering/DocumentsList";
 
 // Purchase
 import PurchaseIndex from "./pages/purchase/index";
@@ -90,6 +92,8 @@ const App = () => (
             <Route path="/engineering" element={<ProtectedRoute><AppLayout><EngineeringIndex /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/projects" element={<ProtectedRoute><AppLayout><ProjectsList /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/projects/:id" element={<ProtectedRoute><AppLayout><ProjectDetails /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/estimates" element={<ProtectedRoute><AppLayout><EstimatesList /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/documents" element={<ProtectedRoute><AppLayout><DocumentsList /></AppLayout></ProtectedRoute>} />
             
             {/* Purchase */}
             <Route path="/purchase" element={<ProtectedRoute><AppLayout><PurchaseIndex /></AppLayout></ProtectedRoute>} />

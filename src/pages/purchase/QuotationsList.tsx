@@ -46,10 +46,6 @@ export default function QuotationsList() {
           <h1 className="text-3xl font-bold">Quotations</h1>
           <p className="text-muted-foreground">Manage supplier quotations</p>
         </div>
-        <Button onClick={() => navigate('/purchase/quotations/new')}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Quotation
-        </Button>
       </div>
 
       <Card>
@@ -81,11 +77,7 @@ export default function QuotationsList() {
                 </TableHeader>
                 <TableBody>
                   {filteredQuotations.map((quot) => (
-                    <TableRow
-                      key={quot.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/purchase/quotations/${quot.id}`)}
-                    >
+                    <TableRow key={quot.id}>
                       <TableCell className="font-medium">{quot.supplierName}</TableCell>
                       <TableCell>{quot.mrCode}</TableCell>
                       <TableCell>{quot.items.length} items</TableCell>
@@ -110,14 +102,6 @@ export default function QuotationsList() {
                 searchQuery
                   ? "No quotations match your search criteria"
                   : "Add quotations from suppliers"
-              }
-              action={
-                !searchQuery
-                  ? {
-                      label: "Add Quotation",
-                      onClick: () => navigate('/purchase/quotations/new'),
-                    }
-                  : undefined
               }
             />
           )}

@@ -51,10 +51,6 @@ export default function ComparativeStatementList() {
           <h1 className="text-3xl font-bold">Comparative Statements</h1>
           <p className="text-muted-foreground">Compare supplier quotations</p>
         </div>
-        <Button onClick={() => navigate('/purchase/comparative/new')}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Statement
-        </Button>
       </div>
 
       <Card>
@@ -96,13 +92,7 @@ export default function ComparativeStatementList() {
                       <TableCell>{stmt.createdBy}</TableCell>
                       <TableCell>{formatDate(stmt.createdAt)}</TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/purchase/comparative/${stmt.id}`)}
-                        >
-                          View
-                        </Button>
+                        <span className="text-muted-foreground text-sm">View only</span>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -117,14 +107,6 @@ export default function ComparativeStatementList() {
                 searchQuery
                   ? "No statements match your search criteria"
                   : "Create comparative statements to analyze quotations"
-              }
-              action={
-                !searchQuery
-                  ? {
-                      label: "Create Statement",
-                      onClick: () => navigate('/purchase/comparative/new'),
-                    }
-                  : undefined
               }
             />
           )}
