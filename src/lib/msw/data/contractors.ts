@@ -1,4 +1,4 @@
-import { Contractor } from '@/types';
+import { Contractor, LabourRate, WO, RABill } from '@/types';
 
 export const contractors: Contractor[] = [
   {
@@ -42,5 +42,97 @@ export const contractors: Contractor[] = [
     active: true,
     createdBy: 'user-2',
     createdAt: '2023-07-01T10:00:00Z',
+  },
+];
+
+export const labourRates: LabourRate[] = [
+  {
+    id: 'lr-1',
+    skill: 'Mason',
+    category: 'Skilled',
+    rate: 800,
+    uom: 'Day',
+    effectiveFrom: '2024-01-01',
+    createdBy: 'user-1',
+    createdAt: '2023-12-15T00:00:00Z',
+  },
+  {
+    id: 'lr-2',
+    skill: 'Helper',
+    category: 'Unskilled',
+    rate: 500,
+    uom: 'Day',
+    effectiveFrom: '2024-01-01',
+    createdBy: 'user-1',
+    createdAt: '2023-12-15T00:00:00Z',
+  },
+  {
+    id: 'lr-3',
+    skill: 'Carpenter',
+    category: 'Skilled',
+    rate: 850,
+    uom: 'Day',
+    effectiveFrom: '2024-01-01',
+    createdBy: 'user-1',
+    createdAt: '2023-12-15T00:00:00Z',
+  },
+];
+
+export const workOrders: WO[] = [
+  {
+    id: 'wo-1',
+    code: 'WO/2024/001',
+    contractorId: 'con-1',
+    contractorName: 'Shapoorji Pallonji & Co',
+    projectId: 'proj-1',
+    projectName: 'Skyline Towers',
+    scope: 'Foundation and structural work for Tower A',
+    startDate: '2024-02-01',
+    endDate: '2024-06-30',
+    amount: 25000000,
+    spent: 5000000,
+    progress: 20,
+    status: 'Active',
+    approvalStatus: 'Approved',
+    createdBy: 'user-1',
+    createdAt: '2024-01-15T00:00:00Z',
+  },
+  {
+    id: 'wo-2',
+    code: 'WO/2024/002',
+    contractorId: 'con-2',
+    contractorName: 'L&T Construction',
+    projectId: 'proj-2',
+    projectName: 'Green Valley',
+    scope: 'Civil and finishing work',
+    startDate: '2024-03-01',
+    endDate: '2024-08-31',
+    amount: 15000000,
+    spent: 0,
+    progress: 0,
+    status: 'Draft',
+    approvalStatus: 'Pending',
+    createdBy: 'user-1',
+    createdAt: '2024-02-10T00:00:00Z',
+  },
+];
+
+export const raBills: RABill[] = [
+  {
+    id: 'ra-1',
+    code: 'RA/2024/001',
+    woId: 'wo-1',
+    woCode: 'WO/2024/001',
+    billNo: 1,
+    periodFrom: '2024-02-01',
+    periodTo: '2024-02-29',
+    measuredAmount: 5000000,
+    tax: 900000,
+    advanceRecovery: 0,
+    total: 5900000,
+    status: 'Approved',
+    approvalStatus: 'Approved',
+    createdBy: 'user-3',
+    createdAt: '2024-03-05T00:00:00Z',
   },
 ];

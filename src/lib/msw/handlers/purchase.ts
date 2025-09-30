@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw';
-import { materialRequisitions, quotations, purchaseOrders, purchaseBills } from '../data/purchase';
+import { materialRequisitions, quotations, purchaseOrders, purchaseBills, comparativeStatements } from '../data/purchase';
 
 export const purchaseHandlers = [
   http.get('/api/mrs', () => {
@@ -24,5 +24,17 @@ export const purchaseHandlers = [
 
   http.get('/api/purchase-bills', () => {
     return HttpResponse.json({ data: purchaseBills, total: purchaseBills.length });
+  }),
+
+  http.get('/api/comparative-statements', () => {
+    return HttpResponse.json({ data: comparativeStatements, total: comparativeStatements.length });
+  }),
+
+  http.get('/api/comparative-statements/:id', ({ params }) => {
+    const cs = comparativeStatements.find((c) => c.id === params.id);
+    if (!cs) {
+      return HttpResponse.json({ error: 'Comparative statement not found' }, { status: 404 });
+    }
+    return HttpResponse.json(cs);
   }),
 ];

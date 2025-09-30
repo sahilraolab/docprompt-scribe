@@ -1,5 +1,7 @@
 import { http, HttpResponse } from 'msw';
-import { items, stock, grns, issues, transfers } from '../data/site';
+import { items, stock } from '../data/site';
+import { grns, issues, transfers } from '../data/grn';
+import { qcInspections } from '../data/qc';
 
 export const siteHandlers = [
   http.get('/api/items', () => {
@@ -20,5 +22,9 @@ export const siteHandlers = [
 
   http.get('/api/transfers', () => {
     return HttpResponse.json({ data: transfers, total: transfers.length });
+  }),
+
+  http.get('/api/qc', () => {
+    return HttpResponse.json({ data: qcInspections, total: qcInspections.length });
   }),
 ];
