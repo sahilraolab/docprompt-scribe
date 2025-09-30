@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Warehouse, PackageCheck, Send, ArrowRightLeft } from 'lucide-react';
+import { Package, Warehouse, PackageCheck, Send, ArrowRightLeft, ClipboardCheck } from 'lucide-react';
 
 export default function SiteIndex() {
   const navigate = useNavigate();
@@ -40,6 +40,13 @@ export default function SiteIndex() {
       icon: ArrowRightLeft,
       path: '/site/transfers',
       color: 'text-cyan-600',
+    },
+    {
+      title: 'Quality Control',
+      description: 'Material QC inspections',
+      icon: ClipboardCheck,
+      path: '/site/qc',
+      color: 'text-rose-600',
     },
   ];
 

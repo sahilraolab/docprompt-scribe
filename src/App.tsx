@@ -14,6 +14,7 @@ import EngineeringIndex from "./pages/engineering/index";
 import ProjectsList from "./pages/engineering/ProjectsList";
 import ProjectDetails from "./pages/engineering/ProjectDetails";
 import EstimatesList from "./pages/engineering/EstimatesList";
+import EstimateForm from "./pages/engineering/EstimateForm";
 import DocumentsList from "./pages/engineering/DocumentsList";
 
 // Purchase
@@ -32,6 +33,7 @@ import PurchaseBillForm from "./pages/purchase/PurchaseBillForm";
 // Contracts
 import ContractsIndex from "./pages/contracts/index";
 import ContractorsList from "./pages/contracts/ContractorsList";
+import ContractorForm from "./pages/contracts/ContractorForm";
 import WorkOrdersList from "./pages/contracts/WorkOrdersList";
 import WorkOrderDetails from "./pages/contracts/WorkOrderDetails";
 import RABillsList from "./pages/contracts/RABillsList";
@@ -44,6 +46,7 @@ import StockList from "./pages/site/StockList";
 import GRNList from "./pages/site/GRNList";
 import IssuesList from "./pages/site/IssuesList";
 import TransfersList from "./pages/site/TransfersList";
+import QCList from "./pages/site/QCList";
 
 // Other modules
 import Notifications from "./pages/notifications/index";
@@ -105,6 +108,8 @@ const App = () => (
             <Route path="/engineering/projects" element={<ProtectedRoute><AppLayout><ProjectsList /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/projects/:id" element={<ProtectedRoute><AppLayout><ProjectDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/estimates" element={<ProtectedRoute><AppLayout><EstimatesList /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/estimates/new" element={<ProtectedRoute><AppLayout><EstimateForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/estimates/:id" element={<ProtectedRoute><AppLayout><EstimateForm /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/documents" element={<ProtectedRoute><AppLayout><DocumentsList /></AppLayout></ProtectedRoute>} />
             
             {/* Purchase */}
@@ -126,6 +131,8 @@ const App = () => (
             {/* Contracts */}
             <Route path="/contracts" element={<ProtectedRoute><AppLayout><ContractsIndex /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/contractors" element={<ProtectedRoute><AppLayout><ContractorsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/contracts/contractors/new" element={<ProtectedRoute><AppLayout><ContractorForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/contracts/contractors/:id" element={<ProtectedRoute><AppLayout><ContractorForm /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/work-orders" element={<ProtectedRoute><AppLayout><WorkOrdersList /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/work-orders/:id" element={<ProtectedRoute><AppLayout><WorkOrderDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/ra-bills" element={<ProtectedRoute><AppLayout><RABillsList /></AppLayout></ProtectedRoute>} />
@@ -138,6 +145,7 @@ const App = () => (
             <Route path="/site/grn" element={<ProtectedRoute><AppLayout><GRNList /></AppLayout></ProtectedRoute>} />
             <Route path="/site/issues" element={<ProtectedRoute><AppLayout><IssuesList /></AppLayout></ProtectedRoute>} />
             <Route path="/site/transfers" element={<ProtectedRoute><AppLayout><TransfersList /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/qc" element={<ProtectedRoute><AppLayout><QCList /></AppLayout></ProtectedRoute>} />
             
             {/* Accounts */}
             <Route path="/accounts" element={<ProtectedRoute><AppLayout><Accounts /></AppLayout></ProtectedRoute>} />
