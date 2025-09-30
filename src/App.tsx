@@ -42,6 +42,7 @@ import WorkOrdersList from "./pages/contracts/WorkOrdersList";
 import WorkOrderDetails from "./pages/contracts/WorkOrderDetails";
 import WorkOrderForm from "./pages/contracts/WorkOrderForm";
 import RABillsList from "./pages/contracts/RABillsList";
+import RABillForm from "./pages/contracts/RABillForm";
 import LabourRatesList from "./pages/contracts/LabourRatesList";
 
 // Site
@@ -50,7 +51,9 @@ import ItemsList from "./pages/site/ItemsList";
 import ItemForm from "./pages/site/ItemForm";
 import StockList from "./pages/site/StockList";
 import GRNList from "./pages/site/GRNList";
+import GRNForm from "./pages/site/GRNForm";
 import IssuesList from "./pages/site/IssuesList";
+import IssueForm from "./pages/site/IssueForm";
 import TransfersList from "./pages/site/TransfersList";
 import QCList from "./pages/site/QCList";
 
@@ -148,6 +151,8 @@ const App = () => (
             <Route path="/contracts/work-orders/:id/edit" element={<ProtectedRoute><AppLayout><WorkOrderForm /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/work-orders/:id" element={<ProtectedRoute><AppLayout><WorkOrderDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/ra-bills" element={<ProtectedRoute><AppLayout><RABillsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/contracts/ra-bills/new" element={<ProtectedRoute><AppLayout><RABillForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/contracts/ra-bills/:id" element={<ProtectedRoute><AppLayout><RABillForm /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/labour-rates" element={<ProtectedRoute><AppLayout><LabourRatesList /></AppLayout></ProtectedRoute>} />
             
             {/* Site */}
@@ -157,7 +162,11 @@ const App = () => (
             <Route path="/site/items/:id" element={<ProtectedRoute><AppLayout><ItemForm /></AppLayout></ProtectedRoute>} />
             <Route path="/site/stock" element={<ProtectedRoute><AppLayout><StockList /></AppLayout></ProtectedRoute>} />
             <Route path="/site/grn" element={<ProtectedRoute><AppLayout><GRNList /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/grn/new" element={<ProtectedRoute><AppLayout><GRNForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/grn/:id" element={<ProtectedRoute><AppLayout><GRNForm /></AppLayout></ProtectedRoute>} />
             <Route path="/site/issues" element={<ProtectedRoute><AppLayout><IssuesList /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/issues/new" element={<ProtectedRoute><AppLayout><IssueForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/issues/:id" element={<ProtectedRoute><AppLayout><IssueForm /></AppLayout></ProtectedRoute>} />
             <Route path="/site/transfers" element={<ProtectedRoute><AppLayout><TransfersList /></AppLayout></ProtectedRoute>} />
             <Route path="/site/qc" element={<ProtectedRoute><AppLayout><QCList /></AppLayout></ProtectedRoute>} />
             
