@@ -31,11 +31,16 @@ import ItemsList from "./pages/site/ItemsList";
 import StockList from "./pages/site/StockList";
 
 // Other modules
-import AccountsIndex from "./pages/accounts/index";
-import WorkflowIndex from "./pages/workflow/index";
-import NotificationsIndex from "./pages/notifications/index";
-import AdminIndex from "./pages/admin/index";
-import SettingsIndex from "./pages/settings/index";
+import Notifications from "./pages/notifications/index";
+import NotificationsList from "./pages/notifications/NotificationsList";
+import Settings from "./pages/settings/index";
+import SettingsPage from "./pages/settings/SettingsPage";
+import Accounts from "./pages/accounts/index";
+import AccountsList from "./pages/accounts/AccountsList";
+import Workflow from "./pages/workflow/index";
+import ApprovalsList from "./pages/workflow/ApprovalsList";
+import Admin from "./pages/admin/index";
+import UsersList from "./pages/admin/UsersList";
 
 const queryClient = new QueryClient();
 
@@ -96,19 +101,24 @@ const App = () => (
             <Route path="/site/stock" element={<ProtectedRoute><AppLayout><StockList /></AppLayout></ProtectedRoute>} />
             
             {/* Accounts */}
-            <Route path="/accounts" element={<ProtectedRoute><AppLayout><AccountsIndex /></AppLayout></ProtectedRoute>} />
+            <Route path="/accounts" element={<ProtectedRoute><AppLayout><Accounts /></AppLayout></ProtectedRoute>} />
+            <Route path="/accounts/list" element={<ProtectedRoute><AppLayout><AccountsList /></AppLayout></ProtectedRoute>} />
             
             {/* Workflow */}
-            <Route path="/workflow" element={<ProtectedRoute><AppLayout><WorkflowIndex /></AppLayout></ProtectedRoute>} />
+            <Route path="/workflow" element={<ProtectedRoute><AppLayout><Workflow /></AppLayout></ProtectedRoute>} />
+            <Route path="/workflow/approvals" element={<ProtectedRoute><AppLayout><ApprovalsList /></AppLayout></ProtectedRoute>} />
             
             {/* Notifications */}
-            <Route path="/notifications" element={<ProtectedRoute><AppLayout><NotificationsIndex /></AppLayout></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><AppLayout><Notifications /></AppLayout></ProtectedRoute>} />
+            <Route path="/notifications/list" element={<ProtectedRoute><AppLayout><NotificationsList /></AppLayout></ProtectedRoute>} />
             
             {/* Admin */}
-            <Route path="/admin" element={<ProtectedRoute><AppLayout><AdminIndex /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AppLayout><Admin /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute><AppLayout><UsersList /></AppLayout></ProtectedRoute>} />
             
             {/* Settings */}
-            <Route path="/settings" element={<ProtectedRoute><AppLayout><SettingsIndex /></AppLayout></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><AppLayout><Settings /></AppLayout></ProtectedRoute>} />
+            <Route path="/settings/general" element={<ProtectedRoute><AppLayout><SettingsPage /></AppLayout></ProtectedRoute>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

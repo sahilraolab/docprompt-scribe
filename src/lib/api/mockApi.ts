@@ -5,6 +5,10 @@ import { materialRequisitions, quotations, purchaseOrders } from '../msw/data/pu
 import { contractors } from '../msw/data/contractors';
 import { workOrders } from '../msw/data/contracts';
 import { items, stock } from '../msw/data/site';
+import { notifications } from '../msw/data/notifications';
+import { workflowConfigs, approvalRequests } from '../msw/data/workflow';
+import { accounts, journals, costCentres, taxConfigs } from '../msw/data/accounts';
+import { companyProfile, financialYears, systemSettings } from '../msw/data/settings';
 
 const MOCK_PASSWORD = 'Pass@1234';
 
@@ -202,6 +206,95 @@ window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Res
   if (url.includes('/api/stock')) {
     return new Response(
       JSON.stringify({ data: stock, total: stock.length }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Notifications endpoints
+  if (url.includes('/api/notifications') && !url.includes('/read')) {
+    return new Response(
+      JSON.stringify({ data: notifications, total: notifications.length }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (url.includes('/read') && init?.method === 'POST') {
+    return new Response(
+      JSON.stringify({ success: true }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Workflow endpoints
+  if (url.includes('/api/workflow-configs')) {
+    return new Response(
+      JSON.stringify({ data: workflowConfigs, total: workflowConfigs.length }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (url.includes('/api/approval-requests')) {
+    return new Response(
+      JSON.stringify({ data: approvalRequests, total: approvalRequests.length }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Accounts endpoints
+  if (url.includes('/api/accounts')) {
+    return new Response(
+      JSON.stringify({ data: accounts, total: accounts.length }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (url.includes('/api/journals')) {
+    return new Response(
+      JSON.stringify({ data: journals, total: journals.length }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (url.includes('/api/cost-centres')) {
+    return new Response(
+      JSON.stringify({ data: costCentres, total: costCentres.length }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (url.includes('/api/tax-configs')) {
+    return new Response(
+      JSON.stringify({ data: taxConfigs, total: taxConfigs.length }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Settings endpoints
+  if (url.includes('/api/company-profile')) {
+    return new Response(
+      JSON.stringify(companyProfile),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (url.includes('/api/financial-years')) {
+    return new Response(
+      JSON.stringify({ data: financialYears, total: financialYears.length }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (url.includes('/api/system-settings')) {
+    return new Response(
+      JSON.stringify(systemSettings),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Admin endpoints
+  if (url.includes('/api/users')) {
+    return new Response(
+      JSON.stringify({ data: users, total: users.length }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   }
