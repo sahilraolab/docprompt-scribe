@@ -20,6 +20,7 @@ import DocumentsList from "./pages/engineering/DocumentsList";
 // Purchase
 import PurchaseIndex from "./pages/purchase/index";
 import SuppliersList from "./pages/purchase/SuppliersList";
+import SupplierForm from "./pages/purchase/SupplierForm";
 import PurchaseOrdersList from "./pages/purchase/PurchaseOrdersList";
 import PODetails from "./pages/purchase/PODetails";
 import POForm from "./pages/purchase/POForm";
@@ -42,6 +43,7 @@ import LabourRatesList from "./pages/contracts/LabourRatesList";
 // Site
 import SiteIndex from "./pages/site/index";
 import ItemsList from "./pages/site/ItemsList";
+import ItemForm from "./pages/site/ItemForm";
 import StockList from "./pages/site/StockList";
 import GRNList from "./pages/site/GRNList";
 import IssuesList from "./pages/site/IssuesList";
@@ -115,6 +117,8 @@ const App = () => (
             {/* Purchase */}
             <Route path="/purchase" element={<ProtectedRoute><AppLayout><PurchaseIndex /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/suppliers" element={<ProtectedRoute><AppLayout><SuppliersList /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/suppliers/new" element={<ProtectedRoute><AppLayout><SupplierForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/suppliers/:id" element={<ProtectedRoute><AppLayout><SupplierForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/mrs" element={<ProtectedRoute><AppLayout><MRList /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/mrs/new" element={<ProtectedRoute><AppLayout><MRForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/mrs/:id" element={<ProtectedRoute><AppLayout><MRForm /></AppLayout></ProtectedRoute>} />
@@ -141,6 +145,8 @@ const App = () => (
             {/* Site */}
             <Route path="/site" element={<ProtectedRoute><AppLayout><SiteIndex /></AppLayout></ProtectedRoute>} />
             <Route path="/site/items" element={<ProtectedRoute><AppLayout><ItemsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/items/new" element={<ProtectedRoute><AppLayout><ItemForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/items/:id" element={<ProtectedRoute><AppLayout><ItemForm /></AppLayout></ProtectedRoute>} />
             <Route path="/site/stock" element={<ProtectedRoute><AppLayout><StockList /></AppLayout></ProtectedRoute>} />
             <Route path="/site/grn" element={<ProtectedRoute><AppLayout><GRNList /></AppLayout></ProtectedRoute>} />
             <Route path="/site/issues" element={<ProtectedRoute><AppLayout><IssuesList /></AppLayout></ProtectedRoute>} />
