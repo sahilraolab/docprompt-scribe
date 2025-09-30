@@ -7,6 +7,9 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/AppLayout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import EngineeringIndex from "./pages/engineering/index";
+import ProjectsList from "./pages/engineering/ProjectsList";
+import ProjectDetails from "./pages/engineering/ProjectDetails";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +60,36 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <Dashboard />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/engineering"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <EngineeringIndex />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/engineering/projects"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <ProjectsList />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/engineering/projects/:id"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <ProjectDetails />
                   </AppLayout>
                 </ProtectedRoute>
               }
