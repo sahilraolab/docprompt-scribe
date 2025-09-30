@@ -3,6 +3,7 @@ import { ID, Status, AuditMeta, ApprovalMeta } from './common';
 export interface Supplier extends AuditMeta {
   id: ID;
   name: string;
+  code: string;
   contact: string;
   phone?: string;
   email?: string;
