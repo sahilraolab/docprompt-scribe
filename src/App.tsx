@@ -8,6 +8,8 @@ import { AppLayout } from "@/components/AppLayout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
+import Forbidden from "./pages/Forbidden";
+import UserProfile from "./pages/profile/UserProfile";
 
 // Engineering
 import EngineeringIndex from "./pages/engineering/index";
@@ -179,6 +181,11 @@ const App = () => (
             <Route path="/settings" element={<ProtectedRoute><AppLayout><Settings /></AppLayout></ProtectedRoute>} />
             <Route path="/settings/general" element={<ProtectedRoute><AppLayout><SettingsPage /></AppLayout></ProtectedRoute>} />
             
+            {/* Profile */}
+            <Route path="/profile" element={<ProtectedRoute><AppLayout><UserProfile /></AppLayout></ProtectedRoute>} />
+            
+            {/* Error Pages */}
+            <Route path="/403" element={<Forbidden />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </TooltipProvider>
