@@ -48,11 +48,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (credentials: LoginCredentials) => {
     try {
+      console.log('Attempting login...');
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
       });
+
+      console.log('Login response status:', response.status);
 
       if (!response.ok) {
         const error = await response.json();
@@ -60,6 +63,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const data = await response.json();
+      console.log('Login successful, user:', data.user.name);
+      
       setUser(data.user);
       setToken(data.token);
       localStorage.setItem(TOKEN_KEY, data.token);
@@ -68,6 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       toast.success('Login successful');
       navigate('/dashboard');
     } catch (error) {
+      console.error('Login error:', error);
       toast.error(error instanceof Error ? error.message : 'Login failed');
       throw error;
     }

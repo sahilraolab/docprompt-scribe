@@ -1,18 +1,15 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { initMockApi } from "./lib/api/mockApi";
 
-async function enableMocking() {
-  if (process.env.NODE_ENV !== 'development') {
-    return;
-  }
+// Initialize mock API
+initMockApi();
 
-  const { worker } = await import('./lib/msw/browser');
-  return worker.start({
-    onUnhandledRequest: 'bypass',
-  });
-}
-
-enableMocking().then(() => {
-  createRoot(document.getElementById("root")!).render(<App />);
-});
+console.log('Rendering app...');
+createRoot(document.getElementById("root")!).render(
+  <ErrorBoundary>
+    <App />
+  </ErrorBoundary>
+);
