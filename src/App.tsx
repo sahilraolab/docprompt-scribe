@@ -33,6 +33,7 @@ import PurchaseBillForm from "./pages/purchase/PurchaseBillForm";
 import ContractsIndex from "./pages/contracts/index";
 import ContractorsList from "./pages/contracts/ContractorsList";
 import WorkOrdersList from "./pages/contracts/WorkOrdersList";
+import WorkOrderDetails from "./pages/contracts/WorkOrderDetails";
 import RABillsList from "./pages/contracts/RABillsList";
 import LabourRatesList from "./pages/contracts/LabourRatesList";
 
@@ -126,6 +127,7 @@ const App = () => (
             <Route path="/contracts" element={<ProtectedRoute><AppLayout><ContractsIndex /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/contractors" element={<ProtectedRoute><AppLayout><ContractorsList /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/work-orders" element={<ProtectedRoute><AppLayout><WorkOrdersList /></AppLayout></ProtectedRoute>} />
+            <Route path="/contracts/work-orders/:id" element={<ProtectedRoute><AppLayout><WorkOrderDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/ra-bills" element={<ProtectedRoute><AppLayout><RABillsList /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/labour-rates" element={<ProtectedRoute><AppLayout><LabourRatesList /></AppLayout></ProtectedRoute>} />
             
