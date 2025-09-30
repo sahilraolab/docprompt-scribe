@@ -9,6 +9,7 @@ import { accountsHandlers } from './accounts';
 import { workflowHandlers } from './workflow';
 import { notificationHandlers } from './notifications';
 import { settingsHandlers } from './settings';
+import { itemsHandlers } from './items';
 
 export const handlers = [
   ...authHandlers,
@@ -22,4 +23,5 @@ export const handlers = [
   ...workflowHandlers,
   ...notificationHandlers,
   ...settingsHandlers,
+  ...itemsHandlers,
 ];

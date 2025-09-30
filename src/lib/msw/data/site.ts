@@ -43,6 +43,7 @@ export const stock: Stock[] = [
     projectName: 'Skyline Towers',
     qty: 500,
     minQty: 100,
+    uom: 'Bags',
     value: 190000,
   },
   {
@@ -54,6 +55,7 @@ export const stock: Stock[] = [
     projectName: 'Skyline Towers',
     qty: 25,
     minQty: 10,
+    uom: 'MT',
     value: 1625000,
   },
 ];

@@ -9,18 +9,23 @@ export interface Item {
   category: string;
   minQty?: number;
   currentStock?: number;
+  description?: string;
 }
 
 export interface Stock {
   id: ID;
   itemId: ID;
   itemName?: string;
+  itemCode?: string;
   location: string;
   projectId?: ID;
   projectName?: string;
   qty: number;
   minQty?: number;
+  maxQty?: number;
+  uom: string;
   value?: number;
+  lastUpdated?: string;
 }
 
 export interface GRN extends AuditMeta, ApprovalMeta {
