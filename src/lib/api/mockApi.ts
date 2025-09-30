@@ -1,5 +1,10 @@
 import { projects } from '../msw/data/projects';
 import { users, findUserByEmail, findUserById } from '../msw/data/users';
+import { suppliers } from '../msw/data/suppliers';
+import { materialRequisitions, quotations, purchaseOrders } from '../msw/data/purchase';
+import { contractors } from '../msw/data/contractors';
+import { workOrders } from '../msw/data/contracts';
+import { items, stock } from '../msw/data/site';
 
 const MOCK_PASSWORD = 'Pass@1234';
 
@@ -102,6 +107,101 @@ window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Res
 
     return new Response(
       JSON.stringify(project),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Suppliers endpoints
+  if (url.includes('/api/suppliers') && !url.match(/\/api\/suppliers\/[^/]+$/)) {
+    return new Response(
+      JSON.stringify({ data: suppliers, total: suppliers.length }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (url.match(/\/api\/suppliers\/[^/]+$/)) {
+    const id = url.split('/').pop();
+    const supplier = suppliers.find(s => s.id === id);
+    
+    if (!supplier) {
+      return new Response(
+        JSON.stringify({ error: 'Supplier not found' }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    return new Response(
+      JSON.stringify(supplier),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Purchase endpoints
+  if (url.includes('/api/mrs')) {
+    return new Response(
+      JSON.stringify({ data: materialRequisitions, total: materialRequisitions.length }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (url.includes('/api/quotations')) {
+    return new Response(
+      JSON.stringify({ data: quotations, total: quotations.length }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (url.includes('/api/pos') && !url.match(/\/api\/pos\/[^/]+$/)) {
+    return new Response(
+      JSON.stringify({ data: purchaseOrders, total: purchaseOrders.length }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (url.match(/\/api\/pos\/[^/]+$/)) {
+    const id = url.split('/').pop();
+    const po = purchaseOrders.find(p => p.id === id);
+    
+    if (!po) {
+      return new Response(
+        JSON.stringify({ error: 'PO not found' }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    return new Response(
+      JSON.stringify(po),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Contractors endpoints
+  if (url.includes('/api/contractors') && !url.match(/\/api\/contractors\/[^/]+$/)) {
+    return new Response(
+      JSON.stringify({ data: contractors, total: contractors.length }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Work Orders endpoints
+  if (url.includes('/api/work-orders')) {
+    return new Response(
+      JSON.stringify({ data: workOrders, total: workOrders.length }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Site endpoints
+  if (url.includes('/api/items')) {
+    return new Response(
+      JSON.stringify({ data: items, total: items.length }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (url.includes('/api/stock')) {
+    return new Response(
+      JSON.stringify({ data: stock, total: stock.length }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   }
