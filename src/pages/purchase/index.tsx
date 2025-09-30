@@ -21,11 +21,25 @@ export default function PurchaseIndex() {
       color: 'text-green-600',
     },
     {
+      title: 'Comparative Statements',
+      description: 'Compare and analyze quotations',
+      icon: FileSpreadsheet,
+      path: '/purchase/comparative',
+      color: 'text-cyan-600',
+    },
+    {
       title: 'Purchase Orders',
       description: 'Create and track purchase orders',
       icon: ShoppingCart,
       path: '/purchase/pos',
       color: 'text-purple-600',
+    },
+    {
+      title: 'Purchase Bills',
+      description: 'Manage supplier invoices',
+      icon: FileText,
+      path: '/purchase/bills',
+      color: 'text-rose-600',
     },
     {
       title: 'Suppliers',
@@ -43,7 +57,7 @@ export default function PurchaseIndex() {
         <p className="text-muted-foreground">Procurement and supplier management</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {modules.map((module) => (
           <Card
             key={module.path}

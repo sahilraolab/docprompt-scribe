@@ -23,6 +23,9 @@ import POForm from "./pages/purchase/POForm";
 import MRList from "./pages/purchase/MRList";
 import MRForm from "./pages/purchase/MRForm";
 import QuotationsList from "./pages/purchase/QuotationsList";
+import ComparativeStatementList from "./pages/purchase/ComparativeStatementList";
+import PurchaseBillsList from "./pages/purchase/PurchaseBillsList";
+import PurchaseBillForm from "./pages/purchase/PurchaseBillForm";
 
 // Contracts
 import ContractsIndex from "./pages/contracts/index";
@@ -95,10 +98,14 @@ const App = () => (
             <Route path="/purchase/mrs/new" element={<ProtectedRoute><AppLayout><MRForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/mrs/:id" element={<ProtectedRoute><AppLayout><MRForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/quotations" element={<ProtectedRoute><AppLayout><QuotationsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/comparative" element={<ProtectedRoute><AppLayout><ComparativeStatementList /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/pos" element={<ProtectedRoute><AppLayout><PurchaseOrdersList /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/pos/new" element={<ProtectedRoute><AppLayout><POForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/pos/:id/edit" element={<ProtectedRoute><AppLayout><POForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/pos/:id" element={<ProtectedRoute><AppLayout><PODetails /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/bills" element={<ProtectedRoute><AppLayout><PurchaseBillsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/bills/new" element={<ProtectedRoute><AppLayout><PurchaseBillForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/bills/:id" element={<ProtectedRoute><AppLayout><PurchaseBillForm /></AppLayout></ProtectedRoute>} />
             
             {/* Contracts */}
             <Route path="/contracts" element={<ProtectedRoute><AppLayout><ContractsIndex /></AppLayout></ProtectedRoute>} />

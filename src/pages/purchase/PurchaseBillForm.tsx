@@ -1,0 +1,222 @@
+import { useNavigate, useParams } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
+
+const billSchema = z.object({
+  poId: z.string().min(1, 'PO is required'),
+  invoiceNo: z.string().min(1, 'Invoice number is required'),
+  invoiceDate: z.string().min(1, 'Invoice date is required'),
+  amount: z.string().min(1, 'Amount is required'),
+  taxPct: z.string().min(1, 'Tax percentage is required'),
+  status: z.enum(['Pending', 'Paid', 'Overdue']),
+});
+
+type BillFormData = z.infer<typeof billSchema>;
+
+export default function PurchaseBillForm() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const isEdit = !!id;
+
+  const form = useForm<BillFormData>({
+    resolver: zodResolver(billSchema),
+    defaultValues: {
+      poId: '',
+      invoiceNo: '',
+      invoiceDate: new Date().toISOString().split('T')[0],
+      amount: '',
+      taxPct: '18',
+      status: 'Pending',
+    },
+  });
+
+  const amount = parseFloat(form.watch('amount') || '0');
+  const taxPct = parseFloat(form.watch('taxPct') || '0');
+  const tax = (amount * taxPct) / 100;
+  const total = amount + tax;
+
+  const onSubmit = (data: BillFormData) => {
+    console.log('Bill data:', data);
+    toast.success(isEdit ? 'Bill updated successfully' : 'Bill created successfully');
+    navigate('/purchase/bills');
+  };
+
+  // Mock POs data
+  const pos = [
+    { id: '1', code: 'PO-2024-001', supplier: 'ABC Suppliers' },
+    { id: '2', code: 'PO-2024-002', supplier: 'XYZ Trading' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/purchase/bills')}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold">{isEdit ? 'Edit' : 'New'} Purchase Bill</h1>
+          <p className="text-muted-foreground">Record supplier invoice</p>
+        </div>
+      </div>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Bill Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="poId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Purchase Order *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select PO" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {pos.map((po) => (
+                          <SelectItem key={po.id} value={po.id}>
+                            {po.code} - {po.supplier}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="invoiceNo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Invoice Number *</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="INV-001" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="invoiceDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Invoice Date *</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Amount (₹) *</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" {...field} placeholder="0.00" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="taxPct"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tax % *</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" {...field} placeholder="18" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
+                <div>
+                  <div className="text-sm text-muted-foreground">Tax Amount</div>
+                  <div className="text-lg font-semibold">₹{tax.toLocaleString('en-IN')}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Total Amount</div>
+                  <div className="text-lg font-semibold">₹{total.toLocaleString('en-IN')}</div>
+                </div>
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="Paid">Paid</SelectItem>
+                          <SelectItem value="Overdue">Overdue</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex gap-4">
+            <Button type="submit">
+              {isEdit ? 'Update Bill' : 'Create Bill'}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => navigate('/purchase/bills')}>
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </div>
+  );
+}
