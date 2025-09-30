@@ -1,4 +1,4 @@
-import { MR, Quotation, PO, PurchaseBill } from '@/types';
+import { MR, Quotation, PO, PurchaseBill, ComparativeStatement } from '@/types';
 
 export const materialRequisitions: MR[] = [
   {
@@ -35,6 +35,51 @@ export const materialRequisitions: MR[] = [
     createdBy: 'user-4',
     createdAt: '2024-11-01T10:00:00Z',
   },
+  {
+    id: 'mr-2',
+    code: 'MR-2024-002',
+    projectId: 'proj-2',
+    projectName: 'Green Valley',
+    items: [
+      {
+        id: 'mr-item-3',
+        itemId: 'item-3',
+        itemName: 'Sand',
+        description: 'River Sand',
+        qty: 200,
+        uom: 'CFT',
+        requiredBy: '2024-12-20',
+      },
+    ],
+    status: 'Pending',
+    approvalStatus: 'Pending',
+    requestedBy: 'user-4',
+    requestedByName: 'Amit Patel',
+    createdBy: 'user-4',
+    createdAt: '2024-11-10T10:00:00Z',
+  },
+  {
+    id: 'mr-3',
+    code: 'MR-2024-003',
+    projectId: 'proj-1',
+    projectName: 'Skyline Towers',
+    items: [
+      {
+        id: 'mr-item-4',
+        itemId: 'item-4',
+        itemName: 'Bricks',
+        description: 'Red Clay Bricks',
+        qty: 10000,
+        uom: 'Nos',
+        requiredBy: '2024-12-25',
+      },
+    ],
+    status: 'Draft',
+    requestedBy: 'user-4',
+    requestedByName: 'Amit Patel',
+    createdBy: 'user-4',
+    createdAt: '2024-11-12T10:00:00Z',
+  },
 ];
 
 export const quotations: Quotation[] = [
@@ -61,6 +106,67 @@ export const quotations: Quotation[] = [
     status: 'Active',
     createdBy: 'user-3',
     createdAt: '2024-11-03T10:00:00Z',
+  },
+  {
+    id: 'quot-2',
+    supplierId: 'sup-2',
+    supplierName: 'UltraTech Industries',
+    mrId: 'mr-1',
+    mrCode: 'MR-2024-001',
+    expiresAt: '2024-12-31',
+    items: [
+      {
+        id: 'quot-item-2',
+        mrItemId: 'mr-item-1',
+        description: 'UltraTech Cement 53 Grade',
+        qty: 1000,
+        uom: 'Bags',
+        rate: 375,
+        taxPct: 18,
+        amount: 375000,
+      },
+    ],
+    notes: 'Bulk discount available',
+    status: 'Active',
+    createdBy: 'user-3',
+    createdAt: '2024-11-03T14:00:00Z',
+  },
+  {
+    id: 'quot-3',
+    supplierId: 'sup-3',
+    supplierName: 'Jindal Steel',
+    mrId: 'mr-1',
+    mrCode: 'MR-2024-001',
+    expiresAt: '2024-12-31',
+    items: [
+      {
+        id: 'quot-item-3',
+        mrItemId: 'mr-item-2',
+        description: 'TMT Bars 12mm',
+        qty: 50,
+        uom: 'MT',
+        rate: 52000,
+        taxPct: 18,
+        amount: 2600000,
+      },
+    ],
+    notes: 'Premium quality steel',
+    status: 'Active',
+    createdBy: 'user-3',
+    createdAt: '2024-11-03T16:00:00Z',
+  },
+];
+
+export const comparativeStatements: ComparativeStatement[] = [
+  {
+    id: 'cs-1',
+    mrId: 'mr-1',
+    mrCode: 'MR-2024-001',
+    quotations: ['quot-1', 'quot-2'],
+    selectedSupplierId: 'sup-2',
+    analysis: 'UltraTech offers better pricing with ₹5/bag savings totaling ₹5,000 on 1000 bags',
+    createdBy: 'user-3',
+    createdAt: '2024-11-04T09:00:00Z',
   },
 ];
 
@@ -95,6 +201,78 @@ export const purchaseOrders: PO[] = [
     createdBy: 'user-3',
     createdAt: '2024-11-04T10:00:00Z',
   },
+  {
+    id: 'po-2',
+    code: 'PO-2024-002',
+    supplierId: 'sup-3',
+    supplierName: 'Jindal Steel',
+    projectId: 'proj-1',
+    projectName: 'Skyline Towers',
+    items: [
+      {
+        id: 'po-item-2',
+        description: 'TMT Bars 12mm',
+        qty: 50,
+        uom: 'MT',
+        rate: 52000,
+        taxPct: 18,
+        amount: 2600000,
+      },
+    ],
+    status: 'Pending',
+    approvalStatus: 'Pending',
+    total: 2600000,
+    taxTotal: 468000,
+    grandTotal: 3068000,
+    deliveryDate: '2024-12-20',
+    terms: 'Payment within 45 days of delivery',
+    createdBy: 'user-3',
+    createdAt: '2024-11-06T10:00:00Z',
+  },
+  {
+    id: 'po-3',
+    code: 'PO-2024-003',
+    supplierId: 'sup-2',
+    supplierName: 'UltraTech Industries',
+    projectId: 'proj-2',
+    projectName: 'Green Valley',
+    items: [
+      {
+        id: 'po-item-3',
+        description: 'UltraTech Cement 53 Grade',
+        qty: 500,
+        uom: 'Bags',
+        rate: 375,
+        taxPct: 18,
+        amount: 187500,
+      },
+    ],
+    status: 'Approved',
+    approvalStatus: 'Approved',
+    total: 187500,
+    taxTotal: 33750,
+    grandTotal: 221250,
+    deliveryDate: '2024-12-10',
+    terms: 'Payment within 30 days',
+    approvedBy: 'user-6',
+    approvedAt: '2024-11-08T10:00:00Z',
+    createdBy: 'user-3',
+    createdAt: '2024-11-07T10:00:00Z',
+  },
 ];
 
-export const purchaseBills: PurchaseBill[] = [];
+export const purchaseBills: PurchaseBill[] = [
+  {
+    id: 'pb-1',
+    poId: 'po-1',
+    poCode: 'PO-2024-001',
+    invoiceNo: 'INV-ACC-2024-1234',
+    invoiceDate: '2024-11-15',
+    amount: 380000,
+    tax: 68400,
+    total: 448400,
+    status: 'Pending',
+    createdBy: 'user-3',
+    createdAt: '2024-11-15T10:00:00Z',
+  },
+];

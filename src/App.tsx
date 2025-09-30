@@ -19,6 +19,10 @@ import PurchaseIndex from "./pages/purchase/index";
 import SuppliersList from "./pages/purchase/SuppliersList";
 import PurchaseOrdersList from "./pages/purchase/PurchaseOrdersList";
 import PODetails from "./pages/purchase/PODetails";
+import POForm from "./pages/purchase/POForm";
+import MRList from "./pages/purchase/MRList";
+import MRForm from "./pages/purchase/MRForm";
+import QuotationsList from "./pages/purchase/QuotationsList";
 
 // Contracts
 import ContractsIndex from "./pages/contracts/index";
@@ -87,7 +91,13 @@ const App = () => (
             {/* Purchase */}
             <Route path="/purchase" element={<ProtectedRoute><AppLayout><PurchaseIndex /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/suppliers" element={<ProtectedRoute><AppLayout><SuppliersList /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/mrs" element={<ProtectedRoute><AppLayout><MRList /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/mrs/new" element={<ProtectedRoute><AppLayout><MRForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/mrs/:id" element={<ProtectedRoute><AppLayout><MRForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/quotations" element={<ProtectedRoute><AppLayout><QuotationsList /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/pos" element={<ProtectedRoute><AppLayout><PurchaseOrdersList /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/pos/new" element={<ProtectedRoute><AppLayout><POForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/pos/:id/edit" element={<ProtectedRoute><AppLayout><POForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/pos/:id" element={<ProtectedRoute><AppLayout><PODetails /></AppLayout></ProtectedRoute>} />
             
             {/* Contracts */}
