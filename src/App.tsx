@@ -32,6 +32,7 @@ import MRForm from "./pages/purchase/MRForm";
 import QuotationsList from "./pages/purchase/QuotationsList";
 import QuotationForm from "./pages/purchase/QuotationForm";
 import ComparativeStatementList from "./pages/purchase/ComparativeStatementList";
+import ComparativeStatementForm from "./pages/purchase/ComparativeStatementForm";
 import PurchaseBillsList from "./pages/purchase/PurchaseBillsList";
 import PurchaseBillForm from "./pages/purchase/PurchaseBillForm";
 
@@ -141,6 +142,8 @@ const App = () => (
             <Route path="/purchase/quotations/new" element={<ProtectedRoute><AppLayout><QuotationForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/quotations/:id" element={<ProtectedRoute><AppLayout><QuotationForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/comparative" element={<ProtectedRoute><AppLayout><ComparativeStatementList /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/comparative/new" element={<ProtectedRoute><AppLayout><ComparativeStatementForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/comparative/:id" element={<ProtectedRoute><AppLayout><ComparativeStatementForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/pos" element={<ProtectedRoute><AppLayout><PurchaseOrdersList /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/pos/new" element={<ProtectedRoute><AppLayout><POForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/pos/:id/edit" element={<ProtectedRoute><AppLayout><POForm /></AppLayout></ProtectedRoute>} />
