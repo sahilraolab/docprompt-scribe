@@ -33,11 +33,16 @@ import PurchaseBillForm from "./pages/purchase/PurchaseBillForm";
 import ContractsIndex from "./pages/contracts/index";
 import ContractorsList from "./pages/contracts/ContractorsList";
 import WorkOrdersList from "./pages/contracts/WorkOrdersList";
+import RABillsList from "./pages/contracts/RABillsList";
+import LabourRatesList from "./pages/contracts/LabourRatesList";
 
 // Site
 import SiteIndex from "./pages/site/index";
 import ItemsList from "./pages/site/ItemsList";
 import StockList from "./pages/site/StockList";
+import GRNList from "./pages/site/GRNList";
+import IssuesList from "./pages/site/IssuesList";
+import TransfersList from "./pages/site/TransfersList";
 
 // Other modules
 import Notifications from "./pages/notifications/index";
@@ -115,11 +120,16 @@ const App = () => (
             <Route path="/contracts" element={<ProtectedRoute><AppLayout><ContractsIndex /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/contractors" element={<ProtectedRoute><AppLayout><ContractorsList /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/work-orders" element={<ProtectedRoute><AppLayout><WorkOrdersList /></AppLayout></ProtectedRoute>} />
+            <Route path="/contracts/ra-bills" element={<ProtectedRoute><AppLayout><RABillsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/contracts/labour-rates" element={<ProtectedRoute><AppLayout><LabourRatesList /></AppLayout></ProtectedRoute>} />
             
             {/* Site */}
             <Route path="/site" element={<ProtectedRoute><AppLayout><SiteIndex /></AppLayout></ProtectedRoute>} />
             <Route path="/site/items" element={<ProtectedRoute><AppLayout><ItemsList /></AppLayout></ProtectedRoute>} />
             <Route path="/site/stock" element={<ProtectedRoute><AppLayout><StockList /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/grn" element={<ProtectedRoute><AppLayout><GRNList /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/issues" element={<ProtectedRoute><AppLayout><IssuesList /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/transfers" element={<ProtectedRoute><AppLayout><TransfersList /></AppLayout></ProtectedRoute>} />
             
             {/* Accounts */}
             <Route path="/accounts" element={<ProtectedRoute><AppLayout><Accounts /></AppLayout></ProtectedRoute>} />
