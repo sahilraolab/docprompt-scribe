@@ -19,6 +19,7 @@ import ProjectForm from "./pages/engineering/ProjectForm";
 import EstimatesList from "./pages/engineering/EstimatesList";
 import EstimateForm from "./pages/engineering/EstimateForm";
 import DocumentsList from "./pages/engineering/DocumentsList";
+import DocumentUpload from "./pages/engineering/DocumentUpload";
 
 // Purchase
 import PurchaseIndex from "./pages/purchase/index";
@@ -35,6 +36,7 @@ import ComparativeStatementList from "./pages/purchase/ComparativeStatementList"
 import ComparativeStatementForm from "./pages/purchase/ComparativeStatementForm";
 import PurchaseBillsList from "./pages/purchase/PurchaseBillsList";
 import PurchaseBillForm from "./pages/purchase/PurchaseBillForm";
+import SupplierDetails from "./pages/purchase/SupplierDetails";
 
 // Contracts
 import ContractsIndex from "./pages/contracts/index";
@@ -46,6 +48,8 @@ import WorkOrderForm from "./pages/contracts/WorkOrderForm";
 import RABillsList from "./pages/contracts/RABillsList";
 import RABillForm from "./pages/contracts/RABillForm";
 import LabourRatesList from "./pages/contracts/LabourRatesList";
+import LabourRatesForm from "./pages/contracts/LabourRatesForm";
+import ContractorDetails from "./pages/contracts/ContractorDetails";
 
 // Site
 import SiteIndex from "./pages/site/index";
@@ -59,6 +63,8 @@ import IssueForm from "./pages/site/IssueForm";
 import TransfersList from "./pages/site/TransfersList";
 import TransferForm from "./pages/site/TransferForm";
 import QCList from "./pages/site/QCList";
+import QCForm from "./pages/site/QCForm";
+import ItemDetails from "./pages/site/ItemDetails";
 
 // Other modules
 import Notifications from "./pages/notifications/index";
@@ -77,6 +83,7 @@ import ApprovalsList from "./pages/workflow/ApprovalsList";
 import WorkflowConfigList from "./pages/workflow/WorkflowConfigList";
 import WorkflowConfigForm from "./pages/workflow/WorkflowConfigForm";
 import SLAList from "./pages/workflow/SLAList";
+import SLAForm from "./pages/workflow/SLAForm";
 import Admin from "./pages/admin/index";
 import UsersList from "./pages/admin/UsersList";
 import UserForm from "./pages/admin/UserForm";
@@ -129,11 +136,13 @@ const App = () => (
             <Route path="/engineering/estimates/new" element={<ProtectedRoute><AppLayout><EstimateForm /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/estimates/:id" element={<ProtectedRoute><AppLayout><EstimateForm /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/documents" element={<ProtectedRoute><AppLayout><DocumentsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/documents/upload" element={<ProtectedRoute><AppLayout><DocumentUpload /></AppLayout></ProtectedRoute>} />
             
             {/* Purchase */}
             <Route path="/purchase" element={<ProtectedRoute><AppLayout><PurchaseIndex /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/suppliers" element={<ProtectedRoute><AppLayout><SuppliersList /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/suppliers/new" element={<ProtectedRoute><AppLayout><SupplierForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/suppliers/:id/view" element={<ProtectedRoute><AppLayout><SupplierDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/suppliers/:id" element={<ProtectedRoute><AppLayout><SupplierForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/mrs" element={<ProtectedRoute><AppLayout><MRList /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/mrs/new" element={<ProtectedRoute><AppLayout><MRForm /></AppLayout></ProtectedRoute>} />
@@ -156,6 +165,7 @@ const App = () => (
             <Route path="/contracts" element={<ProtectedRoute><AppLayout><ContractsIndex /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/contractors" element={<ProtectedRoute><AppLayout><ContractorsList /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/contractors/new" element={<ProtectedRoute><AppLayout><ContractorForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/contracts/contractors/:id/view" element={<ProtectedRoute><AppLayout><ContractorDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/contractors/:id" element={<ProtectedRoute><AppLayout><ContractorForm /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/work-orders" element={<ProtectedRoute><AppLayout><WorkOrdersList /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/work-orders/new" element={<ProtectedRoute><AppLayout><WorkOrderForm /></AppLayout></ProtectedRoute>} />
@@ -165,11 +175,14 @@ const App = () => (
             <Route path="/contracts/ra-bills/new" element={<ProtectedRoute><AppLayout><RABillForm /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/ra-bills/:id" element={<ProtectedRoute><AppLayout><RABillForm /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/labour-rates" element={<ProtectedRoute><AppLayout><LabourRatesList /></AppLayout></ProtectedRoute>} />
+            <Route path="/contracts/labour-rates/new" element={<ProtectedRoute><AppLayout><LabourRatesForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/contracts/labour-rates/:id" element={<ProtectedRoute><AppLayout><LabourRatesForm /></AppLayout></ProtectedRoute>} />
             
             {/* Site */}
             <Route path="/site" element={<ProtectedRoute><AppLayout><SiteIndex /></AppLayout></ProtectedRoute>} />
             <Route path="/site/items" element={<ProtectedRoute><AppLayout><ItemsList /></AppLayout></ProtectedRoute>} />
             <Route path="/site/items/new" element={<ProtectedRoute><AppLayout><ItemForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/items/:id/view" element={<ProtectedRoute><AppLayout><ItemDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/site/items/:id" element={<ProtectedRoute><AppLayout><ItemForm /></AppLayout></ProtectedRoute>} />
             <Route path="/site/stock" element={<ProtectedRoute><AppLayout><StockList /></AppLayout></ProtectedRoute>} />
             <Route path="/site/grn" element={<ProtectedRoute><AppLayout><GRNList /></AppLayout></ProtectedRoute>} />
@@ -182,6 +195,8 @@ const App = () => (
             <Route path="/site/transfers/new" element={<ProtectedRoute><AppLayout><TransferForm /></AppLayout></ProtectedRoute>} />
             <Route path="/site/transfers/:id" element={<ProtectedRoute><AppLayout><TransferForm /></AppLayout></ProtectedRoute>} />
             <Route path="/site/qc" element={<ProtectedRoute><AppLayout><QCList /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/qc/new" element={<ProtectedRoute><AppLayout><QCForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/qc/:id" element={<ProtectedRoute><AppLayout><QCForm /></AppLayout></ProtectedRoute>} />
             
             {/* Accounts */}
             <Route path="/accounts" element={<ProtectedRoute><AppLayout><Accounts /></AppLayout></ProtectedRoute>} />
@@ -201,6 +216,8 @@ const App = () => (
             <Route path="/workflow/config/new" element={<ProtectedRoute><AppLayout><WorkflowConfigForm /></AppLayout></ProtectedRoute>} />
             <Route path="/workflow/config/:id" element={<ProtectedRoute><AppLayout><WorkflowConfigForm /></AppLayout></ProtectedRoute>} />
             <Route path="/workflow/sla" element={<ProtectedRoute><AppLayout><SLAList /></AppLayout></ProtectedRoute>} />
+            <Route path="/workflow/sla/new" element={<ProtectedRoute><AppLayout><SLAForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/workflow/sla/:id" element={<ProtectedRoute><AppLayout><SLAForm /></AppLayout></ProtectedRoute>} />
             
             {/* Notifications */}
             <Route path="/notifications" element={<ProtectedRoute><AppLayout><Notifications /></AppLayout></ProtectedRoute>} />
