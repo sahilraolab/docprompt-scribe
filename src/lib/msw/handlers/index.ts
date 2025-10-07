@@ -10,6 +10,9 @@ import { workflowHandlers } from './workflow';
 import { notificationHandlers } from './notifications';
 import { settingsHandlers } from './settings';
 import { itemsHandlers } from './items';
+import { documentsHandlers } from './documents';
+import { labourRatesHandlers } from './labour-rates';
+import { auditTrailHandlers } from './audit-trail';
 
 export const handlers = [
   ...authHandlers,
@@ -24,4 +27,7 @@ export const handlers = [
   ...notificationHandlers,
   ...settingsHandlers,
   ...itemsHandlers,
+  ...documentsHandlers,
+  ...labourRatesHandlers,
+  ...auditTrailHandlers,
 ];
