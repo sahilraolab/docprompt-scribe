@@ -16,8 +16,9 @@ import {
 } from '@/components/ui/select';
 import { useProjects } from '@/lib/hooks/useProjects';
 import { useItems } from '@/lib/hooks/useSite';
+import { useCreateMR, useUpdateMR } from '@/lib/hooks/usePurchase';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 const mrItemSchema = z.object({
   itemId: z.string().min(1, 'Item is required'),
@@ -82,12 +83,15 @@ export default function MRForm() {
   };
 
   const onSubmit = (data: MRFormData) => {
-    console.log('MR Data:', data);
-    toast({
-      title: id ? 'MR Updated' : 'MR Created',
-      description: `Material requisition has been ${id ? 'updated' : 'created'} successfully.`,
-    });
-    navigate('/purchase/mrs');
+    if (id) {
+      updateMR.mutate({ id, data: data as any }, {
+        onSuccess: () => navigate('/purchase/mrs'),
+      });
+    } else {
+      createMR.mutate(data as any, {
+        onSuccess: () => navigate('/purchase/mrs'),
+      });
+    }
   };
 
   return (
