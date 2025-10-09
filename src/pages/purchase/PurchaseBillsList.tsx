@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
-import { Plus, Search, Receipt, Loader2 } from 'lucide-react';
+import { exportData } from '@/lib/utils/export-enhanced';
+import { Plus, Search, Receipt, Loader2, Download } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PurchaseBill } from '@/types';
 import {
   Table,
   TableBody,
@@ -16,38 +20,60 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
+async function fetchPurchaseBills(): Promise<PurchaseBill[]> {
+  const response = await fetch('/api/purchase-bills');
+  if (!response.ok) throw new Error('Failed to fetch purchase bills');
+  const data = await response.json();
+  return data.data;
+}
+
 export default function PurchaseBillsList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('date');
 
-  // Mock data - will be replaced with real API
-  const bills = [
-    {
-      id: '1',
-      poCode: 'PO-2024-001',
-      invoiceNo: 'INV-001',
-      invoiceDate: '2024-01-15',
-      amount: 450000,
-      tax: 81000,
-      total: 531000,
-      status: 'Active' as const
-    },
-    {
-      id: '2',
-      poCode: 'PO-2024-002',
-      invoiceNo: 'INV-002',
-      invoiceDate: '2024-01-20',
-      amount: 280000,
-      tax: 50400,
-      total: 330400,
-      status: 'Pending' as const
-    }
-  ];
+  const { data: bills, isLoading } = useQuery({
+    queryKey: ['purchase-bills'],
+    queryFn: fetchPurchaseBills,
+  });
 
-  const filteredBills = bills.filter((bill) =>
-    bill.poCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    bill.invoiceNo.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredBills = bills
+    ?.filter((bill) => {
+      const matchesSearch = 
+        bill.poCode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        bill.invoiceNo.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || bill.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'date') return new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime();
+      if (sortBy === 'amount') return b.total - a.total;
+      if (sortBy === 'invoice') return a.invoiceNo.localeCompare(b.invoiceNo);
+      return 0;
+    });
+
+  const handleExport = () => {
+    if (!filteredBills) return;
+    const data = filteredBills.map((bill) => ({
+      'Invoice No': bill.invoiceNo,
+      'PO Code': bill.poCode,
+      'Invoice Date': bill.invoiceDate,
+      'Amount': bill.amount,
+      'Tax': bill.tax,
+      'Total': bill.total,
+      'Status': bill.status,
+    }));
+    exportData(data, { filename: 'purchase-bills', format: 'csv' });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -56,22 +82,51 @@ export default function PurchaseBillsList() {
           <h1 className="text-3xl font-bold">Purchase Bills</h1>
           <p className="text-muted-foreground">Manage supplier invoices and bills</p>
         </div>
-        <Button onClick={() => navigate('/purchase/bills/new')}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Bill
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleExport} variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <Button onClick={() => navigate('/purchase/bills/new')}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Bill
+          </Button>
+        </div>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by PO code or invoice number..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by PO code or invoice number..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Paid">Paid</SelectItem>
+                <SelectItem value="Overdue">Overdue</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date">Date</SelectItem>
+                <SelectItem value="amount">Amount</SelectItem>
+                <SelectItem value="invoice">Invoice No</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>

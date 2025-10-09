@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Package, ShoppingCart, FileSpreadsheet, Building } from 'lucide-react';
+import { FileText, Package, ShoppingCart, FileSpreadsheet, Building, TrendingUp } from 'lucide-react';
 
 export default function PurchaseIndex() {
   const navigate = useNavigate();
@@ -47,6 +47,13 @@ export default function PurchaseIndex() {
       icon: Building,
       path: '/purchase/suppliers',
       color: 'text-amber-600',
+    },
+    {
+      title: 'Rate Management',
+      description: 'Track and manage material rates',
+      icon: TrendingUp,
+      path: '/purchase/rates',
+      color: 'text-indigo-600',
     },
   ];
 

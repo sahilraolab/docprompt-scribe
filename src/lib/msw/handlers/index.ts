@@ -13,6 +13,7 @@ import { itemsHandlers } from './items';
 import { documentsHandlers } from './documents';
 import { labourRatesHandlers } from './labour-rates';
 import { auditTrailHandlers } from './audit-trail';
+import { materialRateHandlers } from './material-rates';
 
 export const handlers = [
   ...authHandlers,
@@ -30,4 +31,5 @@ export const handlers = [
   ...documentsHandlers,
   ...labourRatesHandlers,
   ...auditTrailHandlers,
+  ...materialRateHandlers,
 ];
