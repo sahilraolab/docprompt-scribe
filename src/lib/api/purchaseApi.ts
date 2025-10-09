@@ -4,7 +4,7 @@
  * Update the BASE_URL to point to your Node.js + MongoDB backend
  */
 
-const BASE_URL = process.env.VITE_API_URL || 'http://localhost:5005/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
 
 // Helper function to get auth token
 const getAuthToken = () => {
