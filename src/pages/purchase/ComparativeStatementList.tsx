@@ -103,7 +103,7 @@ export default function ComparativeStatementList() {
           </div>
         </CardHeader>
         <CardContent>
-          {filteredStatements.length > 0 ? (
+          {filteredStatements && filteredStatements.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>

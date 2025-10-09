@@ -130,7 +130,7 @@ export default function PurchaseBillsList() {
           </div>
         </CardHeader>
         <CardContent>
-          {filteredBills.length > 0 ? (
+          {filteredBills && filteredBills.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
