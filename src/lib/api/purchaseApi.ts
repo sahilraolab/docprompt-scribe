@@ -4,11 +4,11 @@
  * Update the BASE_URL to point to your Node.js + MongoDB backend
  */
 
-const BASE_URL = process.env.VITE_API_URL || 'http://localhost:5000/api';
+const BASE_URL = process.env.VITE_API_URL || 'http://localhost:5005/api';
 
 // Helper function to get auth token
 const getAuthToken = () => {
-  return localStorage.getItem('authToken') || '';
+  return localStorage.getItem('erp_auth_token') || '';
 };
 
 // Helper function to make API requests
