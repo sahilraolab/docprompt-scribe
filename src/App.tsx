@@ -38,6 +38,7 @@ import PurchaseBillsList from "./pages/purchase/PurchaseBillsList";
 import PurchaseBillForm from "./pages/purchase/PurchaseBillForm";
 import SupplierDetails from "./pages/purchase/SupplierDetails";
 import RateManagement from "./pages/purchase/RateManagement";
+import RateForm from "./pages/purchase/RateForm";
 
 // Contracts
 import ContractsIndex from "./pages/contracts/index";
@@ -162,8 +163,8 @@ const App = () => (
             <Route path="/purchase/bills/new" element={<ProtectedRoute><AppLayout><PurchaseBillForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/bills/:id" element={<ProtectedRoute><AppLayout><PurchaseBillForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/rates" element={<ProtectedRoute><AppLayout><RateManagement /></AppLayout></ProtectedRoute>} />
-            <Route path="/purchase/rates/new" element={<ProtectedRoute><AppLayout><RateManagement /></AppLayout></ProtectedRoute>} />
-            <Route path="/purchase/rates/:id" element={<ProtectedRoute><AppLayout><RateManagement /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/rates/new" element={<ProtectedRoute><AppLayout><RateForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/rates/:id" element={<ProtectedRoute><AppLayout><RateForm /></AppLayout></ProtectedRoute>} />
             
             {/* Contracts */}
             <Route path="/contracts" element={<ProtectedRoute><AppLayout><ContractsIndex /></AppLayout></ProtectedRoute>} />

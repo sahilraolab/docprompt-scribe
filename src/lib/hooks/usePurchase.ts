@@ -84,3 +84,31 @@ export function useQuotations() {
     queryFn: fetchQuotations,
   });
 }
+
+async function fetchMaterialRates() {
+  const response = await fetch('/api/material-rates');
+  if (!response.ok) throw new Error('Failed to fetch material rates');
+  const data = await response.json();
+  return data.data;
+}
+
+async function fetchMaterialRate(id: string) {
+  const response = await fetch(`/api/material-rates/${id}`);
+  if (!response.ok) throw new Error('Failed to fetch material rate');
+  return response.json();
+}
+
+export function useMaterialRates() {
+  return useQuery({
+    queryKey: ['material-rates'],
+    queryFn: fetchMaterialRates,
+  });
+}
+
+export function useMaterialRate(id: string) {
+  return useQuery({
+    queryKey: ['material-rates', id],
+    queryFn: () => fetchMaterialRate(id),
+    enabled: !!id,
+  });
+}
