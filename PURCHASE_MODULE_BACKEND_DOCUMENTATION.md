@@ -4,13 +4,18 @@
 ## Table of Contents
 1. [Overview](#overview)
 2. [Technology Stack](#technology-stack)
-3. [Database Schema](#database-schema)
-4. [API Endpoints](#api-endpoints)
-5. [Business Logic & Validation](#business-logic--validation)
-6. [Integration Points](#integration-points)
-7. [Security & Authorization](#security--authorization)
-8. [File Structure](#file-structure)
-9. [Testing Strategy](#testing-strategy)
+3. [Initial Setup - Creating First Admin User](#initial-setup---creating-first-admin-user)
+4. [Database Schema](#database-schema)
+5. [API Endpoints](#api-endpoints)
+   - [Authentication Routes](#authentication-routes)
+   - [User Management Routes](#user-management-routes)
+   - [Purchase Module Routes](#purchase-module-routes)
+6. [Business Logic & Validation](#business-logic--validation)
+7. [Integration Points](#integration-points)
+8. [Security & Authorization](#security--authorization)
+9. [File Structure](#file-structure)
+10. [Testing Strategy](#testing-strategy)
+11. [Environment Variables](#environment-variables)
 
 ---
 
@@ -62,7 +67,150 @@ npm install --save-dev nodemon jest supertest
 
 ## Database Schema
 
-### 1. Suppliers Collection
+### 1. Users Collection (Authentication & Authorization)
+
+```javascript
+// models/User.js
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+
+const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    validate: {
+      validator: function(v) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      },
+      message: 'Invalid email address'
+    }
+  },
+  password: {
+    type: String,
+    required: true,
+    minlength: 8,
+  },
+  phone: {
+    type: String,
+    validate: {
+      validator: function(v) {
+        return !v || /^[0-9]{10}$/.test(v);
+      },
+      message: 'Invalid phone number'
+    }
+  },
+  department: {
+    type: String,
+    enum: ['Engineering', 'Purchase', 'Site', 'Accounts', 'Contracts', 'Admin'],
+  },
+  designation: String,
+  active: {
+    type: Boolean,
+    default: true,
+    index: true,
+  },
+  lastLogin: Date,
+  // Avatar/profile picture
+  avatar: String,
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+}, {
+  timestamps: true,
+});
+
+// Hash password before saving
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Method to compare passwords
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
+
+// Remove password from JSON response
+userSchema.methods.toJSON = function() {
+  const obj = this.toObject();
+  delete obj.password;
+  return obj;
+};
+
+// Indexes
+userSchema.index({ email: 1 });
+userSchema.index({ active: 1 });
+
+module.exports = mongoose.model('User', userSchema);
+```
+
+### 2. User Roles Collection (RBAC)
+
+```javascript
+// models/UserRole.js
+const mongoose = require('mongoose');
+
+// Define roles enum
+const roleEnum = ['Admin', 'PurchaseManager', 'PurchaseOfficer', 'ProjectManager', 
+                  'SiteManager', 'AccountsManager', 'ContractsManager', 'Viewer'];
+
+const userRoleSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true,
+  },
+  role: {
+    type: String,
+    enum: roleEnum,
+    required: true,
+  },
+  permissions: [{
+    module: {
+      type: String,
+      enum: ['Purchase', 'Engineering', 'Site', 'Accounts', 'Contracts', 'Workflow', 'Admin'],
+      required: true,
+    },
+    actions: [{
+      type: String,
+      enum: ['Create', 'Read', 'Update', 'Delete', 'Approve', 'Reject', 'Issue', 'Close'],
+    }],
+  }],
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+}, {
+  timestamps: true,
+});
+
+// Unique constraint: one user can have multiple roles
+userRoleSchema.index({ userId: 1, role: 1 }, { unique: true });
+
+module.exports = mongoose.model('UserRole', userRoleSchema);
+```
+
+### 3. Suppliers Collection
 
 ```javascript
 // models/Supplier.js
@@ -980,6 +1128,8 @@ mongoose.connect(process.env.MONGODB_URI, {
 .catch(err => console.error('MongoDB connection error:', err));
 
 // Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/users', require('./routes/users'));
 app.use('/api/suppliers', require('./routes/suppliers'));
 app.use('/api/mrs', require('./routes/material-requisitions'));
 app.use('/api/quotations', require('./routes/quotations'));
@@ -1006,12 +1156,261 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 ```
 
+### Authentication Routes
+
+```javascript
+// routes/auth.js
+const express = require('express');
+const router = express.Router();
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const UserRole = require('../models/UserRole');
+const auth = require('../middleware/auth');
+
+// POST /api/auth/register - Register new user (Admin only)
+router.post('/register', auth, async (req, res) => {
+  try {
+    // Only admins can create users
+    const adminRole = await UserRole.findOne({ 
+      userId: req.userId, 
+      role: 'Admin' 
+    });
+    
+    if (!adminRole) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Only administrators can create users'
+        }
+      });
+    }
+    
+    const { name, email, password, phone, department, designation, role, permissions } = req.body;
+    
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'USER_EXISTS',
+          message: 'User with this email already exists'
+        }
+      });
+    }
+    
+    // Create user
+    const user = new User({
+      name,
+      email,
+      password,
+      phone,
+      department,
+      designation,
+      createdBy: req.userId,
+    });
+    
+    await user.save();
+    
+    // Assign role and permissions
+    if (role) {
+      const userRole = new UserRole({
+        userId: user._id,
+        role,
+        permissions: permissions || [],
+        createdBy: req.userId,
+      });
+      await userRole.save();
+    }
+    
+    res.status(201).json({
+      success: true,
+      message: 'User created successfully',
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        department: user.department,
+        role
+      }
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: error.message
+      }
+    });
+  }
+});
+
+// POST /api/auth/login - User login
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Find user
+    const user = await User.findOne({ email, active: true });
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'INVALID_CREDENTIALS',
+          message: 'Invalid email or password'
+        }
+      });
+    }
+    
+    // Verify password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'INVALID_CREDENTIALS',
+          message: 'Invalid email or password'
+        }
+      });
+    }
+    
+    // Get user roles and permissions
+    const userRoles = await UserRole.find({ userId: user._id });
+    
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRY || '24h' }
+    );
+    
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+    
+    res.json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          department: user.department,
+          designation: user.designation,
+          avatar: user.avatar,
+          roles: userRoles.map(r => ({
+            role: r.role,
+            permissions: r.permissions
+          }))
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: error.message
+      }
+    });
+  }
+});
+
+// GET /api/auth/me - Get current user
+router.get('/me', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    const userRoles = await UserRole.find({ userId: req.userId });
+    
+    res.json({
+      success: true,
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          department: user.department,
+          designation: user.designation,
+          avatar: user.avatar,
+          roles: userRoles.map(r => ({
+            role: r.role,
+            permissions: r.permissions
+          }))
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: error.message
+      }
+    });
+  }
+});
+
+// POST /api/auth/change-password - Change password
+router.post('/change-password', auth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    
+    const user = await User.findById(req.userId);
+    
+    // Verify current password
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'INVALID_PASSWORD',
+          message: 'Current password is incorrect'
+        }
+      });
+    }
+    
+    // Update password
+    user.password = newPassword;
+    await user.save();
+    
+    res.json({
+      success: true,
+      message: 'Password changed successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: error.message
+      }
+    });
+  }
+});
+
+// POST /api/auth/logout - Logout (client-side token removal)
+router.post('/logout', auth, (req, res) => {
+  res.json({
+    success: true,
+    message: 'Logged out successfully'
+  });
+});
+
+module.exports = router;
+```
+
 ### Authentication Middleware
 
 ```javascript
 // middleware/auth.js
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const UserRole = require('../models/UserRole');
 
 const auth = async (req, res, next) => {
   try {
@@ -1024,12 +1423,16 @@ const auth = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId).select('-password');
     
-    if (!user) {
-      throw new Error('User not found');
+    if (!user || !user.active) {
+      throw new Error('User not found or inactive');
     }
+    
+    // Get user roles and permissions
+    const userRoles = await UserRole.find({ userId: user._id });
     
     req.user = user;
     req.userId = user._id;
+    req.userRoles = userRoles;
     next();
   } catch (error) {
     res.status(401).json({
@@ -1049,27 +1452,46 @@ module.exports = auth;
 
 ```javascript
 // middleware/permissions.js
+const UserRole = require('../models/UserRole');
+
 const checkPermission = (module, action) => {
-  return (req, res, next) => {
-    const userRole = req.user.role;
-    const permissions = req.user.permissions || [];
-    
-    // Check if user has required permission
-    const hasPermission = permissions.some(
-      p => p.module === module && p.actions.includes(action)
-    );
-    
-    if (!hasPermission && userRole !== 'Admin') {
-      return res.status(403).json({
+  return async (req, res, next) => {
+    try {
+      const userRoles = req.userRoles || await UserRole.find({ userId: req.userId });
+      
+      // Admin has all permissions
+      const isAdmin = userRoles.some(r => r.role === 'Admin');
+      if (isAdmin) {
+        return next();
+      }
+      
+      // Check if user has required permission
+      const hasPermission = userRoles.some(role => 
+        role.permissions.some(
+          p => p.module === module && p.actions.includes(action)
+        )
+      );
+      
+      if (!hasPermission) {
+        return res.status(403).json({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Insufficient permissions to perform this action'
+          }
+        });
+      }
+      
+      next();
+    } catch (error) {
+      res.status(500).json({
         success: false,
         error: {
-          code: 'FORBIDDEN',
-          message: 'Insufficient permissions'
+          code: 'SERVER_ERROR',
+          message: error.message
         }
       });
     }
-    
-    next();
   };
 };
 
@@ -2166,6 +2588,168 @@ backend/
 
 ---
 
+## Initial Setup - Creating First Admin User
+
+Since the registration endpoint requires admin authentication, you need to create the first admin user directly in the database. Here's how:
+
+### Method 1: Using MongoDB Shell
+
+```javascript
+// Connect to MongoDB
+mongosh "mongodb://localhost:27017/construction-erp"
+
+// Hash the password using Node.js bcrypt
+// First, run this in a Node.js script or terminal:
+const bcrypt = require('bcryptjs');
+const salt = await bcrypt.genSalt(10);
+const hashedPassword = await bcrypt.hash('Admin@123', salt);
+console.log(hashedPassword);
+
+// Then insert admin user with hashed password
+db.users.insertOne({
+  name: "System Administrator",
+  email: "admin@company.com",
+  password: "<PASTE_HASHED_PASSWORD_HERE>",
+  phone: "9999999999",
+  department: "Admin",
+  designation: "Administrator",
+  active: true,
+  createdAt: new Date(),
+  updatedAt: new Date()
+});
+
+// Get the user ID
+const adminUser = db.users.findOne({ email: "admin@company.com" });
+
+// Assign Admin role with full permissions
+db.userroles.insertOne({
+  userId: adminUser._id,
+  role: "Admin",
+  permissions: [
+    {
+      module: "Purchase",
+      actions: ["Create", "Read", "Update", "Delete", "Approve", "Issue"]
+    },
+    {
+      module: "Engineering",
+      actions: ["Create", "Read", "Update", "Delete", "Approve"]
+    },
+    {
+      module: "Site",
+      actions: ["Create", "Read", "Update", "Delete"]
+    },
+    {
+      module: "Accounts",
+      actions: ["Create", "Read", "Update", "Delete"]
+    },
+    {
+      module: "Contracts",
+      actions: ["Create", "Read", "Update", "Delete", "Approve"]
+    },
+    {
+      module: "Workflow",
+      actions: ["Create", "Read", "Update", "Delete"]
+    },
+    {
+      module: "Admin",
+      actions: ["Create", "Read", "Update", "Delete"]
+    }
+  ],
+  createdAt: new Date(),
+  updatedAt: new Date()
+});
+```
+
+### Method 2: Using Node.js Script
+
+```javascript
+// scripts/createAdmin.js
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+require('dotenv').config();
+
+const User = require('./models/User');
+const UserRole = require('./models/UserRole');
+
+async function createAdmin() {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('Connected to MongoDB');
+    
+    // Check if admin exists
+    const existingAdmin = await User.findOne({ email: 'admin@company.com' });
+    if (existingAdmin) {
+      console.log('Admin user already exists');
+      process.exit(0);
+    }
+    
+    // Create admin user
+    const admin = new User({
+      name: 'System Administrator',
+      email: 'admin@company.com',
+      password: 'Admin@123', // Will be hashed by pre-save middleware
+      phone: '9999999999',
+      department: 'Admin',
+      designation: 'Administrator',
+      active: true,
+    });
+    
+    await admin.save();
+    console.log('Admin user created:', admin.email);
+    
+    // Assign Admin role with full permissions
+    const adminRole = new UserRole({
+      userId: admin._id,
+      role: 'Admin',
+      permissions: [
+        { module: 'Purchase', actions: ['Create', 'Read', 'Update', 'Delete', 'Approve', 'Issue'] },
+        { module: 'Engineering', actions: ['Create', 'Read', 'Update', 'Delete', 'Approve'] },
+        { module: 'Site', actions: ['Create', 'Read', 'Update', 'Delete'] },
+        { module: 'Accounts', actions: ['Create', 'Read', 'Update', 'Delete'] },
+        { module: 'Contracts', actions: ['Create', 'Read', 'Update', 'Delete', 'Approve'] },
+        { module: 'Workflow', actions: ['Create', 'Read', 'Update', 'Delete'] },
+        { module: 'Admin', actions: ['Create', 'Read', 'Update', 'Delete'] },
+      ],
+    });
+    
+    await adminRole.save();
+    console.log('Admin role assigned');
+    
+    console.log('\n=== Admin User Created Successfully ===');
+    console.log('Email:', admin.email);
+    console.log('Password: Admin@123');
+    console.log('Please change the password after first login!');
+    console.log('======================================\n');
+    
+    process.exit(0);
+  } catch (error) {
+    console.error('Error creating admin:', error);
+    process.exit(1);
+  }
+}
+
+createAdmin();
+```
+
+**Run the script:**
+```bash
+node scripts/createAdmin.js
+```
+
+### After Admin Creation
+
+1. **Login with admin credentials:**
+   - Email: `admin@company.com`
+   - Password: `Admin@123`
+
+2. **Change the default password immediately** using the `/api/auth/change-password` endpoint
+
+3. **Create other users** through the admin panel using `/api/auth/register` endpoint
+
+4. **Assign appropriate roles** (PurchaseManager, PurchaseOfficer, ProjectManager, etc.) to each user based on their department and responsibilities
+
+---
+
 ## Testing Strategy
 
 ### Unit Tests Example
@@ -2298,17 +2882,42 @@ LOG_LEVEL=info
 
 This comprehensive backend documentation provides:
 
-1. **Complete MongoDB schemas** with proper indexes and validation
-2. **RESTful API endpoints** with authentication and authorization
-3. **Business logic** for code generation, workflows, and integrations
-4. **Integration points** with Engineering, Site, Accounts, and Workflow modules
-5. **Security measures** including RBAC, JWT authentication, and input validation
-6. **File structure** following industry best practices
-7. **Testing strategy** with example unit tests
+1. **Complete User Authentication System** with JWT tokens, password hashing, and role-based access control
+2. **Admin Setup Guide** for creating the first admin user directly in the database
+3. **Complete MongoDB schemas** for Users, Roles, and Purchase entities with proper indexes and validation
+4. **RESTful API endpoints** with authentication and authorization middleware
+5. **Business logic** for code generation, workflows, and integrations
+6. **Integration points** with Engineering, Site, Accounts, and Workflow modules
+7. **Security measures** including RBAC, JWT authentication, password hashing (bcrypt), and input validation
+8. **File structure** following industry best practices
+9. **Testing strategy** with example unit tests
+
+### Authentication Flow
+
+1. **Initial Setup**: Create first admin user directly in MongoDB using the provided script
+2. **Admin Login**: Admin logs in with email/password, receives JWT token
+3. **User Management**: Admin creates additional users through `/api/auth/register` endpoint
+4. **Role Assignment**: Each user is assigned roles (Admin, PurchaseManager, etc.) with specific permissions
+5. **Access Control**: All API endpoints are protected with JWT authentication and role-based permissions
+
+### Purchase Module Features
 
 The Purchase Module is designed to be:
 - **Scalable**: Proper indexing and pagination support
-- **Secure**: JWT authentication, RBAC, input validation
-- **Integrated**: Seamless connection with other ERP modules
+- **Secure**: JWT authentication, RBAC, bcrypt password hashing, input validation
+- **Integrated**: Seamless connection with other ERP modules (Engineering, Site, Accounts, Workflow)
 - **Maintainable**: Clean code structure and comprehensive documentation
 - **Future-proof**: Modular design allows easy extension
+
+### Quick Start
+
+1. Install dependencies: `npm install`
+2. Set up environment variables: Copy `.env.example` to `.env` and configure
+3. Start MongoDB: `mongod`
+4. Create first admin: `node scripts/createAdmin.js`
+5. Start server: `npm start`
+6. Login with admin credentials and start creating users, suppliers, and purchase orders
+
+---
+
+**Note**: Always keep your JWT_SECRET secure and change default admin password immediately after first login!
