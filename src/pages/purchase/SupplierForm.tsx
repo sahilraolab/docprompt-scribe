@@ -15,8 +15,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft } from 'lucide-react';
-import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
+import { useSupplier, useCreateSupplier, useUpdateSupplier } from '@/lib/hooks/usePurchase';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { useEffect } from 'react';
 
 const supplierSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -44,6 +46,10 @@ export default function SupplierForm() {
   const navigate = useNavigate();
   const isEdit = !!id;
 
+  const { data: supplier, isLoading: supplierLoading } = useSupplier(id || '');
+  const createSupplier = useCreateSupplier();
+  const updateSupplier = useUpdateSupplier();
+
   const form = useForm<SupplierFormData>({
     resolver: zodResolver(supplierSchema),
     defaultValues: {
@@ -66,11 +72,42 @@ export default function SupplierForm() {
     },
   });
 
+  useEffect(() => {
+    if (supplier && isEdit) {
+      form.reset({
+        name: supplier.name,
+        contact: supplier.contact,
+        phone: supplier.phone || '',
+        email: supplier.email || '',
+        gst: supplier.gst || '',
+        pan: (supplier as any).pan || '',
+        address: (supplier as any).address || '',
+        city: supplier.city || '',
+        state: supplier.state || '',
+        pincode: (supplier as any).pincode || '',
+        bankName: (supplier as any).bankName || '',
+        accountNo: (supplier as any).accountNo || '',
+        ifsc: (supplier as any).ifsc || '',
+        rating: supplier.rating?.toString() || '',
+        paymentTerms: (supplier as any).paymentTerms || '',
+        active: supplier.active,
+      });
+    }
+  }, [supplier, isEdit, form]);
+
   const onSubmit = (data: SupplierFormData) => {
-    console.log('Supplier data:', data);
-    toast.success(isEdit ? 'Supplier updated successfully' : 'Supplier added successfully');
-    navigate('/purchase/suppliers');
+    if (isEdit && id) {
+      updateSupplier.mutate({ id, data: data as any }, {
+        onSuccess: () => navigate('/purchase/suppliers'),
+      });
+    } else {
+      createSupplier.mutate(data as any, {
+        onSuccess: () => navigate('/purchase/suppliers'),
+      });
+    }
   };
+
+  if (supplierLoading && isEdit) return <LoadingSpinner />;
 
   return (
     <div className="space-y-6">

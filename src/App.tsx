@@ -30,12 +30,16 @@ import PODetails from "./pages/purchase/PODetails";
 import POForm from "./pages/purchase/POForm";
 import MRList from "./pages/purchase/MRList";
 import MRForm from "./pages/purchase/MRForm";
+import MRDetails from "./pages/purchase/MRDetails";
 import QuotationsList from "./pages/purchase/QuotationsList";
 import QuotationForm from "./pages/purchase/QuotationForm";
+import QuotationDetails from "./pages/purchase/QuotationDetails";
 import ComparativeStatementList from "./pages/purchase/ComparativeStatementList";
 import ComparativeStatementForm from "./pages/purchase/ComparativeStatementForm";
+import ComparativeStatementDetails from "./pages/purchase/ComparativeStatementDetails";
 import PurchaseBillsList from "./pages/purchase/PurchaseBillsList";
 import PurchaseBillForm from "./pages/purchase/PurchaseBillForm";
+import PurchaseBillDetails from "./pages/purchase/PurchaseBillDetails";
 import SupplierDetails from "./pages/purchase/SupplierDetails";
 import RateManagement from "./pages/purchase/RateManagement";
 import RateForm from "./pages/purchase/RateForm";
@@ -148,12 +152,15 @@ const App = () => (
             <Route path="/purchase/suppliers/:id" element={<ProtectedRoute><AppLayout><SupplierForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/mrs" element={<ProtectedRoute><AppLayout><MRList /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/mrs/new" element={<ProtectedRoute><AppLayout><MRForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/mrs/:id/view" element={<ProtectedRoute><AppLayout><MRDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/mrs/:id" element={<ProtectedRoute><AppLayout><MRForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/quotations" element={<ProtectedRoute><AppLayout><QuotationsList /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/quotations/new" element={<ProtectedRoute><AppLayout><QuotationForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/quotations/:id/view" element={<ProtectedRoute><AppLayout><QuotationDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/quotations/:id" element={<ProtectedRoute><AppLayout><QuotationForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/comparative" element={<ProtectedRoute><AppLayout><ComparativeStatementList /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/comparative/new" element={<ProtectedRoute><AppLayout><ComparativeStatementForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/comparative/:id/view" element={<ProtectedRoute><AppLayout><ComparativeStatementDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/comparative/:id" element={<ProtectedRoute><AppLayout><ComparativeStatementForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/pos" element={<ProtectedRoute><AppLayout><PurchaseOrdersList /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/pos/new" element={<ProtectedRoute><AppLayout><POForm /></AppLayout></ProtectedRoute>} />
@@ -161,6 +168,7 @@ const App = () => (
             <Route path="/purchase/pos/:id" element={<ProtectedRoute><AppLayout><PODetails /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/bills" element={<ProtectedRoute><AppLayout><PurchaseBillsList /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/bills/new" element={<ProtectedRoute><AppLayout><PurchaseBillForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/bills/:id/view" element={<ProtectedRoute><AppLayout><PurchaseBillDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/bills/:id" element={<ProtectedRoute><AppLayout><PurchaseBillForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/rates" element={<ProtectedRoute><AppLayout><RateManagement /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/rates/new" element={<ProtectedRoute><AppLayout><RateForm /></AppLayout></ProtectedRoute>} />

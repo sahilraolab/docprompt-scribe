@@ -44,8 +44,9 @@ type MRFormData = z.infer<typeof mrSchema>;
 export default function MRForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { data: projects } = useProjects();
+  const createMR = useCreateMR();
+  const updateMR = useUpdateMR();
   const { data: items } = useItems();
   const [mrItems, setMRItems] = useState<any[]>([
     { itemId: '', description: '', qty: 1, uom: '', requiredBy: '' },

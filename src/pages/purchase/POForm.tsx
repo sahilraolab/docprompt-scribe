@@ -16,9 +16,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useProjects } from '@/lib/hooks/useProjects';
-import { useSuppliers } from '@/lib/hooks/usePurchase';
+import { useSuppliers, useCreatePO, useUpdatePO } from '@/lib/hooks/usePurchase';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils/format';
 
 const poItemSchema = z.object({
@@ -57,9 +57,10 @@ type POFormData = z.infer<typeof poSchema>;
 export default function POForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { data: projects } = useProjects();
   const { data: suppliers } = useSuppliers();
+  const createPO = useCreatePO();
+  const updatePO = useUpdatePO();
   
   const [poItems, setPoItems] = useState<any[]>([
     { description: '', qty: 1, uom: '', rate: 0, taxPct: 18 },
@@ -112,12 +113,16 @@ export default function POForm() {
   const { subtotal, taxTotal, grandTotal } = calculateTotals();
 
   const onSubmit = (data: POFormData) => {
-    console.log('PO Data:', { ...data, subtotal, taxTotal, grandTotal });
-    toast({
-      title: id ? 'PO Updated' : 'PO Created',
-      description: `Purchase order has been ${id ? 'updated' : 'created'} successfully.`,
-    });
-    navigate('/purchase/pos');
+    const poData = { ...data, total: subtotal, taxTotal, grandTotal };
+    if (id) {
+      updatePO.mutate({ id, data: poData as any }, {
+        onSuccess: () => navigate('/purchase/pos'),
+      });
+    } else {
+      createPO.mutate(poData as any, {
+        onSuccess: () => navigate('/purchase/pos'),
+      });
+    }
   };
 
   return (
