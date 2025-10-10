@@ -2,13 +2,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Project } from '@/types';
 import { projectApi } from '@/lib/api/purchaseApi';
 import { toast } from 'sonner';
+import { mockProjects } from '@/lib/msw/data/projects-mock';
 
 export function useProjects() {
   return useQuery({
     queryKey: ['projects'],
     queryFn: async () => {
-      const response = await projectApi.getAll() as any;
-      return response.data || response;
+      try {
+        const response = await projectApi.getAll() as any;
+        const data = response.data || response;
+        // Use mock data if API returns empty or fails
+        return data && data.length > 0 ? data : mockProjects;
+      } catch (error) {
+        console.warn('Projects API not available, using mock data');
+        return mockProjects;
+      }
     },
   });
 }
