@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { supplierApi, mrApi, poApi, quotationApi, materialRateApi } from '@/lib/api/purchaseApi';
+import { supplierApi, mrApi, poApi, quotationApi, materialRateApi, purchaseBillApi, comparativeStatementApi } from '@/lib/api/purchaseApi';
 
 // Suppliers
 export function useSuppliers() {
@@ -268,6 +268,97 @@ export function useUpdateMaterialRate() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to update material rate');
+    },
+  });
+}
+
+// Purchase Bills
+export function usePurchaseBills() {
+  return useQuery({
+    queryKey: ['purchase-bills'],
+    queryFn: async () => {
+      const result = await purchaseBillApi.getAll() as any;
+      return result.data || result;
+    },
+  });
+}
+
+export function usePurchaseBill(id: string) {
+  return useQuery({
+    queryKey: ['purchase-bill', id],
+    queryFn: async () => {
+      const result = await purchaseBillApi.getById(id) as any;
+      return result.data || result;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useCreatePurchaseBill() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: any) => purchaseBillApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-bills'] });
+      toast.success('Purchase bill created successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create purchase bill');
+    },
+  });
+}
+
+export function useUpdatePurchaseBill() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => 
+      purchaseBillApi.update(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-bills'] });
+      queryClient.invalidateQueries({ queryKey: ['purchase-bill', variables.id] });
+      toast.success('Purchase bill updated successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update purchase bill');
+    },
+  });
+}
+
+// Comparative Statements
+export function useComparativeStatements() {
+  return useQuery({
+    queryKey: ['comparative-statements'],
+    queryFn: async () => {
+      const result = await comparativeStatementApi.getAll() as any;
+      return result.data || result;
+    },
+  });
+}
+
+export function useComparativeStatement(id: string) {
+  return useQuery({
+    queryKey: ['comparative-statement', id],
+    queryFn: async () => {
+      const result = await comparativeStatementApi.getById(id) as any;
+      return result.data || result;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useCreateComparativeStatement() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: any) => comparativeStatementApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comparative-statements'] });
+      toast.success('Comparative statement created successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create comparative statement');
     },
   });
 }

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -11,6 +10,7 @@ import { exportData } from '@/lib/utils/export-enhanced';
 import { Plus, Search, Receipt, Loader2, Download } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PurchaseBill } from '@/types';
+import { usePurchaseBills } from '@/lib/hooks/usePurchase';
 import {
   Table,
   TableBody,
@@ -20,23 +20,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-async function fetchPurchaseBills(): Promise<PurchaseBill[]> {
-  const response = await fetch('/api/purchase-bills');
-  if (!response.ok) throw new Error('Failed to fetch purchase bills');
-  const data = await response.json();
-  return data.data;
-}
-
 export default function PurchaseBillsList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('date');
 
-  const { data: bills, isLoading } = useQuery({
-    queryKey: ['purchase-bills'],
-    queryFn: fetchPurchaseBills,
-  });
+  const { data: bills, isLoading } = usePurchaseBills();
 
   const filteredBills = bills
     ?.filter((bill) => {

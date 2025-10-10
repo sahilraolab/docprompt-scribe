@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -10,6 +9,7 @@ import { exportData } from '@/lib/utils/export-enhanced';
 import { Plus, Search, FileSpreadsheet, Loader2, Download } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ComparativeStatement } from '@/types';
+import { useComparativeStatements } from '@/lib/hooks/usePurchase';
 import {
   Table,
   TableBody,
@@ -19,22 +19,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-async function fetchComparativeStatements(): Promise<ComparativeStatement[]> {
-  const response = await fetch('/api/comparative-statements');
-  if (!response.ok) throw new Error('Failed to fetch comparative statements');
-  const data = await response.json();
-  return data.data;
-}
-
 export default function ComparativeStatementList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<string>('date');
 
-  const { data: statements, isLoading } = useQuery({
-    queryKey: ['comparative-statements'],
-    queryFn: fetchComparativeStatements,
-  });
+  const { data: statements, isLoading } = useComparativeStatements();
 
   const filteredStatements = statements
     ?.filter((stmt) =>

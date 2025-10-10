@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -9,6 +8,7 @@ import { formatCurrency, formatDate } from '@/lib/utils/format';
 import { exportData } from '@/lib/utils/export-enhanced';
 import { Plus, Search, TrendingUp, Loader2, Download, Edit } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useMaterialRates } from '@/lib/hooks/usePurchase';
 import {
   Table,
   TableBody,
@@ -32,13 +32,6 @@ interface MaterialRate {
   createdAt: string;
 }
 
-async function fetchMaterialRates(): Promise<MaterialRate[]> {
-  const response = await fetch('/api/material-rates');
-  if (!response.ok) throw new Error('Failed to fetch material rates');
-  const data = await response.json();
-  return data.data;
-}
-
 export default function RateManagement() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,10 +39,7 @@ export default function RateManagement() {
   const [statusFilter, setStatusFilter] = useState<string>('active');
   const [sortBy, setSortBy] = useState<string>('date');
 
-  const { data: rates, isLoading } = useQuery({
-    queryKey: ['material-rates'],
-    queryFn: fetchMaterialRates,
-  });
+  const { data: rates, isLoading } = useMaterialRates();
 
   const filteredRates = rates
     ?.filter((rate) => {
@@ -93,7 +83,7 @@ export default function RateManagement() {
     );
   }
 
-  const uniqueSuppliers = Array.from(new Set(rates?.map(r => r.supplierName) || []));
+  const uniqueSuppliers = Array.from(new Set(rates?.map(r => r.supplierName) || [])) as string[];
 
   return (
     <div className="space-y-6">
