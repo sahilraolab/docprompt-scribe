@@ -124,7 +124,7 @@ const onSubmit = (data: QuotationFormData) => {
   }
 };
 
-// MRs will be loaded dynamically from API
+  return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate('/purchase/quotations')}>
