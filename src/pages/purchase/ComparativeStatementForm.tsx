@@ -26,6 +26,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { useMRs, useQuotationsByMR, useCreateComparativeStatement } from '@/lib/hooks/usePurchase';
 
 const csSchema = z.object({
   mrId: z.string().min(1, 'Material requisition is required'),
@@ -54,54 +55,11 @@ export default function ComparativeStatementForm() {
 
   const mrId = watch('mrId');
 
-  // Mock data - quotations for comparison
-  const quotations = [
-    {
-      id: '1',
-      supplierId: '1',
-      supplierName: 'ABC Suppliers',
-      items: [
-        { description: 'Cement (OPC 53 Grade)', qty: 100, uom: 'Bag', rate: 420, taxPct: 18, amount: 42000 },
-        { description: 'Steel TMT Bars 12mm', qty: 5, uom: 'Ton', rate: 58000, taxPct: 18, amount: 290000 },
-      ],
-      subtotal: 332000,
-      tax: 59760,
-      total: 391760,
-      deliveryDays: 7,
-      paymentTerms: '30 days',
-      validUntil: '2024-02-15',
-    },
-    {
-      id: '2',
-      supplierId: '2',
-      supplierName: 'XYZ Trading',
-      items: [
-        { description: 'Cement (OPC 53 Grade)', qty: 100, uom: 'Bag', rate: 415, taxPct: 18, amount: 41500 },
-        { description: 'Steel TMT Bars 12mm', qty: 5, uom: 'Ton', rate: 57500, taxPct: 18, amount: 287500 },
-      ],
-      subtotal: 329000,
-      tax: 59220,
-      total: 388220,
-      deliveryDays: 5,
-      paymentTerms: '45 days',
-      validUntil: '2024-02-20',
-    },
-    {
-      id: '3',
-      supplierId: '3',
-      supplierName: 'BuildMart Suppliers',
-      items: [
-        { description: 'Cement (OPC 53 Grade)', qty: 100, uom: 'Bag', rate: 425, taxPct: 18, amount: 42500 },
-        { description: 'Steel TMT Bars 12mm', qty: 5, uom: 'Ton', rate: 58500, taxPct: 18, amount: 292500 },
-      ],
-      subtotal: 335000,
-      tax: 60300,
-      total: 395300,
-      deliveryDays: 10,
-      paymentTerms: '30 days',
-      validUntil: '2024-02-10',
-    },
-  ];
+// Load MRs and quotations dynamically
+const { data: mrs } = useMRs();
+const { data: quotations = [], isLoading } = useQuotationsByMR(mrId || '');
+const createCS = useCreateComparativeStatement();
+const [selectedQuotationId, setSelectedQuotationId] = useState<string>('');
 
   const onSubmit = (data: CSFormData) => {
     if (!selectedSupplier) {
@@ -113,19 +71,23 @@ export default function ComparativeStatementForm() {
       return;
     }
 
-    console.log('CS Data:', { ...data, selectedSupplierId: selectedSupplier });
-    toast({
-      title: 'Comparative Statement Created',
-      description: 'The comparative statement has been created successfully.',
+    const payload = {
+      ...data,
+      selectedSupplierId: selectedSupplier,
+    } as any;
+
+    createCS.mutate(payload, {
+      onSuccess: () => {
+        toast({ title: 'Comparative Statement Created', description: 'Created successfully.' });
+        navigate('/purchase/comparative');
+      },
+      onError: (err: any) => {
+        toast({ title: 'Failed to create', description: err?.message || 'Try again', variant: 'destructive' });
+      },
     });
-    navigate('/purchase/comparative');
   };
 
-  // Mock MRs
-  const materialRequisitions = [
-    { id: '1', code: 'MR-2024-001', project: 'Green Valley Apartments' },
-    { id: '2', code: 'MR-2024-002', project: 'Tech Park Complex' },
-  ];
+// MRs loaded from API via useMRs()
 
   return (
     <div className="space-y-6">
@@ -155,9 +117,9 @@ export default function ComparativeStatementForm() {
                   <SelectValue placeholder="Select material requisition" />
                 </SelectTrigger>
                 <SelectContent>
-                  {materialRequisitions.map((mr) => (
+                  {mrs?.map((mr: any) => (
                     <SelectItem key={mr.id} value={mr.id}>
-                      {mr.code} - {mr.project}
+                      {(mr.code || mr.mrCode) ?? mr.id}
                     </SelectItem>
                   ))}
                 </SelectContent>

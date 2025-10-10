@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useSuppliers } from '@/lib/hooks/usePurchase';
+import { useSuppliers, useMRs, useCreateQuotation, useUpdateQuotation } from '@/lib/hooks/usePurchase';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils/format';
@@ -45,12 +45,16 @@ type QuotationFormData = z.infer<typeof quotationSchema>;
 export default function QuotationForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { data: suppliers } = useSuppliers();
+const { toast } = useToast();
+const { data: suppliers } = useSuppliers();
+const { data: mrs } = useMRs();
   
-  const [quotationItems, setQuotationItems] = useState<any[]>([
-    { description: '', qty: 1, uom: '', rate: 0, taxPct: 18 },
-  ]);
+const createQuotation = useCreateQuotation();
+const updateQuotation = useUpdateQuotation();
+
+const [quotationItems, setQuotationItems] = useState<any[]>([
+  { description: '', qty: 1, uom: '', rate: 0, taxPct: 18 },
+]);
 
   const {
     register,
@@ -101,22 +105,26 @@ export default function QuotationForm() {
 
   const { subtotal, taxTotal, grandTotal } = calculateTotals();
 
-  const onSubmit = (data: QuotationFormData) => {
-    console.log('Quotation Data:', { ...data, subtotal, taxTotal, grandTotal });
-    toast({
-      title: id ? 'Quotation Updated' : 'Quotation Created',
-      description: `Quotation has been ${id ? 'updated' : 'created'} successfully.`,
+const onSubmit = (data: QuotationFormData) => {
+  const itemsWithAmount = quotationItems.map((item) => ({
+    ...item,
+    amount: item.qty * item.rate,
+  }));
+  const payload = { ...data, items: itemsWithAmount } as any;
+
+  if (id) {
+    updateQuotation.mutate(
+      { id, data: payload },
+      { onSuccess: () => navigate('/purchase/quotations') }
+    );
+  } else {
+    createQuotation.mutate(payload, {
+      onSuccess: () => navigate('/purchase/quotations'),
     });
-    navigate('/purchase/quotations');
-  };
+  }
+};
 
-  // Mock MRs
-  const materialRequisitions = [
-    { id: '1', code: 'MR-2024-001', project: 'Green Valley Apartments' },
-    { id: '2', code: 'MR-2024-002', project: 'Tech Park Complex' },
-  ];
-
-  return (
+// MRs will be loaded dynamically from API
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate('/purchase/quotations')}>
@@ -143,13 +151,13 @@ export default function QuotationForm() {
                 <SelectTrigger>
                   <SelectValue placeholder="Select MR" />
                 </SelectTrigger>
-                <SelectContent>
-                  {materialRequisitions.map((mr) => (
-                    <SelectItem key={mr.id} value={mr.id}>
-                      {mr.code} - {mr.project}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+<SelectContent>
+  {mrs?.map((mr) => (
+    <SelectItem key={mr.id} value={mr.id}>
+      {(mr.code || mr.mrCode) ?? mr.id}
+    </SelectItem>
+  ))}
+</SelectContent>
               </Select>
               {errors.mrId && (
                 <p className="text-sm text-destructive">{errors.mrId.message}</p>

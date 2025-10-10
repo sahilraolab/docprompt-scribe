@@ -61,6 +61,7 @@ export default function MRForm() {
     watch,
   } = useForm<MRFormData>({
     resolver: zodResolver(mrSchema),
+    defaultValues: { items: mrItems as any },
   });
 
   const selectedProjectId = watch('projectId');

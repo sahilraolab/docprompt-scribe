@@ -68,6 +68,18 @@ export function useQuotations() {
   });
 }
 
+// Filtered Quotations by MR
+export function useQuotationsByMR(mrId: string) {
+  return useQuery({
+    queryKey: ['quotations', 'mr', mrId],
+    queryFn: async () => {
+      const result = await quotationApi.getAll({ mrId }) as any;
+      return result.data || result;
+    },
+    enabled: !!mrId,
+  });
+}
+
 // Material Rates
 export function useMaterialRates() {
   return useQuery({
