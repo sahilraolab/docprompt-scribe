@@ -401,6 +401,69 @@ export const materialRateApi = {
     }),
 };
 
+// ============= PROJECTS =============
+
+export const projectApi = {
+  getAll: (params?: { page?: number; limit?: number }) =>
+    apiRequest(`/projects${params ? `?page=${params.page || 1}&limit=${params.limit || 50}` : ''}`),
+
+  getById: (id: string) => apiRequest(`/projects/${id}`),
+
+  create: (data: any) =>
+    apiRequest('/projects', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: any) =>
+    apiRequest(`/projects/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    apiRequest(`/projects/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
+// ============= ITEMS =============
+
+export const itemApi = {
+  getAll: (params?: { page?: number; limit?: number; category?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.category) queryParams.append('category', params.category);
+    
+    return apiRequest(`/items${queryParams.toString() ? `?${queryParams}` : ''}`);
+  },
+
+  getById: (id: string) => apiRequest(`/items/${id}`),
+
+  create: (data: any) =>
+    apiRequest('/items', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: any) =>
+    apiRequest(`/items/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    apiRequest(`/items/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Stock related
+  getStock: () => apiRequest('/stock'),
+
+  getStockByLocation: (location: string) => apiRequest(`/stock/location/${location}`),
+};
+
 // ============= DASHBOARD & REPORTS =============
 
 export const purchaseDashboardApi = {
