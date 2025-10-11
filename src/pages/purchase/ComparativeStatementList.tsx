@@ -9,7 +9,7 @@ import { exportData } from '@/lib/utils/export-enhanced';
 import { Plus, Search, FileSpreadsheet, Loader2, Download } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ComparativeStatement } from '@/types';
-import { useComparativeStatements } from '@/lib/hooks/usePurchase';
+import { useComparativeStatements } from '@/lib/hooks/usePurchaseBackend';
 import {
   Table,
   TableBody,

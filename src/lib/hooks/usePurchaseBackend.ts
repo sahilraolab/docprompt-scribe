@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { mrsApi, quotationsApi, csApi, posApi, purchaseBillsApi, itemsApi } from '@/lib/api/purchaseApiBackend';
+import { mrsApi, quotationsApi, csApi, posApi, purchaseBillsApi, itemsApi, suppliersApi, materialRatesApi } from '@/lib/api/purchaseApiBackend';
 import { toast } from 'sonner';
 
 // Material Requisitions hooks
@@ -461,6 +461,122 @@ export function useDeleteItem() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to delete item');
+    },
+  });
+}
+
+// Suppliers hooks
+export function useSuppliers() {
+  return useQuery({
+    queryKey: ['suppliers'],
+    queryFn: suppliersApi.getAll,
+  });
+}
+
+export function useSupplier(id: string) {
+  return useQuery({
+    queryKey: ['suppliers', id],
+    queryFn: () => suppliersApi.getById(id),
+    enabled: !!id,
+  });
+}
+
+export function useCreateSupplier() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: suppliersApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      toast.success('Supplier created successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create supplier');
+    },
+  });
+}
+
+export function useUpdateSupplier() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => suppliersApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      toast.success('Supplier updated successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update supplier');
+    },
+  });
+}
+
+export function useDeleteSupplier() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: suppliersApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      toast.success('Supplier deleted successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete supplier');
+    },
+  });
+}
+
+// Material Rates hooks
+export function useMaterialRates() {
+  return useQuery({
+    queryKey: ['material-rates'],
+    queryFn: materialRatesApi.getAll,
+  });
+}
+
+export function useMaterialRate(id: string) {
+  return useQuery({
+    queryKey: ['material-rates', id],
+    queryFn: () => materialRatesApi.getById(id),
+    enabled: !!id,
+  });
+}
+
+export function useCreateMaterialRate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: materialRatesApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['material-rates'] });
+      toast.success('Material rate created successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create material rate');
+    },
+  });
+}
+
+export function useUpdateMaterialRate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => materialRatesApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['material-rates'] });
+      toast.success('Material rate updated successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update material rate');
+    },
+  });
+}
+
+export function useDeleteMaterialRate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: materialRatesApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['material-rates'] });
+      toast.success('Material rate deleted successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete material rate');
     },
   });
 }

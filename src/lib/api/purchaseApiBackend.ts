@@ -78,6 +78,24 @@ export const purchaseBillsApi = {
   delete: (id: string) => apiCall(`/purchase/bills/${id}`, { method: 'DELETE' }),
 };
 
+// Suppliers API
+export const suppliersApi = {
+  getAll: () => apiCall('/purchase/suppliers'),
+  getById: (id: string) => apiCall(`/purchase/suppliers/${id}`),
+  create: (data: any) => apiCall('/purchase/suppliers', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: any) => apiCall(`/purchase/suppliers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: string) => apiCall(`/purchase/suppliers/${id}`, { method: 'DELETE' }),
+};
+
+// Material Rates API
+export const materialRatesApi = {
+  getAll: () => apiCall('/purchase/material-rates'),
+  getById: (id: string) => apiCall(`/purchase/material-rates/${id}`),
+  create: (data: any) => apiCall('/purchase/material-rates', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: any) => apiCall(`/purchase/material-rates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: string) => apiCall(`/purchase/material-rates/${id}`, { method: 'DELETE' }),
+};
+
 // Items API
 export const itemsApi = {
   getAll: () => apiCall('/items'),

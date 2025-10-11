@@ -10,7 +10,7 @@ import { exportData } from '@/lib/utils/export-enhanced';
 import { Plus, Search, Receipt, Loader2, Download } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PurchaseBill } from '@/types';
-import { usePurchaseBills } from '@/lib/hooks/usePurchase';
+import { usePurchaseBills } from '@/lib/hooks/usePurchaseBackend';
 import {
   Table,
   TableBody,

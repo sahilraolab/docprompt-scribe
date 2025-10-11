@@ -15,8 +15,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useProjects } from '@/lib/hooks/useProjects';
-import { useItems } from '@/lib/hooks/useSite';
-import { useCreateMR, useUpdateMR } from '@/lib/hooks/usePurchase';
+import { useItems } from '@/lib/hooks/usePurchaseBackend';
+import { useCreateMR, useUpdateMR } from '@/lib/hooks/usePurchaseBackend';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 

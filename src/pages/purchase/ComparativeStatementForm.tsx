@@ -26,7 +26,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useMRs, useQuotationsByMR, useCreateComparativeStatement } from '@/lib/hooks/usePurchase';
+import { useMRs, useQuotationsByMR, useCreateComparativeStatement } from '@/lib/hooks/usePurchaseBackend';
 
 const csSchema = z.object({
   mrId: z.string().min(1, 'Material requisition is required'),

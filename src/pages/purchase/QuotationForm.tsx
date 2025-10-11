@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useSuppliers, useMRs, useCreateQuotation, useUpdateQuotation } from '@/lib/hooks/usePurchase';
+import { useSuppliers, useMRs, useCreateQuotation, useUpdateQuotation } from '@/lib/hooks/usePurchaseBackend';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils/format';

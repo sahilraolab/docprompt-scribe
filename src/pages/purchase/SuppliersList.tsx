@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSuppliers } from '@/lib/hooks/usePurchase';
+import { useSuppliers } from '@/lib/hooks/usePurchaseBackend';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';

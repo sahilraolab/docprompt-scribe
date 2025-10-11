@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useProjects } from '@/lib/hooks/useProjects';
-import { useSuppliers, useCreatePO, useUpdatePO } from '@/lib/hooks/usePurchase';
+import { useSuppliers, useCreatePO, useUpdatePO } from '@/lib/hooks/usePurchaseBackend';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils/format';

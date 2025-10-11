@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { useSupplier, useCreateSupplier, useUpdateSupplier } from '@/lib/hooks/usePurchase';
+import { useSupplier, useCreateSupplier, useUpdateSupplier } from '@/lib/hooks/usePurchaseBackend';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useEffect } from 'react';
 

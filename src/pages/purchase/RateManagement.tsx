@@ -8,7 +8,7 @@ import { formatCurrency, formatDate } from '@/lib/utils/format';
 import { exportData } from '@/lib/utils/export-enhanced';
 import { Plus, Search, TrendingUp, Loader2, Download, Edit } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useMaterialRates } from '@/lib/hooks/usePurchase';
+import { useMaterialRates } from '@/lib/hooks/usePurchaseBackend';
 import {
   Table,
   TableBody,
