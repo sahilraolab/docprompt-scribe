@@ -87,6 +87,7 @@ export default function PlanForm() {
     try {
       const payload = {
         ...data,
+        assignedTo: data.assignedTo || undefined, // Convert empty string to undefined
         tasks,
       };
 
