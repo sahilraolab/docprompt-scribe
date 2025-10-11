@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useProject, useEstimatesByProject, useDocumentsByProject } from '@/lib/hooks/useEngineering';
+import { useProject, useEstimatesByProject, useDocumentsByProject, usePlansByProject } from '@/lib/hooks/useEngineering';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,6 +29,7 @@ export default function ProjectDetails() {
   const { data: project, isLoading } = useProject(id!);
   const { data: estimatesData, isLoading: estimatesLoading } = useEstimatesByProject(id!);
   const { data: documentsData, isLoading: documentsLoading } = useDocumentsByProject(id!);
+  const { data: plansData, isLoading: plansLoading } = usePlansByProject(id!);
 
 
   if (isLoading) {
@@ -338,9 +339,67 @@ export default function ProjectDetails() {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground text-center py-8">
-                Plans & Tasks feature requires backend implementation. See ENGINEERING_BACKEND_REQUIREMENTS.md
-              </p>
+              {plansLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : plansData?.data && plansData.data.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Plan Name</TableHead>
+                        <TableHead>Timeline</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Progress</TableHead>
+                        <TableHead>Tasks</TableHead>
+                        <TableHead className="w-[100px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {plansData.data.map((plan: any) => (
+                        <TableRow key={plan._id}>
+                          <TableCell className="font-medium">{plan.name}</TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              <div>{formatDate(plan.startDate)}</div>
+                              <div className="text-muted-foreground">to {formatDate(plan.endDate)}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell><StatusBadge status={plan.status} /></TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="w-24 bg-secondary rounded-full h-2">
+                                <div
+                                  className="bg-primary h-2 rounded-full"
+                                  style={{ width: `${plan.progress || 0}%` }}
+                                />
+                              </div>
+                              <span className="text-sm text-muted-foreground">{plan.progress || 0}%</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{plan.tasks?.length || 0} tasks</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate(`/engineering/plans/${plan._id}`)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-8">
+                  No plans created yet
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
