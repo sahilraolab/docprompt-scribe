@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building, FileText, FolderOpen } from 'lucide-react';
+import { Building, FileText, FolderOpen, Calendar } from 'lucide-react';
 
 export default function EngineeringIndex() {
   const navigate = useNavigate();
@@ -26,6 +26,13 @@ export default function EngineeringIndex() {
       icon: FolderOpen,
       path: '/engineering/documents',
       color: 'text-purple-600',
+    },
+    {
+      title: 'Plans & Tasks',
+      description: 'Project planning and task management',
+      icon: Calendar,
+      path: '/engineering/plans',
+      color: 'text-orange-600',
     },
   ];
 

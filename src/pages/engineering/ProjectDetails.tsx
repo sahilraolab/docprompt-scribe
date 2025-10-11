@@ -331,7 +331,7 @@ export default function ProjectDetails() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Plans & Tasks</CardTitle>
-                <Button size="sm">
+                <Button size="sm" onClick={() => navigate('/engineering/plans/new')}>
                   <Plus className="h-4 w-4 mr-2" />
                   New Plan
                 </Button>
@@ -339,7 +339,7 @@ export default function ProjectDetails() {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground text-center py-8">
-                No plans created yet
+                Plans & Tasks feature requires backend implementation. See ENGINEERING_BACKEND_REQUIREMENTS.md
               </p>
             </CardContent>
           </Card>

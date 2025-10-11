@@ -20,6 +20,9 @@ import EstimatesList from "./pages/engineering/EstimatesList";
 import EstimateForm from "./pages/engineering/EstimateForm";
 import DocumentsList from "./pages/engineering/DocumentsList";
 import DocumentUpload from "./pages/engineering/DocumentUpload";
+import PlansList from "./pages/engineering/PlansList";
+import PlanForm from "./pages/engineering/PlanForm";
+import PlanDetails from "./pages/engineering/PlanDetails";
 
 // Purchase
 import PurchaseIndex from "./pages/purchase/index";
@@ -143,6 +146,10 @@ const App = () => (
             <Route path="/engineering/estimates/:id" element={<ProtectedRoute><AppLayout><EstimateForm /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/documents" element={<ProtectedRoute><AppLayout><DocumentsList /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/documents/upload" element={<ProtectedRoute><AppLayout><DocumentUpload /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/plans" element={<ProtectedRoute><AppLayout><PlansList /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/plans/new" element={<ProtectedRoute><AppLayout><PlanForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/plans/:id/edit" element={<ProtectedRoute><AppLayout><PlanForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/plans/:id" element={<ProtectedRoute><AppLayout><PlanDetails /></AppLayout></ProtectedRoute>} />
             
             {/* Purchase */}
             <Route path="/purchase" element={<ProtectedRoute><AppLayout><PurchaseIndex /></AppLayout></ProtectedRoute>} />
