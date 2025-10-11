@@ -25,9 +25,11 @@ export default function DocumentsList() {
   const documents = documentsData?.data || [];
 
   const filteredDocuments = documents.filter((doc: any) =>
-    doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    doc.projectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    doc.type.toLowerCase().includes(searchQuery.toLowerCase())
+    doc.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (doc.projectId?.name || doc.projectName || '')
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase()) ||
+    doc.type?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const getTypeColor = (type: string) => {
@@ -92,17 +94,17 @@ export default function DocumentsList() {
                 </TableHeader>
                 <TableBody>
                   {filteredDocuments.map((doc: any) => (
-                    <TableRow key={doc.id}>
+                    <TableRow key={doc._id || doc.id}>
                       <TableCell className="font-medium">{doc.name}</TableCell>
                       <TableCell>
                         <Badge className={getTypeColor(doc.type)} variant="secondary">
                           {doc.type}
                         </Badge>
                       </TableCell>
-                      <TableCell>{doc.projectName || 'N/A'}</TableCell>
+                      <TableCell>{doc.projectId?.name || doc.projectName || 'N/A'}</TableCell>
                       <TableCell>v{doc.version}</TableCell>
                       <TableCell>{doc.size ? `${(doc.size / 1024 / 1024).toFixed(2)} MB` : 'N/A'}</TableCell>
-                      <TableCell>{doc.createdBy || 'N/A'}</TableCell>
+                      <TableCell>{doc.uploadedBy?.name || doc.createdBy?.name || 'N/A'}</TableCell>
                       <TableCell>{formatDate(doc.createdAt)}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">

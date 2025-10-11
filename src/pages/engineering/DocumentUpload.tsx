@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, X, FileText } from 'lucide-react';
+import { } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function DocumentUpload() {
@@ -15,47 +15,38 @@ export default function DocumentUpload() {
   const { data: projectsData } = useProjects();
   const createDocument = useCreateDocument();
   
-  const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [projectId, setProjectId] = useState('');
   const [documentType, setDocumentType] = useState('');
   const [name, setName] = useState('');
   const [version, setVersion] = useState('1');
   const [description, setDescription] = useState('');
+  const [url, setUrl] = useState('');
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFiles([...files, ...Array.from(e.target.files)]);
-    }
-  };
+  // File upload is not handled on backend; using URL-based upload
 
-  const removeFile = (index: number) => {
-    setFiles(files.filter((_, i) => i !== index));
-  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    if (!projectId || !documentType || !name || files.length === 0) {
-      toast.error('Please fill all required fields and select at least one file');
+    if (!projectId || !documentType || !name || !url) {
+      toast.error('Please fill all required fields including a valid file URL');
       return;
     }
 
     setUploading(true);
     
     try {
-      const formData = new FormData();
-      formData.append('projectId', projectId);
-      formData.append('name', name);
-      formData.append('type', documentType);
-      formData.append('version', version);
-      if (description) formData.append('description', description);
-      
-      files.forEach((file) => {
-        formData.append('files', file);
-      });
+      const payload = {
+        projectId,
+        name,
+        type: documentType,
+        version: parseInt(version) || 1,
+        description: description || undefined,
+        url,
+      };
 
-      await createDocument.mutateAsync(formData);
+      await createDocument.mutateAsync(payload);
       navigate('/engineering/documents');
     } catch (error) {
       console.error('Failed to upload document:', error);
@@ -91,7 +82,7 @@ export default function DocumentUpload() {
                   </SelectTrigger>
                   <SelectContent>
                     {projectsData?.data?.map((project: any) => (
-                      <SelectItem key={project.id} value={project.id}>
+                      <SelectItem key={project._id || project.id} value={(project._id || project.id)}>
                         {project.name}
                       </SelectItem>
                     ))}
@@ -149,52 +140,20 @@ export default function DocumentUpload() {
             </div>
 
             <div className="space-y-4">
-              <Label>Upload Files *</Label>
-              <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground mb-4">
-                  Drag and drop files here, or click to browse
-                </p>
-                <Input
-                  type="file"
-                  multiple
-                  onChange={handleFileChange}
-                  className="max-w-xs mx-auto"
-                />
-              </div>
-
-              {files.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">{files.length} file(s) selected:</p>
-                  {files.map((file, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                    >
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        <span className="text-sm">{file.name}</span>
-                        <span className="text-xs text-muted-foreground">
-                          ({(file.size / 1024).toFixed(2)} KB)
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeFile(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <Label htmlFor="url">File URL *</Label>
+              <Input
+                id="url"
+                placeholder="https://example.com/path/to/file.pdf"
+                required
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+              />
+              <p className="text-sm text-muted-foreground">Backend expects a URL; direct file uploads are not enabled.</p>
             </div>
 
             <div className="flex gap-4">
-              <Button type="submit" disabled={uploading || files.length === 0}>
-                {uploading ? 'Uploading...' : 'Upload Documents'}
+              <Button type="submit" disabled={uploading}>
+                {uploading ? 'Saving...' : 'Save Document'}
               </Button>
               <Button type="button" variant="outline" onClick={() => navigate('/engineering/documents')}>
                 Cancel

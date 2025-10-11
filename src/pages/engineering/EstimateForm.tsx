@@ -27,7 +27,7 @@ import { ArrowLeft, Plus, Trash, Loader2 } from 'lucide-react';
 
 const estimateItemSchema = z.object({
   description: z.string().min(1, 'Description is required'),
-  type: z.string().optional(),
+  type: z.enum(['Material', 'Labour', 'Equipment', 'Overhead']).default('Material'),
   unit: z.string().min(1, 'Unit is required'),
   qty: z.string().min(1, 'Quantity is required'),
   rate: z.string().min(1, 'Rate is required'),
@@ -52,7 +52,8 @@ export default function EstimateForm() {
   const createEstimate = useCreateEstimate();
   const updateEstimate = useUpdateEstimate();
 
-  const [items, setItems] = useState([
+  type UIItem = { description: string; type: 'Material' | 'Labour' | 'Equipment' | 'Overhead'; unit: string; qty: string; rate: string };
+  const [items, setItems] = useState<UIItem[]>([
     { description: '', type: 'Material', unit: '', qty: '', rate: '' },
   ]);
 
@@ -69,8 +70,8 @@ export default function EstimateForm() {
   useEffect(() => {
     if (estimateData && isEdit) {
       form.reset({
-        projectId: estimateData.projectId,
-        version: estimateData.version.toString(),
+        projectId: (estimateData.projectId && (estimateData.projectId._id || estimateData.projectId.id || estimateData.projectId)) || '',
+        version: estimateData.version?.toString() || '1',
         description: estimateData.description || '',
       });
       if (estimateData.items && estimateData.items.length > 0) {
@@ -144,7 +145,7 @@ export default function EstimateForm() {
     }, 0);
   };
 
-  const projects = projectsData?.data || [];
+  const projects = (projectsData?.data || []) as any[];
   const units = ['SQM', 'CUM', 'RMT', 'NOS', 'KG', 'TON', 'BAG', 'LTR'];
 
   return (
@@ -180,8 +181,8 @@ export default function EstimateForm() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {projects.map((project) => (
-                            <SelectItem key={project.id} value={project.id}>
+                          {projects.map((project: any) => (
+                            <SelectItem key={project._id || project.id} value={(project._id || project.id)}>
                               {project.name}
                             </SelectItem>
                           ))}

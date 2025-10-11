@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useProject, useCreateProject, useUpdateProject } from '@/lib/hooks/useEngineering';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +40,7 @@ const projectSchema = z.object({
   state: z.string().min(1, 'State is required'),
   address: z.string().optional(),
   reraId: z.string().optional(),
-  managerId: z.string().optional(),
+  managerId: z.string().min(1, 'Project manager is required'),
 });
 
 type ProjectFormData = z.infer<typeof projectSchema>;
@@ -56,6 +57,7 @@ export default function ProjectForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const isEdit = !!id;
 
   const { data: projectData } = useProject(id || '');
@@ -76,33 +78,35 @@ export default function ProjectForm() {
       state: '',
       address: '',
       reraId: '',
-      managerId: '',
+      managerId: (user as any)?._id || user?.id || '',
     },
   });
 
   useEffect(() => {
     if (projectData && isEdit) {
       form.reset({
-        code: projectData.code,
+        code: projectData.code || '',
         name: projectData.name,
         description: projectData.description || '',
         status: projectData.status,
-        budget: projectData.budget.toString(),
-        startDate: projectData.startDate.split('T')[0],
+        budget: String(projectData.budget ?? ''),
+        startDate: (projectData.startDate || '').split('T')[0],
         endDate: projectData.endDate ? projectData.endDate.split('T')[0] : '',
         city: projectData.city,
         state: projectData.state,
         address: '',
         reraId: projectData.reraId || '',
-        managerId: projectData.managerId,
+        managerId: (projectData.managerId && (projectData.managerId._id || projectData.managerId.id || projectData.managerId)) || '',
       });
     }
   }, [projectData, isEdit, form]);
 
   const onSubmit = async (data: ProjectFormData) => {
     try {
+      const currentUserId = (user as any)?._id || user?.id || '';
       const projectPayload = {
         ...data,
+        managerId: data.managerId || currentUserId,
         budget: parseFloat(data.budget),
         progress: 0,
         spent: 0,
@@ -119,12 +123,9 @@ export default function ProjectForm() {
     }
   };
 
-  // Mock managers data
-  const managers = [
-    { id: '1', name: 'Rajesh Kumar' },
-    { id: '2', name: 'Priya Sharma' },
-    { id: '3', name: 'Amit Patel' },
-  ];
+  const currentUserId = (user as any)?._id || user?.id || '';
+  const currentUserName = user?.name || 'Me';
+  // Using current user as manager by default
 
   return (
     <div className="space-y-6">
@@ -243,24 +244,22 @@ export default function ProjectForm() {
                   )}
                 />
 
-                <FormField
+                 <FormField
                   control={form.control}
                   name="managerId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Project Manager</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormLabel>Project Manager *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || currentUserId}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select manager" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {managers.map((manager) => (
-                            <SelectItem key={manager.id} value={manager.id}>
-                              {manager.name}
-                            </SelectItem>
-                          ))}
+                          <SelectItem key={currentUserId} value={currentUserId}>
+                            {currentUserName} (You)
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
