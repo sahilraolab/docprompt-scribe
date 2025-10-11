@@ -17,7 +17,9 @@ async function apiCall(endpoint: string, options?: RequestInit) {
     throw new Error(error.message || `HTTP ${response.status}`);
   }
 
-  return response.json();
+  const result = await response.json();
+  // Extract data from wrapped response { success: true, data: [...] }
+  return result.data !== undefined ? result.data : result;
 }
 
 // Material Requisitions API
