@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useProjects } from '@/lib/hooks/useProjects';
+import { useProjects } from '@/lib/hooks/useEngineering';
 import { PageHeader } from '@/components/PageHeader';
 import { DataTable } from '@/components/DataTable';
 import { SearchBar } from '@/components/SearchBar';
@@ -22,7 +22,8 @@ import { INDIAN_STATES } from '@/lib/constants';
 
 export default function ProjectsList() {
   const navigate = useNavigate();
-  const { data: projects, isLoading } = useProjects();
+  const { data: projectsData, isLoading } = useProjects();
+  const projects = projectsData?.data || [];
   
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -30,7 +31,7 @@ export default function ProjectsList() {
   const [sortBy, setSortBy] = useState<string>('name');
 
   // Filter projects
-  const filteredProjects = projects?.filter((project) => {
+  const filteredProjects = projects.filter((project) => {
     const matchesSearch = 
       project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -235,7 +236,7 @@ export default function ProjectsList() {
 
           {/* Results Count */}
           <div className="text-sm text-muted-foreground">
-            Showing {sortedProjects.length} of {projects?.length || 0} projects
+            Showing {sortedProjects.length} of {projects.length} projects
           </div>
 
           {/* Data Table */}

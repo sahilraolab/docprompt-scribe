@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useProjects, useCreateDocument } from '@/lib/hooks/useEngineering';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,13 +8,20 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Upload, X, FileText } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export default function DocumentUpload() {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { data: projectsData } = useProjects();
+  const createDocument = useCreateDocument();
+  
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [projectId, setProjectId] = useState('');
+  const [documentType, setDocumentType] = useState('');
+  const [name, setName] = useState('');
+  const [version, setVersion] = useState('1');
+  const [description, setDescription] = useState('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -27,17 +35,33 @@ export default function DocumentUpload() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setUploading(true);
+    
+    if (!projectId || !documentType || !name || files.length === 0) {
+      toast.error('Please fill all required fields and select at least one file');
+      return;
+    }
 
-    // Simulate upload
-    setTimeout(() => {
-      toast({
-        title: 'Documents uploaded',
-        description: `${files.length} file(s) uploaded successfully`,
+    setUploading(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('projectId', projectId);
+      formData.append('name', name);
+      formData.append('type', documentType);
+      formData.append('version', version);
+      if (description) formData.append('description', description);
+      
+      files.forEach((file) => {
+        formData.append('files', file);
       });
-      setUploading(false);
+
+      await createDocument.mutateAsync(formData);
       navigate('/engineering/documents');
-    }, 1500);
+    } catch (error) {
+      console.error('Failed to upload document:', error);
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -61,42 +85,55 @@ export default function DocumentUpload() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="project">Project *</Label>
-                <Select required>
+                <Select required value={projectId} onValueChange={setProjectId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select project" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="p1">Metro Phase 2</SelectItem>
-                    <SelectItem value="p2">Highway Expansion</SelectItem>
-                    <SelectItem value="p3">Bridge Construction</SelectItem>
+                    {projectsData?.data?.map((project: any) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="category">Category *</Label>
-                <Select required>
+                <Label htmlFor="category">Document Type *</Label>
+                <Select required value={documentType} onValueChange={setDocumentType}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="drawing">Drawing</SelectItem>
-                    <SelectItem value="report">Report</SelectItem>
-                    <SelectItem value="specification">Specification</SelectItem>
-                    <SelectItem value="bom">Bill of Materials</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="Plan">Plan</SelectItem>
+                    <SelectItem value="Permit">Permit</SelectItem>
+                    <SelectItem value="Report">Report</SelectItem>
+                    <SelectItem value="Drawing">Drawing</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="title">Document Title *</Label>
-                <Input id="title" placeholder="Enter document title" required />
+                <Label htmlFor="title">Document Name *</Label>
+                <Input 
+                  id="title" 
+                  placeholder="Enter document name" 
+                  required 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="version">Version</Label>
-                <Input id="version" placeholder="e.g., 1.0, Rev A" />
+                <Input 
+                  id="version" 
+                  placeholder="e.g., 1" 
+                  value={version}
+                  onChange={(e) => setVersion(e.target.value)}
+                />
               </div>
             </div>
 
@@ -106,6 +143,8 @@ export default function DocumentUpload() {
                 id="description" 
                 placeholder="Enter document description"
                 rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
               />
             </div>
 

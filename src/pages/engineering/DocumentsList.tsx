@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDocuments } from '@/lib/hooks/useEngineering';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/EmptyState';
 import { formatDate } from '@/lib/utils/format';
-import { Plus, Search, FileText, Download, Eye } from 'lucide-react';
+import { Plus, Search, FileText, Download, Eye, Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -19,54 +20,13 @@ import { Badge } from '@/components/ui/badge';
 export default function DocumentsList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { data: documentsData, isLoading } = useDocuments();
 
-  // Mock data
-  const documents = [
-    {
-      id: '1',
-      name: 'Site Plan - Phase 1',
-      type: 'Drawing',
-      projectName: 'Green Valley Apartments',
-      fileSize: '2.4 MB',
-      uploadedBy: 'John Doe',
-      uploadedAt: '2024-01-15',
-      version: 'v2.0',
-    },
-    {
-      id: '2',
-      name: 'Structural Design Report',
-      type: 'Report',
-      projectName: 'Green Valley Apartments',
-      fileSize: '5.1 MB',
-      uploadedBy: 'Jane Smith',
-      uploadedAt: '2024-01-12',
-      version: 'v1.0',
-    },
-    {
-      id: '3',
-      name: 'BOQ Final',
-      type: 'BOQ',
-      projectName: 'City Mall Extension',
-      fileSize: '1.8 MB',
-      uploadedBy: 'Mike Johnson',
-      uploadedAt: '2024-01-10',
-      version: 'v3.0',
-    },
-    {
-      id: '4',
-      name: 'Site Photos - Week 12',
-      type: 'Photo',
-      projectName: 'Smart Office Tower',
-      fileSize: '12.5 MB',
-      uploadedBy: 'Sarah Lee',
-      uploadedAt: '2024-01-08',
-      version: 'v1.0',
-    },
-  ];
+  const documents = documentsData?.data || [];
 
-  const filteredDocuments = documents.filter((doc) =>
+  const filteredDocuments = documents.filter((doc: any) =>
     doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    doc.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    doc.projectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     doc.type.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -92,7 +52,7 @@ export default function DocumentsList() {
           <h1 className="text-3xl font-bold">Project Documents</h1>
           <p className="text-muted-foreground">Manage drawings, reports, and files</p>
         </div>
-        <Button onClick={() => navigate('/engineering/documents/new')}>
+        <Button onClick={() => navigate('/engineering/documents/upload')}>
           <Plus className="h-4 w-4 mr-2" />
           Upload Document
         </Button>
@@ -111,7 +71,11 @@ export default function DocumentsList() {
           </div>
         </CardHeader>
         <CardContent>
-          {filteredDocuments.length > 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : filteredDocuments.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -127,7 +91,7 @@ export default function DocumentsList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredDocuments.map((doc) => (
+                  {filteredDocuments.map((doc: any) => (
                     <TableRow key={doc.id}>
                       <TableCell className="font-medium">{doc.name}</TableCell>
                       <TableCell>
@@ -135,17 +99,17 @@ export default function DocumentsList() {
                           {doc.type}
                         </Badge>
                       </TableCell>
-                      <TableCell>{doc.projectName}</TableCell>
-                      <TableCell>{doc.version}</TableCell>
-                      <TableCell>{doc.fileSize}</TableCell>
-                      <TableCell>{doc.uploadedBy}</TableCell>
-                      <TableCell>{formatDate(doc.uploadedAt)}</TableCell>
+                      <TableCell>{doc.projectName || 'N/A'}</TableCell>
+                      <TableCell>v{doc.version}</TableCell>
+                      <TableCell>{doc.size ? `${(doc.size / 1024 / 1024).toFixed(2)} MB` : 'N/A'}</TableCell>
+                      <TableCell>{doc.createdBy || 'N/A'}</TableCell>
+                      <TableCell>{formatDate(doc.createdAt)}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={() => window.open(doc.url, '_blank')}>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={() => window.open(doc.url, '_blank')}>
                             <Download className="h-4 w-4" />
                           </Button>
                         </div>
@@ -168,7 +132,7 @@ export default function DocumentsList() {
                 !searchQuery
                   ? {
                       label: "Upload Document",
-                      onClick: () => navigate('/engineering/documents/new'),
+                      onClick: () => navigate('/engineering/documents/upload'),
                     }
                   : undefined
               }

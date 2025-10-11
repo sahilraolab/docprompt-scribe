@@ -2,6 +2,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useEffect } from 'react';
+import { useProject, useCreateProject, useUpdateProject } from '@/lib/hooks/useEngineering';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -56,6 +58,10 @@ export default function ProjectForm() {
   const { toast } = useToast();
   const isEdit = !!id;
 
+  const { data: projectData } = useProject(id || '');
+  const createProject = useCreateProject();
+  const updateProject = useUpdateProject();
+
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
@@ -74,13 +80,43 @@ export default function ProjectForm() {
     },
   });
 
-  const onSubmit = (data: ProjectFormData) => {
-    console.log('Project data:', data);
-    toast({
-      title: isEdit ? 'Project Updated' : 'Project Created',
-      description: `${data.name} has been ${isEdit ? 'updated' : 'created'} successfully.`,
-    });
-    navigate('/engineering/projects');
+  useEffect(() => {
+    if (projectData && isEdit) {
+      form.reset({
+        code: projectData.code,
+        name: projectData.name,
+        description: projectData.description || '',
+        status: projectData.status,
+        budget: projectData.budget.toString(),
+        startDate: projectData.startDate.split('T')[0],
+        endDate: projectData.endDate ? projectData.endDate.split('T')[0] : '',
+        city: projectData.city,
+        state: projectData.state,
+        address: '',
+        reraId: projectData.reraId || '',
+        managerId: projectData.managerId,
+      });
+    }
+  }, [projectData, isEdit, form]);
+
+  const onSubmit = async (data: ProjectFormData) => {
+    try {
+      const projectPayload = {
+        ...data,
+        budget: parseFloat(data.budget),
+        progress: 0,
+        spent: 0,
+      };
+
+      if (isEdit && id) {
+        await updateProject.mutateAsync({ id, data: projectPayload });
+      } else {
+        await createProject.mutateAsync(projectPayload);
+      }
+      navigate('/engineering/projects');
+    } catch (error) {
+      console.error('Failed to save project:', error);
+    }
   };
 
   // Mock managers data

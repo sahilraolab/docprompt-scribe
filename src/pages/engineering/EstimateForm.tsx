@@ -2,6 +2,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useState, useEffect } from 'react';
+import { useProjects, useEstimate, useCreateEstimate, useUpdateEstimate } from '@/lib/hooks/useEngineering';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -21,12 +23,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Plus, Trash } from 'lucide-react';
-import { toast } from 'sonner';
-import { useState } from 'react';
+import { ArrowLeft, Plus, Trash, Loader2 } from 'lucide-react';
 
 const estimateItemSchema = z.object({
   description: z.string().min(1, 'Description is required'),
+  type: z.string().optional(),
   unit: z.string().min(1, 'Unit is required'),
   qty: z.string().min(1, 'Quantity is required'),
   rate: z.string().min(1, 'Rate is required'),
@@ -46,28 +47,82 @@ export default function EstimateForm() {
   const navigate = useNavigate();
   const isEdit = !!id;
 
+  const { data: projectsData } = useProjects();
+  const { data: estimateData } = useEstimate(id || '');
+  const createEstimate = useCreateEstimate();
+  const updateEstimate = useUpdateEstimate();
+
   const [items, setItems] = useState([
-    { description: '', unit: '', qty: '', rate: '' },
+    { description: '', type: 'Material', unit: '', qty: '', rate: '' },
   ]);
 
   const form = useForm<EstimateFormData>({
     resolver: zodResolver(estimateSchema),
     defaultValues: {
       projectId: '',
-      version: 'v1.0',
+      version: '1',
       description: '',
       items: items,
     },
   });
 
-  const onSubmit = (data: EstimateFormData) => {
-    console.log('Estimate data:', data);
-    toast.success(isEdit ? 'Estimate updated successfully' : 'Estimate created successfully');
-    navigate('/engineering/estimates');
+  useEffect(() => {
+    if (estimateData && isEdit) {
+      form.reset({
+        projectId: estimateData.projectId,
+        version: estimateData.version.toString(),
+        description: estimateData.description || '',
+      });
+      if (estimateData.items && estimateData.items.length > 0) {
+        setItems(estimateData.items.map((item: any) => ({
+          description: item.description,
+          type: item.type,
+          unit: item.uom,
+          qty: item.qty.toString(),
+          rate: item.rate.toString(),
+        })));
+      }
+    }
+  }, [estimateData, isEdit, form]);
+
+  const onSubmit = async (data: EstimateFormData) => {
+    try {
+      const estimateItems = items.map((item) => ({
+        description: item.description,
+        type: item.type || 'Material',
+        qty: parseFloat(item.qty),
+        uom: item.unit,
+        rate: parseFloat(item.rate),
+        amount: parseFloat(item.qty) * parseFloat(item.rate),
+      }));
+
+      const subtotal = estimateItems.reduce((sum, item) => sum + item.amount, 0);
+      const tax = subtotal * 0.18; // 18% GST
+
+      const estimatePayload = {
+        projectId: data.projectId,
+        version: parseInt(data.version),
+        description: data.description,
+        items: estimateItems,
+        subtotal,
+        tax,
+        total: subtotal + tax,
+        status: 'Draft',
+      };
+
+      if (isEdit && id) {
+        await updateEstimate.mutateAsync({ id, data: estimatePayload });
+      } else {
+        await createEstimate.mutateAsync(estimatePayload);
+      }
+      navigate('/engineering/estimates');
+    } catch (error) {
+      console.error('Failed to save estimate:', error);
+    }
   };
 
   const addItem = () => {
-    setItems([...items, { description: '', unit: '', qty: '', rate: '' }]);
+    setItems([...items, { description: '', type: 'Material', unit: '', qty: '', rate: '' }]);
   };
 
   const removeItem = (index: number) => {
@@ -89,13 +144,7 @@ export default function EstimateForm() {
     }, 0);
   };
 
-  // Mock projects
-  const projects = [
-    { id: '1', name: 'Green Valley Apartments' },
-    { id: '2', name: 'City Mall Extension' },
-    { id: '3', name: 'Smart Office Tower' },
-  ];
-
+  const projects = projectsData?.data || [];
   const units = ['SQM', 'CUM', 'RMT', 'NOS', 'KG', 'TON', 'BAG', 'LTR'];
 
   return (

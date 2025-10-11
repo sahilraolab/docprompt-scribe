@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useEstimates } from '@/lib/hooks/useEngineering';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -20,44 +21,13 @@ import { Badge } from '@/components/ui/badge';
 export default function EstimatesList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { data: estimatesData, isLoading } = useEstimates();
 
-  // Mock data
-  const estimates = [
-    {
-      id: '1',
-      projectName: 'Green Valley Apartments',
-      version: 'v2.0',
-      totalCost: 15000000,
-      status: 'Approved' as const,
-      createdAt: '2024-01-15',
-      createdBy: 'John Doe',
-      isLatest: true,
-    },
-    {
-      id: '2',
-      projectName: 'Green Valley Apartments',
-      version: 'v1.0',
-      totalCost: 14500000,
-      status: 'Closed' as const,
-      createdAt: '2024-01-10',
-      createdBy: 'John Doe',
-      isLatest: false,
-    },
-    {
-      id: '3',
-      projectName: 'City Mall Extension',
-      version: 'v1.0',
-      totalCost: 25000000,
-      status: 'Draft' as const,
-      createdAt: '2024-01-20',
-      createdBy: 'Jane Smith',
-      isLatest: true,
-    },
-  ];
+  const estimates = estimatesData?.data || [];
 
-  const filteredEstimates = estimates.filter((est) =>
-    est.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    est.version.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredEstimates = estimates.filter((est: any) =>
+    est.projectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    `v${est.version}`.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -86,7 +56,11 @@ export default function EstimatesList() {
           </div>
         </CardHeader>
         <CardContent>
-          {filteredEstimates.length > 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : filteredEstimates.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -100,7 +74,7 @@ export default function EstimatesList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredEstimates.map((est) => (
+                  {filteredEstimates.map((est: any) => (
                     <TableRow
                       key={est.id}
                       className="cursor-pointer hover:bg-muted/50"
@@ -109,18 +83,13 @@ export default function EstimatesList() {
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           {est.projectName}
-                          {est.isLatest && (
-                            <Badge variant="secondary" className="text-xs">
-                              Latest
-                            </Badge>
-                          )}
                         </div>
                       </TableCell>
-                      <TableCell>{est.version}</TableCell>
+                      <TableCell>v{est.version}</TableCell>
                       <TableCell className="font-medium">
-                        {formatCurrency(est.totalCost)}
+                        {formatCurrency(est.total)}
                       </TableCell>
-                      <TableCell>{est.createdBy}</TableCell>
+                      <TableCell>{est.createdBy || 'N/A'}</TableCell>
                       <TableCell>{formatDate(est.createdAt)}</TableCell>
                       <TableCell>
                         <StatusBadge status={est.status} />
