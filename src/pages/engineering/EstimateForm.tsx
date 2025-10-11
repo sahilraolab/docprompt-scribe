@@ -46,10 +46,11 @@ type EstimateFormData = z.infer<typeof estimateSchema>;
 export default function EstimateForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const isEdit = !!id;
+  const rawId = id;
+  const isEdit = !!rawId && rawId !== 'new';
 
   const { data: projectsData } = useProjects();
-  const { data: estimateData } = useEstimate(id || '');
+  const { data: estimateData } = useEstimate(isEdit ? (rawId as string) : '');
   const createEstimate = useCreateEstimate();
   const updateEstimate = useUpdateEstimate();
 

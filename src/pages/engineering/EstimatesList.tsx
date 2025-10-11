@@ -76,20 +76,20 @@ export default function EstimatesList() {
                 <TableBody>
                   {filteredEstimates.map((est: any) => (
                     <TableRow
-                      key={est.id}
+                      key={est._id || est.id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/engineering/estimates/${est.id}`)}
+                      onClick={() => navigate(`/engineering/estimates/${est._id || est.id}`)}
                     >
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
-                          {est.projectName}
+                          {est.projectId?.name || est.projectName || 'N/A'}
                         </div>
                       </TableCell>
                       <TableCell>v{est.version}</TableCell>
                       <TableCell className="font-medium">
                         {formatCurrency(est.total)}
                       </TableCell>
-                      <TableCell>{est.createdBy || 'N/A'}</TableCell>
+                      <TableCell>{est.createdBy?.name || est.createdBy || 'N/A'}</TableCell>
                       <TableCell>{formatDate(est.createdAt)}</TableCell>
                       <TableCell>
                         <StatusBadge status={est.status} />

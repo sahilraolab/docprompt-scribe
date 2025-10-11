@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useProject, useEstimatesByProject, useDocumentsByProject, usePlansByProject } from '@/lib/hooks/useEngineering';
+import { useProject, useEstimatesByProject, useDocumentsByProject } from '@/lib/hooks/useEngineering';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,7 +29,6 @@ export default function ProjectDetails() {
   const { data: project, isLoading } = useProject(id!);
   const { data: estimatesData, isLoading: estimatesLoading } = useEstimatesByProject(id!);
   const { data: documentsData, isLoading: documentsLoading } = useDocumentsByProject(id!);
-  const { data: plansData, isLoading: plansLoading } = usePlansByProject(id!);
 
 
   if (isLoading) {
@@ -196,7 +195,7 @@ export default function ProjectDetails() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Estimates</CardTitle>
-                <Button size="sm">
+                <Button size="sm" onClick={() => navigate('/engineering/estimates/new')}>
                   <Plus className="h-4 w-4 mr-2" />
                   New Estimate
                 </Button>
@@ -215,7 +214,7 @@ export default function ProjectDetails() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Documents</CardTitle>
-                <Button size="sm">
+                <Button size="sm" onClick={() => navigate('/engineering/documents/upload')}>
                   <Plus className="h-4 w-4 mr-2" />
                   Upload Document
                 </Button>
