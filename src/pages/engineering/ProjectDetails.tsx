@@ -202,9 +202,50 @@ export default function ProjectDetails() {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground text-center py-8">
-                No estimates available yet
-              </p>
+              {estimatesLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : estimatesData?.data && estimatesData.data.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Version</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Total Cost</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead className="w-[100px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {estimatesData.data.map((est: any) => (
+                        <TableRow key={est._id}>
+                          <TableCell className="font-medium">v{est.version}</TableCell>
+                          <TableCell>{est.description || 'No description'}</TableCell>
+                          <TableCell className="font-medium">{formatCurrency(est.total)}</TableCell>
+                          <TableCell><StatusBadge status={est.status} /></TableCell>
+                          <TableCell>{formatDate(est.createdAt)}</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate(`/engineering/estimates/${est._id}`)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-8">
+                  No estimates available yet
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -221,9 +262,66 @@ export default function ProjectDetails() {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground text-center py-8">
-                No documents uploaded yet
-              </p>
+              {documentsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : documentsData?.data && documentsData.data.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Version</TableHead>
+                        <TableHead>Uploaded By</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="w-[150px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {documentsData.data.map((doc: any) => (
+                        <TableRow key={doc._id}>
+                          <TableCell className="font-medium">{doc.name}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{doc.type}</Badge>
+                          </TableCell>
+                          <TableCell>v{doc.version}</TableCell>
+                          <TableCell>{doc.uploadedBy?.name || 'N/A'}</TableCell>
+                          <TableCell>{formatDate(doc.createdAt)}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => window.open(buildFileUrl(doc.url), '_blank')}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = buildFileUrl(doc.url);
+                                  link.download = doc.name;
+                                  link.click();
+                                }}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-8">
+                  No documents uploaded yet
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
