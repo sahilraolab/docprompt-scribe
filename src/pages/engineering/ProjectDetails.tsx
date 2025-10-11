@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useProject } from '@/lib/hooks/useEngineering';
+import { useProject, useEstimatesByProject, useDocumentsByProject, usePlansByProject } from '@/lib/hooks/useEngineering';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,13 +15,22 @@ import {
   MapPin,
   User,
   Loader2,
-  Plus
+  Plus,
+  Eye,
+  Download
 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+
 
 export default function ProjectDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: project, isLoading } = useProject(id!);
+  const { data: estimatesData, isLoading: estimatesLoading } = useEstimatesByProject(id!);
+  const { data: documentsData, isLoading: documentsLoading } = useDocumentsByProject(id!);
+  const { data: plansData, isLoading: plansLoading } = usePlansByProject(id!);
+
 
   if (isLoading) {
     return (
@@ -43,6 +52,14 @@ export default function ProjectDetails() {
   }
 
   const budgetUtilization = (project.spent / project.budget) * 100;
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+  const API_ORIGIN = (() => { try { return new URL(API_URL).origin; } catch { return (API_URL || '').replace(/\/api$/, ''); } })();
+  const buildFileUrl = (u?: string) => {
+    if (!u) return '';
+    if (/^https?:\/\//i.test(u)) return u;
+    return `${API_ORIGIN}${u.startsWith('/') ? '' : '/'}${u}`;
+  };
+
 
   return (
     <div className="space-y-6">
@@ -125,7 +142,7 @@ export default function ProjectDetails() {
                   <p className="text-sm text-muted-foreground mb-1">Project Manager</p>
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <p className="font-medium">{project.managerName || 'Not assigned'}</p>
+                    <p className="font-medium">{project.managerId?.name || project.managerName || 'Not assigned'}</p>
                   </div>
                 </div>
                 <div>
