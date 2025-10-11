@@ -47,7 +47,21 @@ export const documentsApi = {
   getAll: () => apiCall('/engineering/documents'),
   getById: (id: string) => apiCall(`/engineering/documents/${id}`),
   getByProject: (projectId: string) => apiCall(`/engineering/documents?projectId=${projectId}`),
-  create: (data: any) => apiCall('/engineering/documents', { method: 'POST', body: JSON.stringify(data) }),
+  create: async (data: FormData) => {
+    const token = localStorage.getItem('erp_auth_token');
+    const response = await fetch(`${API_URL}/engineering/documents`, {
+      method: 'POST',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : '',
+      },
+      body: data,
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Upload failed' }));
+      throw new Error(error.message || `HTTP ${response.status}`);
+    }
+    return response.json();
+  },
   update: (id: string, data: any) => apiCall(`/engineering/documents/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: string) => apiCall(`/engineering/documents/${id}`, { method: 'DELETE' }),
 };

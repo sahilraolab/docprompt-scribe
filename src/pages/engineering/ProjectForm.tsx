@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/SearchableSelect';
 import { ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -333,20 +334,15 @@ export default function ProjectForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>State *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select state" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {indianStates.map((state) => (
-                            <SelectItem key={state} value={state}>
-                              {state}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SearchableSelect
+                          options={indianStates.map(state => ({ value: state, label: state }))}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select state"
+                          searchPlaceholder="Search states..."
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

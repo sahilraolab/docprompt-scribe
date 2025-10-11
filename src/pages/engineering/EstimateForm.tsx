@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/SearchableSelect';
 import { ArrowLeft, Plus, Trash, Loader2 } from 'lucide-react';
 
 const estimateItemSchema = z.object({
@@ -174,20 +175,18 @@ export default function EstimateForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Project *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select project" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {projects.map((project: any) => (
-                            <SelectItem key={project._id || project.id} value={(project._id || project.id)}>
-                              {project.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SearchableSelect
+                          options={projects.map((project: any) => ({
+                            value: project._id || project.id,
+                            label: `${project.code} - ${project.name}`
+                          }))}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select project"
+                          searchPlaceholder="Search projects..."
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
