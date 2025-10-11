@@ -2,6 +2,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useEffect } from 'react';
+import { usePOs, useCreatePurchaseBill, useUpdatePurchaseBill, usePurchaseBill } from '@/lib/hooks/usePurchaseBackend';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -13,6 +15,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { SearchableSelect } from '@/components/SearchableSelect';
 import {
   Select,
   SelectContent,
@@ -39,6 +42,11 @@ export default function PurchaseBillForm() {
   const navigate = useNavigate();
   const isEdit = !!id;
 
+  const { data: pos, isLoading: posLoading } = usePOs();
+  const { data: billData } = usePurchaseBill(id || '');
+  const createBill = useCreatePurchaseBill();
+  const updateBill = useUpdatePurchaseBill();
+
   const form = useForm<BillFormData>({
     resolver: zodResolver(billSchema),
     defaultValues: {
@@ -51,22 +59,52 @@ export default function PurchaseBillForm() {
     },
   });
 
+  useEffect(() => {
+    if (billData && isEdit) {
+      form.reset({
+        poId: billData.poId || '',
+        invoiceNo: billData.invoiceNo || '',
+        invoiceDate: billData.invoiceDate ? billData.invoiceDate.split('T')[0] : '',
+        amount: String(billData.amount || ''),
+        taxPct: String(billData.taxPct || '18'),
+        status: billData.status || 'Pending',
+      });
+    }
+  }, [billData, isEdit, form]);
+
   const amount = parseFloat(form.watch('amount') || '0');
   const taxPct = parseFloat(form.watch('taxPct') || '0');
   const tax = (amount * taxPct) / 100;
   const total = amount + tax;
 
-  const onSubmit = (data: BillFormData) => {
-    console.log('Bill data:', data);
-    toast.success(isEdit ? 'Bill updated successfully' : 'Bill created successfully');
-    navigate('/purchase/bills');
+  const onSubmit = async (data: BillFormData) => {
+    try {
+      const billPayload = {
+        poId: data.poId,
+        invoiceNo: data.invoiceNo,
+        invoiceDate: data.invoiceDate,
+        amount: parseFloat(data.amount),
+        tax: tax,
+        total: total,
+        status: data.status,
+      };
+
+      if (isEdit && id) {
+        await updateBill.mutateAsync({ id, data: billPayload });
+      } else {
+        await createBill.mutateAsync(billPayload);
+      }
+      navigate('/purchase/bills');
+    } catch (error) {
+      console.error('Failed to save bill:', error);
+    }
   };
 
-  // Mock POs data
-  const pos = [
-    { id: '1', code: 'PO-2024-001', supplier: 'ABC Suppliers' },
-    { id: '2', code: 'PO-2024-002', supplier: 'XYZ Trading' },
-  ];
+  // Prepare PO options for SearchableSelect
+  const poOptions = (pos || []).map(po => ({
+    value: po.id,
+    label: `${po.code} - ${po.supplierName || 'Supplier'}`,
+  }));
 
   return (
     <div className="space-y-6">
@@ -93,20 +131,16 @@ export default function PurchaseBillForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Purchase Order *</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select PO" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {pos.map((po) => (
-                          <SelectItem key={po.id} value={po.id}>
-                            {po.code} - {po.supplier}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <SearchableSelect
+                        options={poOptions}
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select PO"
+                        searchPlaceholder="Search POs..."
+                        disabled={posLoading}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -7,21 +7,13 @@ import { formatCurrency, formatDate } from '@/lib/utils/format';
 import { useQuery } from '@tanstack/react-query';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
-async function fetchPurchaseBill(id: string) {
-  const response = await fetch(`/api/purchase-bills/${id}`);
-  if (!response.ok) throw new Error('Failed to fetch purchase bill');
-  return response.json();
-}
+import { usePurchaseBill } from '@/lib/hooks/usePurchaseBackend';
 
 export default function PurchaseBillDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const { data: bill, isLoading } = useQuery({
-    queryKey: ['purchase-bills', id],
-    queryFn: () => fetchPurchaseBill(id!),
-    enabled: !!id,
-  });
+  const { data: bill, isLoading } = usePurchaseBill(id || '');
 
   if (isLoading) return <LoadingSpinner />;
   if (!bill) return <div>Purchase bill not found</div>;

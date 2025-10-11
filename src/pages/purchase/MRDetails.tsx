@@ -8,21 +8,13 @@ import { formatDate } from '@/lib/utils/format';
 import { useQuery } from '@tanstack/react-query';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
-async function fetchMR(id: string) {
-  const response = await fetch(`/api/mrs/${id}`);
-  if (!response.ok) throw new Error('Failed to fetch MR');
-  return response.json();
-}
+import { useMR } from '@/lib/hooks/usePurchaseBackend';
 
 export default function MRDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const { data: mr, isLoading } = useQuery({
-    queryKey: ['mrs', id],
-    queryFn: () => fetchMR(id!),
-    enabled: !!id,
-  });
+  const { data: mr, isLoading } = useMR(id || '');
 
   if (isLoading) return <LoadingSpinner />;
   if (!mr) return <div>MR not found</div>;

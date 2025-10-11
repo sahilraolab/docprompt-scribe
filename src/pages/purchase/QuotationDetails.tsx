@@ -8,21 +8,13 @@ import { formatCurrency, formatDate } from '@/lib/utils/format';
 import { useQuery } from '@tanstack/react-query';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
-async function fetchQuotation(id: string) {
-  const response = await fetch(`/api/quotations/${id}`);
-  if (!response.ok) throw new Error('Failed to fetch quotation');
-  return response.json();
-}
+import { useQuotation } from '@/lib/hooks/usePurchaseBackend';
 
 export default function QuotationDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const { data: quotation, isLoading } = useQuery({
-    queryKey: ['quotations', id],
-    queryFn: () => fetchQuotation(id!),
-    enabled: !!id,
-  });
+  const { data: quotation, isLoading } = useQuotation(id || '');
 
   if (isLoading) return <LoadingSpinner />;
   if (!quotation) return <div>Quotation not found</div>;

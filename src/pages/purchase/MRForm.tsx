@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,16 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { SearchableSelect } from '@/components/SearchableSelect';
 import { useProjects } from '@/lib/hooks/useProjects';
-import { useItems } from '@/lib/hooks/usePurchaseBackend';
-import { useCreateMR, useUpdateMR } from '@/lib/hooks/usePurchaseBackend';
+import { useItems } from '@/lib/hooks/useSite';
+import { useCreateMR, useUpdateMR, useMR } from '@/lib/hooks/usePurchaseBackend';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -32,7 +26,6 @@ const mrSchema = z.object({
   projectId: z.string().min(1, 'Project is required'),
   items: z.array(mrItemSchema).min(1, 'At least one item is required'),
 }).refine((data) => {
-  // Business rule: Check if required dates are in the future
   const today = new Date().toISOString().split('T')[0];
   return data.items.every(item => !item.requiredBy || item.requiredBy >= today);
 }, {
@@ -45,11 +38,13 @@ type MRFormData = z.infer<typeof mrSchema>;
 export default function MRForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: projects } = useProjects();
+  const { data: projects, isLoading: projectsLoading } = useProjects();
+  const { data: items, isLoading: itemsLoading } = useItems();
+  const { data: mrData } = useMR(id || '');
   const createMR = useCreateMR();
   const updateMR = useUpdateMR();
-  const { data: items } = useItems();
-  const [mrItems, setMRItems] = useState<any[]>([
+  
+  const [mrItems, setMRItems] = useState<MRFormData['items']>([
     { itemId: '', description: '', qty: 1, uom: '', requiredBy: '' },
   ]);
 
@@ -61,18 +56,37 @@ export default function MRForm() {
     watch,
   } = useForm<MRFormData>({
     resolver: zodResolver(mrSchema),
-    defaultValues: { items: mrItems as any },
+    defaultValues: { items: mrItems as any, projectId: '' },
   });
 
   const selectedProjectId = watch('projectId');
 
+  useEffect(() => {
+    if (mrData && id) {
+      setValue('projectId', mrData.projectId || '');
+      const formattedItems = mrData.items?.map((item: any) => ({
+        itemId: item.itemId || '',
+        description: item.description || '',
+        qty: item.qty || 0,
+        uom: item.uom || '',
+        requiredBy: item.requiredBy ? item.requiredBy.split('T')[0] : '',
+      })) || [];
+      setMRItems(formattedItems);
+      setValue('items', formattedItems);
+    }
+  }, [mrData, id, setValue]);
+
   const addItem = () => {
-    setMRItems([...mrItems, { itemId: '', description: '', qty: 1, uom: '', requiredBy: '' }]);
+    const newItems = [...mrItems, { itemId: '', description: '', qty: 1, uom: '', requiredBy: '' }];
+    setMRItems(newItems);
+    setValue('items', newItems);
   };
 
   const removeItem = (index: number) => {
     if (mrItems.length > 1) {
-      setMRItems(mrItems.filter((_, i) => i !== index));
+      const newItems = mrItems.filter((_, i) => i !== index);
+      setMRItems(newItems);
+      setValue('items', newItems);
     }
   };
 
@@ -83,14 +97,30 @@ export default function MRForm() {
     setValue('items', updated);
   };
 
+  const projectOptions = (projects || []).map(project => ({
+    value: project.id,
+    label: `${project.name} (${project.code})`,
+  }));
+
+  const itemOptions = (items || []).map(item => ({
+    value: item.id,
+    label: `${item.name} (${item.code})`,
+  }));
+
   const onSubmit = (data: MRFormData) => {
     if (id) {
       updateMR.mutate({ id, data: data as any }, {
-        onSuccess: () => navigate('/purchase/mrs'),
+        onSuccess: () => {
+          toast.success('MR updated successfully');
+          navigate('/purchase/mrs');
+        },
       });
     } else {
       createMR.mutate(data as any, {
-        onSuccess: () => navigate('/purchase/mrs'),
+        onSuccess: () => {
+          toast.success('MR created successfully');
+          navigate('/purchase/mrs');
+        },
       });
     }
   };
@@ -117,21 +147,14 @@ export default function MRForm() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="projectId">Project *</Label>
-              <Select
+              <SearchableSelect
+                options={projectOptions}
                 value={selectedProjectId}
-                onValueChange={(value) => setValue('projectId', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select project" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects?.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.name} ({project.code})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(value) => setValue('projectId', value)}
+                placeholder="Select project"
+                searchPlaceholder="Search projects..."
+                disabled={projectsLoading}
+              />
               {errors.projectId && (
                 <p className="text-sm text-destructive">{errors.projectId.message}</p>
               )}
@@ -169,9 +192,10 @@ export default function MRForm() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Item *</Label>
-                    <Select
+                    <SearchableSelect
+                      options={itemOptions}
                       value={item.itemId}
-                      onValueChange={(value) => {
+                      onChange={(value) => {
                         const selectedItem = items?.find((i) => i.id === value);
                         updateItem(index, 'itemId', value);
                         if (selectedItem) {
@@ -179,18 +203,10 @@ export default function MRForm() {
                           updateItem(index, 'uom', selectedItem.uom);
                         }
                       }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select item" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {items?.map((item) => (
-                          <SelectItem key={item.id} value={item.id}>
-                            {item.name} ({item.code})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select item"
+                      searchPlaceholder="Search items..."
+                      disabled={itemsLoading}
+                    />
                   </div>
 
                   <div className="space-y-2">

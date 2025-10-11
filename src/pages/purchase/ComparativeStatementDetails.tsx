@@ -8,21 +8,13 @@ import { formatCurrency, formatDate } from '@/lib/utils/format';
 import { useQuery } from '@tanstack/react-query';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
-async function fetchComparativeStatement(id: string) {
-  const response = await fetch(`/api/comparative-statements/${id}`);
-  if (!response.ok) throw new Error('Failed to fetch comparative statement');
-  return response.json();
-}
+import { useComparativeStatement } from '@/lib/hooks/usePurchaseBackend';
 
 export default function ComparativeStatementDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const { data: statement, isLoading } = useQuery({
-    queryKey: ['comparative-statements', id],
-    queryFn: () => fetchComparativeStatement(id!),
-    enabled: !!id,
-  });
+  const { data: statement, isLoading } = useComparativeStatement(id || '');
 
   if (isLoading) return <LoadingSpinner />;
   if (!statement) return <div>Comparative statement not found</div>;

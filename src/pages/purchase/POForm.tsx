@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,15 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { SearchableSelect } from '@/components/SearchableSelect';
 import { useProjects } from '@/lib/hooks/useProjects';
-import { useSuppliers, useCreatePO, useUpdatePO } from '@/lib/hooks/usePurchaseBackend';
+import { useSuppliers, useCreatePO, useUpdatePO, usePO } from '@/lib/hooks/usePurchaseBackend';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils/format';
@@ -36,7 +30,6 @@ const poSchema = z.object({
   terms: z.string().optional(),
   items: z.array(poItemSchema).min(1, 'At least one item is required'),
 }).refine((data) => {
-  // Business rule: Delivery date must be in future
   if (!data.deliveryDate) return true;
   const today = new Date().toISOString().split('T')[0];
   return data.deliveryDate >= today;
@@ -44,7 +37,6 @@ const poSchema = z.object({
   message: 'Delivery date must be today or in the future',
   path: ['deliveryDate'],
 }).refine((data) => {
-  // Business rule: Total amount should not exceed 10 crores without approval
   const total = data.items.reduce((sum, item) => sum + (item.qty * item.rate * (1 + item.taxPct / 100)), 0);
   return total <= 100000000;
 }, {
@@ -57,12 +49,13 @@ type POFormData = z.infer<typeof poSchema>;
 export default function POForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: projects } = useProjects();
-  const { data: suppliers } = useSuppliers();
+  const { data: projects, isLoading: projectsLoading } = useProjects();
+  const { data: suppliers, isLoading: suppliersLoading } = useSuppliers();
+  const { data: poData } = usePO(id || '');
   const createPO = useCreatePO();
   const updatePO = useUpdatePO();
   
-  const [poItems, setPoItems] = useState<any[]>([
+  const [poItems, setPoItems] = useState<POFormData['items']>([
     { description: '', qty: 1, uom: '', rate: 0, taxPct: 18 },
   ]);
 
@@ -74,18 +67,41 @@ export default function POForm() {
     watch,
   } = useForm<POFormData>({
     resolver: zodResolver(poSchema),
+    defaultValues: { items: poItems, projectId: '', supplierId: '', deliveryDate: '', terms: '' },
   });
 
   const selectedProjectId = watch('projectId');
   const selectedSupplierId = watch('supplierId');
 
+  useEffect(() => {
+    if (poData && id) {
+      setValue('projectId', poData.projectId || '');
+      setValue('supplierId', poData.supplierId || '');
+      setValue('deliveryDate', poData.deliveryDate ? poData.deliveryDate.split('T')[0] : '');
+      setValue('terms', poData.terms || '');
+      const formattedItems = poData.items?.map((item: any) => ({
+        description: item.description || '',
+        qty: item.qty || 0,
+        uom: item.uom || '',
+        rate: item.rate || 0,
+        taxPct: item.taxPct || 0,
+      })) || [];
+      setPoItems(formattedItems);
+      setValue('items', formattedItems);
+    }
+  }, [poData, id, setValue]);
+
   const addItem = () => {
-    setPoItems([...poItems, { description: '', qty: 1, uom: '', rate: 0, taxPct: 18 }]);
+    const newItems = [...poItems, { description: '', qty: 1, uom: '', rate: 0, taxPct: 18 }];
+    setPoItems(newItems);
+    setValue('items', newItems);
   };
 
   const removeItem = (index: number) => {
     if (poItems.length > 1) {
-      setPoItems(poItems.filter((_, i) => i !== index));
+      const newItems = poItems.filter((_, i) => i !== index);
+      setPoItems(newItems);
+      setValue('items', newItems);
     }
   };
 
@@ -112,15 +128,31 @@ export default function POForm() {
 
   const { subtotal, taxTotal, grandTotal } = calculateTotals();
 
+  const projectOptions = (projects || []).map(project => ({
+    value: project.id,
+    label: `${project.name} (${project.code})`,
+  }));
+
+  const supplierOptions = (suppliers || []).map(supplier => ({
+    value: supplier.id,
+    label: `${supplier.name} (${supplier.code})`,
+  }));
+
   const onSubmit = (data: POFormData) => {
     const poData = { ...data, total: subtotal, taxTotal, grandTotal };
     if (id) {
       updatePO.mutate({ id, data: poData as any }, {
-        onSuccess: () => navigate('/purchase/pos'),
+        onSuccess: () => {
+          toast.success('PO updated successfully');
+          navigate('/purchase/pos');
+        },
       });
     } else {
       createPO.mutate(poData as any, {
-        onSuccess: () => navigate('/purchase/pos'),
+        onSuccess: () => {
+          toast.success('PO created successfully');
+          navigate('/purchase/pos');
+        },
       });
     }
   };
@@ -148,21 +180,14 @@ export default function POForm() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="projectId">Project *</Label>
-                <Select
+                <SearchableSelect
+                  options={projectOptions}
                   value={selectedProjectId}
-                  onValueChange={(value) => setValue('projectId', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select project" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects?.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name} ({project.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => setValue('projectId', value)}
+                  placeholder="Select project"
+                  searchPlaceholder="Search projects..."
+                  disabled={projectsLoading}
+                />
                 {errors.projectId && (
                   <p className="text-sm text-destructive">{errors.projectId.message}</p>
                 )}
@@ -170,21 +195,14 @@ export default function POForm() {
 
               <div className="space-y-2">
                 <Label htmlFor="supplierId">Supplier *</Label>
-                <Select
+                <SearchableSelect
+                  options={supplierOptions}
                   value={selectedSupplierId}
-                  onValueChange={(value) => setValue('supplierId', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select supplier" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {suppliers?.map((supplier) => (
-                      <SelectItem key={supplier.id} value={supplier.id}>
-                        {supplier.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => setValue('supplierId', value)}
+                  placeholder="Select supplier"
+                  searchPlaceholder="Search suppliers..."
+                  disabled={suppliersLoading}
+                />
                 {errors.supplierId && (
                   <p className="text-sm text-destructive">{errors.supplierId.message}</p>
                 )}
@@ -200,7 +218,7 @@ export default function POForm() {
               <Label htmlFor="terms">Terms & Conditions</Label>
               <Textarea
                 {...register('terms')}
-                placeholder="Payment terms, delivery conditions, etc."
+                placeholder="Enter payment and delivery terms"
                 rows={3}
               />
             </div>
@@ -210,7 +228,7 @@ export default function POForm() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Items</CardTitle>
+              <CardTitle>PO Items</CardTitle>
               <Button type="button" variant="outline" size="sm" onClick={addItem}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Item
@@ -234,8 +252,8 @@ export default function POForm() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="col-span-3 space-y-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2 col-span-2">
                     <Label>Description *</Label>
                     <Input
                       value={item.description}
@@ -259,25 +277,26 @@ export default function POForm() {
                     <Input
                       value={item.uom}
                       onChange={(e) => updateItem(index, 'uom', e.target.value)}
-                      placeholder="Unit"
+                      placeholder="e.g., kg, pcs, m"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Rate *</Label>
+                    <Label>Rate (₹) *</Label>
                     <Input
                       type="number"
+                      step="0.01"
                       value={item.rate}
                       onChange={(e) => updateItem(index, 'rate', parseFloat(e.target.value))}
                       min="0"
-                      step="0.01"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Tax %</Label>
+                    <Label>Tax % *</Label>
                     <Input
                       type="number"
+                      step="0.01"
                       value={item.taxPct}
                       onChange={(e) => updateItem(index, 'taxPct', parseFloat(e.target.value))}
                       min="0"
@@ -285,30 +304,35 @@ export default function POForm() {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Amount</Label>
-                    <Input
-                      value={formatCurrency(calculateItemAmount(item))}
-                      disabled
-                      className="bg-muted"
-                    />
+                  <div className="col-span-2 p-3 bg-muted rounded-lg">
+                    <div className="flex justify-between text-sm">
+                      <span>Item Amount:</span>
+                      <span className="font-medium">{formatCurrency(calculateItemAmount(item))}</span>
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
+          </CardContent>
+        </Card>
 
-            <div className="border-t pt-4 space-y-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Subtotal:</span>
-                <span className="font-medium">{formatCurrency(subtotal)}</span>
+                <span>₹{subtotal.toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>Tax Total:</span>
-                <span className="font-medium">{formatCurrency(taxTotal)}</span>
+                <span>₹{taxTotal.toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between text-lg font-bold">
+              <div className="flex justify-between text-lg font-bold pt-2 border-t">
                 <span>Grand Total:</span>
-                <span>{formatCurrency(grandTotal)}</span>
+                <span>₹{grandTotal.toLocaleString('en-IN')}</span>
               </div>
             </div>
           </CardContent>
