@@ -97,12 +97,12 @@ export default function MRForm() {
     setValue('items', updated);
   };
 
-  const projectOptions = (projects || []).map(project => ({
+  const projectOptions = (Array.isArray(projects) ? projects : []).map(project => ({
     value: project.id,
     label: `${project.name} (${project.code})`,
   }));
 
-  const itemOptions = (items || []).map(item => ({
+  const itemOptions = (Array.isArray(items) ? items : []).map(item => ({
     value: item.id,
     label: `${item.name} (${item.code})`,
   }));

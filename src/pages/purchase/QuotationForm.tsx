@@ -152,7 +152,7 @@ const onSubmit = (data: QuotationFormData) => {
                   <SelectValue placeholder="Select MR" />
                 </SelectTrigger>
 <SelectContent>
-  {mrs?.map((mr) => (
+  {(Array.isArray(mrs) ? mrs : []).map((mr) => (
     <SelectItem key={mr.id} value={mr.id}>
       {(mr.code || mr.mrCode) ?? mr.id}
     </SelectItem>
@@ -175,7 +175,7 @@ const onSubmit = (data: QuotationFormData) => {
                     <SelectValue placeholder="Select supplier" />
                   </SelectTrigger>
                   <SelectContent>
-                    {suppliers?.map((supplier) => (
+                    {(Array.isArray(suppliers) ? suppliers : []).map((supplier) => (
                       <SelectItem key={supplier.id} value={supplier.id}>
                         {supplier.name}
                       </SelectItem>

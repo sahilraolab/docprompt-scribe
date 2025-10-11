@@ -128,12 +128,12 @@ export default function POForm() {
 
   const { subtotal, taxTotal, grandTotal } = calculateTotals();
 
-  const projectOptions = (projects || []).map(project => ({
+  const projectOptions = (Array.isArray(projects) ? projects : []).map(project => ({
     value: project.id,
     label: `${project.name} (${project.code})`,
   }));
 
-  const supplierOptions = (suppliers || []).map(supplier => ({
+  const supplierOptions = (Array.isArray(suppliers) ? suppliers : []).map(supplier => ({
     value: supplier.id,
     label: `${supplier.name} (${supplier.code})`,
   }));

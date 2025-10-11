@@ -101,7 +101,7 @@ export default function PurchaseBillForm() {
   };
 
   // Prepare PO options for SearchableSelect
-  const poOptions = (pos || []).map(po => ({
+  const poOptions = (Array.isArray(pos) ? pos : []).map(po => ({
     value: po.id,
     label: `${po.code} - ${po.supplierName || 'Supplier'}`,
   }));

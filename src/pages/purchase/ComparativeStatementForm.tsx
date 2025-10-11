@@ -117,7 +117,7 @@ const [selectedQuotationId, setSelectedQuotationId] = useState<string>('');
                   <SelectValue placeholder="Select material requisition" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mrs?.map((mr: any) => (
+                  {(Array.isArray(mrs) ? mrs : []).map((mr: any) => (
                     <SelectItem key={mr.id} value={mr.id}>
                       {(mr.code || mr.mrCode) ?? mr.id}
                     </SelectItem>
