@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { SearchableSelect } from '@/components/SearchableSelect';
+import { toast } from 'sonner';
 import { ArrowLeft, Plus, Trash, Loader2 } from 'lucide-react';
 
 const estimateItemSchema = z.object({
@@ -38,7 +39,6 @@ const estimateSchema = z.object({
   projectId: z.string().min(1, 'Project is required'),
   version: z.string().min(1, 'Version is required'),
   description: z.string().optional(),
-  items: z.array(estimateItemSchema).min(1, 'At least one item is required'),
 });
 
 type EstimateFormData = z.infer<typeof estimateSchema>;
@@ -64,7 +64,6 @@ export default function EstimateForm() {
       projectId: '',
       version: '1',
       description: '',
-      items: items,
     },
   });
 
@@ -89,6 +88,21 @@ export default function EstimateForm() {
 
   const onSubmit = async (data: EstimateFormData) => {
     try {
+      // Validate items (since items are managed outside react-hook-form)
+      if (!items.length) {
+        toast.error('Add at least one estimate item');
+        return;
+      }
+      for (const [idx, item] of items.entries()) {
+        const hasAll = item.description.trim() && item.unit.trim() && item.qty && item.rate;
+        const qty = parseFloat(item.qty);
+        const rate = parseFloat(item.rate);
+        if (!hasAll || isNaN(qty) || isNaN(rate) || qty <= 0 || rate < 0) {
+          toast.error(`Please complete item ${idx + 1} with valid quantity and rate`);
+          return;
+        }
+      }
+
       const estimateItems = items.map((item) => ({
         description: item.description,
         type: item.type || 'Material',

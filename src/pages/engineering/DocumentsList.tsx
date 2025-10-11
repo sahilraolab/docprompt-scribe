@@ -17,6 +17,14 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+const API_ORIGIN = (() => { try { return new URL(API_URL).origin; } catch { return (API_URL || '').replace(/\/api$/, ''); } })();
+const buildFileUrl = (u?: string) => {
+  if (!u) return '';
+  if (/^https?:\/\//i.test(u)) return u;
+  return `${API_ORIGIN}${u.startsWith('/') ? '' : '/'}${u}`;
+};
+
 export default function DocumentsList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -108,10 +116,10 @@ export default function DocumentsList() {
                       <TableCell>{formatDate(doc.createdAt)}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => window.open(doc.url, '_blank')}>
+                          <Button variant="ghost" size="sm" onClick={() => window.open(buildFileUrl(doc.url), '_blank', 'noopener') }>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => window.open(doc.url, '_blank')}>
+                          <Button variant="ghost" size="sm" onClick={() => window.open(buildFileUrl(doc.url), '_blank', 'noopener') }>
                             <Download className="h-4 w-4" />
                           </Button>
                         </div>
