@@ -2,6 +2,40 @@
 
 This guide provides complete backend implementation for handling document file uploads in the Engineering module.
 
+## CRITICAL: Fix 404 Error for Document Downloads
+
+**The 404 error when clicking download/eye icons happens because your Express server is not configured to serve static files.**
+
+### Required Fix in server.js
+
+Add this code in your `server.js` or `app.js` **BEFORE your routes**:
+
+```javascript
+const express = require('express');
+const path = require('path');
+const cors = require('cors');
+
+const app = express();
+
+// CRITICAL: Enable CORS for frontend
+app.use(cors({
+  origin: 'http://localhost:8080', // Your frontend URL
+  credentials: true
+}));
+
+// CRITICAL: Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Body parsers
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Then add your routes...
+app.use('/api', routes);
+```
+
+This allows files at `/uploads/documents/filename.pdf` to be accessible.
+
 ## 1. Install Required Dependencies
 
 ```bash

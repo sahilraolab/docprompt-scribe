@@ -148,6 +148,7 @@ export default function EstimateForm() {
 
   const projects = (projectsData?.data || []) as any[];
   const units = ['SQM', 'CUM', 'RMT', 'NOS', 'KG', 'TON', 'BAG', 'LTR'];
+  const itemTypes = ['Material', 'Labour', 'Equipment', 'Overhead'] as const;
 
   return (
     <div className="space-y-6">
@@ -253,7 +254,7 @@ export default function EstimateForm() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
                       <Input
-                        placeholder="Description"
+                        placeholder="Description *"
                         value={item.description}
                         onChange={(e) => {
                           const newItems = [...items];
@@ -262,6 +263,26 @@ export default function EstimateForm() {
                         }}
                       />
                     </div>
+
+                    <Select
+                      value={item.type}
+                      onValueChange={(value) => {
+                        const newItems = [...items];
+                        newItems[index].type = value as 'Material' | 'Labour' | 'Equipment' | 'Overhead';
+                        setItems(newItems);
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {itemTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
 
                     <Select
                       value={item.unit}
@@ -327,7 +348,13 @@ export default function EstimateForm() {
           </Card>
 
           <div className="flex gap-4">
-            <Button type="submit">
+            <Button 
+              type="submit" 
+              disabled={createEstimate.isPending || updateEstimate.isPending}
+            >
+              {(createEstimate.isPending || updateEstimate.isPending) && (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              )}
               {isEdit ? 'Update Estimate' : 'Create Estimate'}
             </Button>
             <Button type="button" variant="outline" onClick={() => navigate('/engineering/estimates')}>

@@ -66,14 +66,14 @@ export default function ProjectsList() {
     {
       key: 'code',
       header: 'Code',
-      render: (project: Project) => (
+      render: (project: any) => (
         <span className="font-medium">{project.code}</span>
       ),
     },
     {
       key: 'name',
       header: 'Project Name',
-      render: (project: Project) => (
+      render: (project: any) => (
         <div>
           <p className="font-medium">{project.name}</p>
           <p className="text-sm text-muted-foreground">{project.city}, {project.state}</p>
@@ -83,24 +83,24 @@ export default function ProjectsList() {
     {
       key: 'status',
       header: 'Status',
-      render: (project: Project) => <StatusBadge status={project.status} />,
+      render: (project: any) => <StatusBadge status={project.status} />,
     },
     {
       key: 'budget',
       header: 'Budget',
-      render: (project: Project) => formatCurrency(project.budget),
+      render: (project: any) => formatCurrency(project.budget),
       className: 'text-right',
     },
     {
       key: 'spent',
       header: 'Spent',
-      render: (project: Project) => formatCurrency(project.spent),
+      render: (project: any) => formatCurrency(project.spent),
       className: 'text-right',
     },
     {
       key: 'progress',
       header: 'Progress',
-      render: (project: Project) => (
+      render: (project: any) => (
         <div className="flex items-center gap-2">
           <div className="flex-1 bg-secondary rounded-full h-2">
             <div
@@ -117,7 +117,7 @@ export default function ProjectsList() {
     {
       key: 'startDate',
       header: 'Start Date',
-      render: (project: Project) => formatDate(project.startDate),
+      render: (project: any) => formatDate(project.startDate),
     },
   ];
 
@@ -243,7 +243,7 @@ export default function ProjectsList() {
           <DataTable
             data={sortedProjects}
             columns={columns}
-            onRowClick={(project) => navigate(`/engineering/projects/${project.id}`)}
+            onRowClick={(project) => navigate(`/engineering/projects/${project._id || project.id}`)}
             isLoading={isLoading}
             emptyMessage="No projects found"
           />
