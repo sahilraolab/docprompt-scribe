@@ -3,19 +3,18 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useSuppliers } from '@/lib/hooks/usePurchaseBackend';
+import { 
+  useSuppliers, 
+  useItems, 
+  useMaterialRate, 
+  useCreateMaterialRate, 
+  useUpdateMaterialRate 
+} from '@/lib/hooks/usePurchaseBackend';
+import { SearchableSelect } from '@/components/SearchableSelect';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
@@ -32,34 +31,17 @@ const rateSchema = z.object({
 
 type RateFormData = z.infer<typeof rateSchema>;
 
-async function fetchItems() {
-  const response = await fetch('/api/items');
-  if (!response.ok) throw new Error('Failed to fetch items');
-  const data = await response.json();
-  return data.data;
-}
-
-async function fetchRate(id: string) {
-  const response = await fetch(`/api/material-rates/${id}`);
-  if (!response.ok) throw new Error('Failed to fetch rate');
-  return response.json();
-}
-
 export default function RateForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { data: suppliers } = useSuppliers();
-  const { data: items } = useQuery({
-    queryKey: ['items'],
-    queryFn: fetchItems,
-  });
-
-  const { data: existingRate, isLoading } = useQuery({
-    queryKey: ['material-rates', id],
-    queryFn: () => fetchRate(id!),
-    enabled: !!id,
-  });
+  
+  const { data: suppliers, isLoading: suppliersLoading } = useSuppliers();
+  const { data: items, isLoading: itemsLoading } = useItems();
+  const { data: existingRate, isLoading: rateLoading } = useMaterialRate(id || '');
+  
+  const createMutation = useCreateMaterialRate();
+  const updateMutation = useUpdateMaterialRate();
 
   const {
     register,
@@ -96,38 +78,37 @@ export default function RateForm() {
 
   const onSubmit = async (data: RateFormData) => {
     try {
-      const method = id ? 'PUT' : 'POST';
-      const url = id ? `/api/material-rates/${id}` : '/api/material-rates';
-      
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) throw new Error('Failed to save rate');
-
-      toast({
-        title: id ? 'Rate Updated' : 'Rate Created',
-        description: `Material rate has been ${id ? 'updated' : 'created'} successfully.`,
-      });
+      if (id) {
+        await updateMutation.mutateAsync({ id, data });
+      } else {
+        await createMutation.mutateAsync(data);
+      }
       navigate('/purchase/rates');
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to save material rate. Please try again.',
-        variant: 'destructive',
-      });
+      // Error toast is handled by the mutation hooks
     }
   };
 
-  if (isLoading && id) {
+  const isLoading = suppliersLoading || itemsLoading || (id && rateLoading);
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
+
+  const itemOptions = (Array.isArray(items) ? items : []).map(item => ({
+    value: item.id,
+    label: `${item.name} (${item.code})`,
+  }));
+
+  const supplierOptions = (Array.isArray(suppliers) ? suppliers : []).map(supplier => ({
+    value: supplier.id,
+    label: `${supplier.name} (${supplier.code})`,
+  }));
 
   return (
     <div className="space-y-6">
@@ -150,21 +131,12 @@ export default function RateForm() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="itemId">Item *</Label>
-                <Select
+                <SearchableSelect
+                  options={itemOptions}
                   value={itemId}
-                  onValueChange={(value) => setValue('itemId', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select item" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {items?.map((item: any) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.name} ({item.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => setValue('itemId', value)}
+                  placeholder="Search items..."
+                />
                 {errors.itemId && (
                   <p className="text-sm text-destructive">{errors.itemId.message}</p>
                 )}
@@ -172,21 +144,12 @@ export default function RateForm() {
 
               <div className="space-y-2">
                 <Label htmlFor="supplierId">Supplier *</Label>
-                <Select
+                <SearchableSelect
+                  options={supplierOptions}
                   value={supplierId}
-                  onValueChange={(value) => setValue('supplierId', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select supplier" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {suppliers?.map((supplier) => (
-                      <SelectItem key={supplier.id} value={supplier.id}>
-                        {supplier.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => setValue('supplierId', value)}
+                  placeholder="Search suppliers..."
+                />
                 {errors.supplierId && (
                   <p className="text-sm text-destructive">{errors.supplierId.message}</p>
                 )}
@@ -248,7 +211,10 @@ export default function RateForm() {
           <Button type="button" variant="outline" onClick={() => navigate('/purchase/rates')}>
             Cancel
           </Button>
-          <Button type="submit">{id ? 'Update' : 'Create'} Rate</Button>
+          <Button type="submit" disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {id ? 'Update' : 'Create'} Rate
+          </Button>
         </div>
       </form>
     </div>
