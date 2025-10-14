@@ -18,21 +18,27 @@ export interface MR extends AuditMeta, ApprovalMeta {
   id: ID;
   projectId: ID;
   projectName?: string;
+  boqId?: ID; // Link to BOQ if auto-generated
   code: string;
   items: MRItem[];
   status: 'Draft' | 'Pending' | 'Approved' | 'Rejected';
   requestedBy: ID;
   requestedByName?: string;
+  purpose?: string;
+  source: 'Manual' | 'BOQ' | 'Plan'; // Source of requisition
 }
 
 export interface MRItem {
   id: ID;
   itemId: ID;
   itemName?: string;
+  itemCode?: string;
   description: string;
   qty: number;
   uom: string;
   requiredBy?: string;
+  boqItemId?: ID; // Link to BOQ item if auto-generated
+  estimatedRate?: number;
 }
 
 export interface Quotation extends AuditMeta {

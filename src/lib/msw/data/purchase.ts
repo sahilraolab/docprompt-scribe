@@ -6,11 +6,13 @@ export const materialRequisitions: MR[] = [
     code: 'MR-2024-001',
     projectId: 'proj-1',
     projectName: 'Skyline Towers',
+    source: 'Manual',
     items: [
       {
         id: 'mr-item-1',
         itemId: 'item-1',
         itemName: 'Cement ACC',
+        itemCode: 'CEM-001',
         description: 'ACC Cement 53 Grade',
         qty: 1000,
         uom: 'Bags',
@@ -20,6 +22,7 @@ export const materialRequisitions: MR[] = [
         id: 'mr-item-2',
         itemId: 'item-2',
         itemName: 'Steel TMT',
+        itemCode: 'STL-001',
         description: 'TMT Bars 12mm',
         qty: 50,
         uom: 'MT',
@@ -40,11 +43,13 @@ export const materialRequisitions: MR[] = [
     code: 'MR-2024-002',
     projectId: 'proj-2',
     projectName: 'Green Valley',
+    source: 'Manual',
     items: [
       {
         id: 'mr-item-3',
         itemId: 'item-3',
         itemName: 'Sand',
+        itemCode: 'SND-001',
         description: 'River Sand',
         qty: 200,
         uom: 'CFT',
@@ -63,11 +68,13 @@ export const materialRequisitions: MR[] = [
     code: 'MR-2024-003',
     projectId: 'proj-1',
     projectName: 'Skyline Towers',
+    source: 'Manual',
     items: [
       {
         id: 'mr-item-4',
         itemId: 'item-4',
         itemName: 'Bricks',
+        itemCode: 'BRK-001',
         description: 'Red Clay Bricks',
         qty: 10000,
         uom: 'Nos',

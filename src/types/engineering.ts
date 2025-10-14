@@ -34,11 +34,66 @@ export interface Estimate extends AuditMeta, ApprovalMeta {
 export interface EstimateItem {
   id: ID;
   type: 'Material' | 'Labour' | 'Equipment' | 'Overhead';
+  itemId?: ID; // Link to Master Item
+  itemName?: string;
   description: string;
   qty: number;
   uom: string;
   rate: number;
   amount: number;
+}
+
+// BOQ - Bill of Quantities
+export interface BOQ extends AuditMeta {
+  id: ID;
+  projectId: ID;
+  projectName?: string;
+  estimateId?: ID;
+  version: number;
+  items: BOQItem[];
+  status: 'Draft' | 'Approved' | 'Active' | 'Completed';
+  totalCost: number;
+}
+
+export interface BOQItem {
+  id: ID;
+  itemId: ID; // Master Item reference
+  itemName?: string;
+  itemCode?: string;
+  category: string;
+  description: string;
+  qty: number;
+  uom: string;
+  estimatedRate: number;
+  actualRate?: number;
+  estimatedAmount: number;
+  actualAmount?: number;
+  consumedQty?: number;
+  balanceQty?: number;
+  activityCode?: string;
+  activityName?: string;
+}
+
+// Material Master - Shared across modules
+export interface MaterialMaster extends AuditMeta {
+  id: ID;
+  code: string;
+  name: string;
+  description?: string;
+  category: string;
+  subCategory?: string;
+  uom: string;
+  specification?: string;
+  make?: string;
+  brand?: string;
+  hsnCode?: string;
+  taxRate?: number;
+  minStockLevel?: number;
+  maxStockLevel?: number;
+  reorderLevel?: number;
+  standardRate?: number;
+  lastPurchaseRate?: number;
+  active: boolean;
 }
 
 export interface Document extends AuditMeta {
