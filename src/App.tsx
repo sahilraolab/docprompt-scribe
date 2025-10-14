@@ -16,6 +16,10 @@ import EngineeringIndex from "./pages/engineering/index";
 import ProjectsList from "./pages/engineering/ProjectsList";
 import ProjectDetails from "./pages/engineering/ProjectDetails";
 import ProjectForm from "./pages/engineering/ProjectForm";
+import MaterialMasterList from "./pages/engineering/MaterialMasterList";
+import MaterialMasterForm from "./pages/engineering/MaterialMasterForm";
+import BOQList from "./pages/engineering/BOQList";
+import BOQDetails from "./pages/engineering/BOQDetails";
 import EstimatesList from "./pages/engineering/EstimatesList";
 import EstimateForm from "./pages/engineering/EstimateForm";
 import DocumentsList from "./pages/engineering/DocumentsList";
@@ -141,6 +145,11 @@ const App = () => (
             <Route path="/engineering/projects/new" element={<ProtectedRoute><AppLayout><ProjectForm /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/projects/:id/edit" element={<ProtectedRoute><AppLayout><ProjectForm /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/projects/:id" element={<ProtectedRoute><AppLayout><ProjectDetails /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/materials" element={<ProtectedRoute><AppLayout><MaterialMasterList /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/materials/new" element={<ProtectedRoute><AppLayout><MaterialMasterForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/materials/:id" element={<ProtectedRoute><AppLayout><MaterialMasterForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/boq" element={<ProtectedRoute><AppLayout><BOQList /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/boq/:id" element={<ProtectedRoute><AppLayout><BOQDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/estimates" element={<ProtectedRoute><AppLayout><EstimatesList /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/estimates/new" element={<ProtectedRoute><AppLayout><EstimateForm /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/estimates/:id" element={<ProtectedRoute><AppLayout><EstimateForm /></AppLayout></ProtectedRoute>} />

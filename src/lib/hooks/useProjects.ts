@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Project } from '@/types';
-import { projectApi } from '@/lib/api/purchaseApi';
+import { projectsApi } from '@/lib/api/engineeringApi';
 import { toast } from 'sonner';
 import { mockProjects } from '@/lib/msw/data/projects-mock';
 
@@ -9,7 +9,7 @@ export function useProjects() {
     queryKey: ['projects'],
     queryFn: async () => {
       try {
-        const response = await projectApi.getAll() as any;
+        const response = await projectsApi.getAll() as any;
         const data = response.data || response;
         // Use mock data if API returns empty or fails
         return data && data.length > 0 ? data : mockProjects;
@@ -25,7 +25,7 @@ export function useProject(id: string) {
   return useQuery({
     queryKey: ['projects', id],
     queryFn: async () => {
-      const response = await projectApi.getById(id) as any;
+      const response = await projectsApi.getById(id) as any;
       return response.data || response;
     },
     enabled: !!id,
@@ -35,7 +35,7 @@ export function useProject(id: string) {
 export function useCreateProject() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => projectApi.create(data),
+    mutationFn: (data: any) => projectsApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success('Project created successfully');
@@ -49,7 +49,7 @@ export function useCreateProject() {
 export function useUpdateProject() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => projectApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) => projectsApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success('Project updated successfully');
@@ -63,7 +63,7 @@ export function useUpdateProject() {
 export function useDeleteProject() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => projectApi.delete(id),
+    mutationFn: (id: string) => projectsApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success('Project deleted successfully');

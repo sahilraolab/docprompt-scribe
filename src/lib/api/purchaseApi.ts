@@ -4,7 +4,7 @@
  * Update the BASE_URL to point to your Node.js + MongoDB backend
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
 
 // Helper function to get auth token
 const getAuthToken = () => {
@@ -59,25 +59,25 @@ export const supplierApi = {
     if (params?.active !== undefined)
       queryParams.append('active', params.active.toString());
 
-    return apiRequest(`/suppliers?${queryParams}`);
+    return apiRequest(`/purchase/suppliers?${queryParams}`);
   },
 
-  getById: (id: string) => apiRequest(`/suppliers/${id}`),
+  getById: (id: string) => apiRequest(`/purchase/suppliers/${id}`),
 
   create: (data: any) =>
-    apiRequest('/suppliers', {
+    apiRequest('/purchase/suppliers', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   update: (id: string, data: any) =>
-    apiRequest(`/suppliers/${id}`, {
+    apiRequest(`/purchase/suppliers/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   delete: (id: string) =>
-    apiRequest(`/suppliers/${id}`, {
+    apiRequest(`/purchase/suppliers/${id}`, {
       method: 'DELETE',
     }),
 };
@@ -99,36 +99,36 @@ export const mrApi = {
     if (params?.projectId) queryParams.append('projectId', params.projectId);
     if (params?.status) queryParams.append('status', params.status);
 
-    return apiRequest(`/mrs?${queryParams}`);
+    return apiRequest(`/purchase/mrs?${queryParams}`);
   },
 
-  getById: (id: string) => apiRequest(`/mrs/${id}`),
+  getById: (id: string) => apiRequest(`/purchase/mrs/${id}`),
 
   create: (data: any) =>
-    apiRequest('/mrs', {
+    apiRequest('/purchase/mrs', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   update: (id: string, data: any) =>
-    apiRequest(`/mrs/${id}`, {
+    apiRequest(`/purchase/mrs/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   submit: (id: string) =>
-    apiRequest(`/mrs/${id}/submit`, {
+    apiRequest(`/purchase/mrs/${id}/submit`, {
       method: 'POST',
     }),
 
   approve: (id: string, action: 'approve' | 'reject', remarks?: string) =>
-    apiRequest(`/mrs/${id}/approve`, {
+    apiRequest(`/purchase/mrs/${id}/approve`, {
       method: 'POST',
       body: JSON.stringify({ action, remarks }),
     }),
 
   delete: (id: string) =>
-    apiRequest(`/mrs/${id}`, {
+    apiRequest(`/purchase/mrs/${id}`, {
       method: 'DELETE',
     }),
 };
@@ -153,31 +153,31 @@ export const quotationApi = {
     if (params?.mrId) queryParams.append('mrId', params.mrId);
     if (params?.status) queryParams.append('status', params.status);
 
-    return apiRequest(`/quotations?${queryParams}`);
+    return apiRequest(`/purchase/quotations?${queryParams}`);
   },
 
-  getById: (id: string) => apiRequest(`/quotations/${id}`),
+  getById: (id: string) => apiRequest(`/purchase/quotations/${id}`),
 
   create: (data: any) =>
-    apiRequest('/quotations', {
+    apiRequest('/purchase/quotations', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   update: (id: string, data: any) =>
-    apiRequest(`/quotations/${id}`, {
+    apiRequest(`/purchase/quotations/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   updateStatus: (id: string, status: string, remarks?: string) =>
-    apiRequest(`/quotations/${id}/status`, {
+    apiRequest(`/purchase/quotations/${id}/status`, {
       method: 'POST',
       body: JSON.stringify({ status, remarks }),
     }),
 
   delete: (id: string) =>
-    apiRequest(`/quotations/${id}`, {
+    apiRequest(`/purchase/quotations/${id}`, {
       method: 'DELETE',
     }),
 };
@@ -197,13 +197,13 @@ export const comparativeStatementApi = {
     if (params?.search) queryParams.append('search', params.search);
     if (params?.mrId) queryParams.append('mrId', params.mrId);
 
-    return apiRequest(`/comparative-statements?${queryParams}`);
+    return apiRequest(`/purchase/comparative-statements?${queryParams}`);
   },
 
-  getById: (id: string) => apiRequest(`/comparative-statements/${id}`),
+  getById: (id: string) => apiRequest(`/purchase/comparative-statements/${id}`),
 
   create: (data: any) =>
-    apiRequest('/comparative-statements', {
+    apiRequest('/purchase/comparative-statements', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -214,13 +214,13 @@ export const comparativeStatementApi = {
     quotationId: string,
     remarks?: string
   ) =>
-    apiRequest(`/comparative-statements/${id}/select`, {
+    apiRequest(`/purchase/comparative-statements/${id}/select`, {
       method: 'POST',
       body: JSON.stringify({ supplierId, quotationId, remarks }),
     }),
 
   delete: (id: string) =>
-    apiRequest(`/comparative-statements/${id}`, {
+    apiRequest(`/purchase/comparative-statements/${id}`, {
       method: 'DELETE',
     }),
 };
@@ -245,46 +245,46 @@ export const poApi = {
       queryParams.append('supplierId', params.supplierId);
     if (params?.status) queryParams.append('status', params.status);
 
-    return apiRequest(`/pos?${queryParams}`);
+    return apiRequest(`/purchase/pos?${queryParams}`);
   },
 
-  getById: (id: string) => apiRequest(`/pos/${id}`),
+  getById: (id: string) => apiRequest(`/purchase/pos/${id}`),
 
   create: (data: any) =>
-    apiRequest('/pos', {
+    apiRequest('/purchase/pos', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   update: (id: string, data: any) =>
-    apiRequest(`/pos/${id}`, {
+    apiRequest(`/purchase/pos/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   submit: (id: string) =>
-    apiRequest(`/pos/${id}/submit`, {
+    apiRequest(`/purchase/pos/${id}/submit`, {
       method: 'POST',
     }),
 
   approve: (id: string, action: 'approve' | 'reject', remarks?: string) =>
-    apiRequest(`/pos/${id}/approve`, {
+    apiRequest(`/purchase/pos/${id}/approve`, {
       method: 'POST',
       body: JSON.stringify({ action, remarks }),
     }),
 
   issue: (id: string) =>
-    apiRequest(`/pos/${id}/issue`, {
+    apiRequest(`/purchase/pos/${id}/issue`, {
       method: 'POST',
     }),
 
   close: (id: string) =>
-    apiRequest(`/pos/${id}/close`, {
+    apiRequest(`/purchase/pos/${id}/close`, {
       method: 'POST',
     }),
 
   delete: (id: string) =>
-    apiRequest(`/pos/${id}`, {
+    apiRequest(`/purchase/pos/${id}`, {
       method: 'DELETE',
     }),
 };
@@ -309,25 +309,25 @@ export const purchaseBillApi = {
       queryParams.append('supplierId', params.supplierId);
     if (params?.status) queryParams.append('status', params.status);
 
-    return apiRequest(`/purchase-bills?${queryParams}`);
+    return apiRequest(`/purchase/bills?${queryParams}`);
   },
 
-  getById: (id: string) => apiRequest(`/purchase-bills/${id}`),
+  getById: (id: string) => apiRequest(`/purchase/bills/${id}`),
 
   create: (data: any) =>
-    apiRequest('/purchase-bills', {
+    apiRequest('/purchase/bills', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   update: (id: string, data: any) =>
-    apiRequest(`/purchase-bills/${id}`, {
+    apiRequest(`/purchase/bills/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   approve: (id: string, remarks?: string) =>
-    apiRequest(`/purchase-bills/${id}/approve`, {
+    apiRequest(`/purchase/bills/${id}/approve`, {
       method: 'POST',
       body: JSON.stringify({ remarks }),
     }),
@@ -342,13 +342,13 @@ export const purchaseBillApi = {
       remarks?: string;
     }
   ) =>
-    apiRequest(`/purchase-bills/${id}/payment`, {
+    apiRequest(`/purchase/bills/${id}/payment`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   delete: (id: string) =>
-    apiRequest(`/purchase-bills/${id}`, {
+    apiRequest(`/purchase/bills/${id}`, {
       method: 'DELETE',
     }),
 };
@@ -373,30 +373,30 @@ export const materialRateApi = {
     if (params?.itemId) queryParams.append('itemId', params.itemId);
     if (params?.status) queryParams.append('status', params.status);
 
-    return apiRequest(`/material-rates?${queryParams}`);
+    return apiRequest(`/purchase/material-rates?${queryParams}`);
   },
 
-  getById: (id: string) => apiRequest(`/material-rates/${id}`),
+  getById: (id: string) => apiRequest(`/purchase/material-rates/${id}`),
 
   create: (data: any) =>
-    apiRequest('/material-rates', {
+    apiRequest('/purchase/material-rates', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   update: (id: string, data: any) =>
-    apiRequest(`/material-rates/${id}`, {
+    apiRequest(`/purchase/material-rates/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   deactivate: (id: string) =>
-    apiRequest(`/material-rates/${id}/deactivate`, {
+    apiRequest(`/purchase/material-rates/${id}/deactivate`, {
       method: 'POST',
     }),
 
   delete: (id: string) =>
-    apiRequest(`/material-rates/${id}`, {
+    apiRequest(`/purchase/material-rates/${id}`, {
       method: 'DELETE',
     }),
 };
@@ -405,24 +405,24 @@ export const materialRateApi = {
 
 export const projectApi = {
   getAll: (params?: { page?: number; limit?: number }) =>
-    apiRequest(`/projects${params ? `?page=${params.page || 1}&limit=${params.limit || 50}` : ''}`),
+    apiRequest(`/engineering/projects${params ? `?page=${params.page || 1}&limit=${params.limit || 50}` : ''}`),
 
-  getById: (id: string) => apiRequest(`/projects/${id}`),
+  getById: (id: string) => apiRequest(`/engineering/projects/${id}`),
 
   create: (data: any) =>
-    apiRequest('/projects', {
+    apiRequest('/engineering/projects', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   update: (id: string, data: any) =>
-    apiRequest(`/projects/${id}`, {
+    apiRequest(`/engineering/projects/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   delete: (id: string) =>
-    apiRequest(`/projects/${id}`, {
+    apiRequest(`/engineering/projects/${id}`, {
       method: 'DELETE',
     }),
 };
@@ -436,32 +436,32 @@ export const itemApi = {
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     if (params?.category) queryParams.append('category', params.category);
     
-    return apiRequest(`/items${queryParams.toString() ? `?${queryParams}` : ''}`);
+    return apiRequest(`/site/items${queryParams.toString() ? `?${queryParams}` : ''}`);
   },
 
-  getById: (id: string) => apiRequest(`/items/${id}`),
+  getById: (id: string) => apiRequest(`/site/items/${id}`),
 
   create: (data: any) =>
-    apiRequest('/items', {
+    apiRequest('/site/items', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   update: (id: string, data: any) =>
-    apiRequest(`/items/${id}`, {
+    apiRequest(`/site/items/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   delete: (id: string) =>
-    apiRequest(`/items/${id}`, {
+    apiRequest(`/site/items/${id}`, {
       method: 'DELETE',
     }),
 
   // Stock related
-  getStock: () => apiRequest('/stock'),
+  getStock: () => apiRequest('/site/stock'),
 
-  getStockByLocation: (location: string) => apiRequest(`/stock/location/${location}`),
+  getStockByLocation: (location: string) => apiRequest(`/site/stock/location/${location}`),
 };
 
 // ============= DASHBOARD & REPORTS =============

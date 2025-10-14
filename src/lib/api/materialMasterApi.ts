@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
 
 async function apiCall(endpoint: string, options?: RequestInit) {
   const token = localStorage.getItem('erp_auth_token');
@@ -21,13 +21,13 @@ async function apiCall(endpoint: string, options?: RequestInit) {
 
 // Material Master API (Shared across Engineering & Purchase)
 export const materialMasterApi = {
-  getAll: () => apiCall('/materials'),
-  getById: (id: string) => apiCall(`/materials/${id}`),
-  getByCategory: (category: string) => apiCall(`/materials?category=${category}`),
-  create: (data: any) => apiCall('/materials', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: any) => apiCall(`/materials/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: string) => apiCall(`/materials/${id}`, { method: 'DELETE' }),
-  search: (query: string) => apiCall(`/materials/search?q=${encodeURIComponent(query)}`),
+  getAll: () => apiCall('/engineering/materials'),
+  getById: (id: string) => apiCall(`/engineering/materials/${id}`),
+  getByCategory: (category: string) => apiCall(`/engineering/materials?category=${category}`),
+  create: (data: any) => apiCall('/engineering/materials', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: any) => apiCall(`/engineering/materials/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: string) => apiCall(`/engineering/materials/${id}`, { method: 'DELETE' }),
+  search: (query: string) => apiCall(`/engineering/materials/search?q=${encodeURIComponent(query)}`),
 };
 
 // BOQ API
