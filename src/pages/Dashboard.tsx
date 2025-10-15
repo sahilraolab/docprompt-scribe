@@ -1,5 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { KPICard } from '@/components/KPICard';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 import { 
   TrendingUp, 
   Package, 
@@ -8,7 +10,13 @@ import {
   AlertCircle,
   Clock,
   CheckCircle,
-  XCircle
+  XCircle,
+  Building2,
+  ShoppingCart,
+  Briefcase,
+  DollarSign,
+  TrendingDown,
+  Activity
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/format';
 import {
@@ -28,7 +36,9 @@ import {
 } from 'recharts';
 
 export default function Dashboard() {
-  // Mock data for charts
+  const navigate = useNavigate();
+
+  // Enhanced mock data
   const projectStatusData = [
     { name: 'Planning', value: 2, color: '#3b82f6' },
     { name: 'Active', value: 5, color: '#10b981' },
@@ -46,47 +56,86 @@ export default function Dashboard() {
   ];
 
   const projectProgress = [
-    { project: 'Green Valley', progress: 75 },
-    { project: 'City Mall', progress: 45 },
-    { project: 'Smart Office', progress: 60 },
-    { project: 'Riverside', progress: 30 },
+    { project: 'Green Valley Residency', progress: 75 },
+    { project: 'City Mall Expansion', progress: 45 },
+    { project: 'Smart Office Complex', progress: 60 },
+    { project: 'Riverside Apartments', progress: 30 },
   ];
 
   const pendingApprovals = [
-    { type: 'Material Requisitions', count: 8, icon: Package },
-    { type: 'Purchase Orders', count: 5, icon: FileText },
-    { type: 'Work Orders', count: 3, icon: Users },
-    { type: 'RA Bills', count: 4, icon: FileText },
+    { type: 'Material Requisitions', count: 8, icon: Package, path: '/purchase/mrs' },
+    { type: 'Purchase Orders', count: 5, icon: ShoppingCart, path: '/purchase/pos' },
+    { type: 'Work Orders', count: 3, icon: Briefcase, path: '/contracts/work-orders' },
+    { type: 'RA Bills', count: 4, icon: FileText, path: '/contracts/ra-bills' },
+  ];
+
+  const quickActions = [
+    { label: 'New Project', icon: Building2, path: '/engineering/projects/new', variant: 'default' as const },
+    { label: 'Create MR', icon: Package, path: '/purchase/mrs/new', variant: 'outline' as const },
+    { label: 'New PO', icon: ShoppingCart, path: '/purchase/pos/new', variant: 'outline' as const },
+    { label: 'Add Contractor', icon: Users, path: '/contracts/contractors/new', variant: 'outline' as const },
   ];
 
   return (
     <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Overview of your construction ERP</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Welcome back! Here's your construction ERP overview</p>
+        </div>
+        <div className="flex gap-2">
+          {quickActions.map((action, index) => (
+            <Button
+              key={index}
+              variant={action.variant}
+              onClick={() => navigate(action.path)}
+              className="gap-2"
+            >
+              <action.icon className="h-4 w-4" />
+              <span className="hidden lg:inline">{action.label}</span>
+            </Button>
+          ))}
+        </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards Row 1 - Financial Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <KPICard
+          title="Total Budget"
+          value={formatCurrency(45000000, 'short')}
+          description="Across all projects"
+          icon={DollarSign}
+          trend={{ value: 8, isPositive: true }}
+        />
+        <KPICard
+          title="Budget Utilized"
+          value={formatCurrency(31500000, 'short')}
+          description="70% of total budget"
+          icon={TrendingDown}
+        />
+        <KPICard
+          title="Pending Payments"
+          value={formatCurrency(4200000, 'short')}
+          description="Due this month"
+          icon={Clock}
+        />
+        <KPICard
+          title="Monthly Revenue"
+          value={formatCurrency(6800000, 'short')}
+          description="+12% from last month"
+          icon={TrendingUp}
+          trend={{ value: 12, isPositive: true }}
+        />
+      </div>
+
+      {/* KPI Cards Row 2 - Operations */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
           title="Active Projects"
           value="11"
           description="+2 this month"
-          icon={TrendingUp}
+          icon={Building2}
           trend={{ value: 18, isPositive: true }}
-        />
-        <KPICard
-          title="Total Budget"
-          value={formatCurrency(45000000, 'short')}
-          description="+8% from last month"
-          icon={TrendingUp}
-          trend={{ value: 8, isPositive: true }}
-        />
-        <KPICard
-          title="Pending Approvals"
-          value="20"
-          description="5 urgent"
-          icon={Clock}
         />
         <KPICard
           title="Active Contractors"
@@ -94,6 +143,18 @@ export default function Dashboard() {
           description="+3 this week"
           icon={Users}
           trend={{ value: 12, isPositive: true }}
+        />
+        <KPICard
+          title="Pending Approvals"
+          value="20"
+          description="Requires action"
+          icon={AlertCircle}
+        />
+        <KPICard
+          title="Stock Value"
+          value="₹42.5L"
+          description="Current inventory"
+          icon={Package}
         />
       </div>
 
@@ -103,7 +164,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Project Status Distribution</CardTitle>
-            <CardDescription>Current status of all projects</CardDescription>
+            <CardDescription>Current status of all 11 projects</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -131,7 +192,7 @@ export default function Dashboard() {
         {/* Monthly Expenses */}
         <Card>
           <CardHeader>
-            <CardTitle>Monthly Expenses (Lakhs)</CardTitle>
+            <CardTitle>Monthly Expenses (Lakhs ₹)</CardTitle>
             <CardDescription>Materials, Labour & Equipment costs</CardDescription>
           </CardHeader>
           <CardContent>
@@ -156,15 +217,15 @@ export default function Dashboard() {
         {/* Project Progress */}
         <Card>
           <CardHeader>
-            <CardTitle>Project Progress</CardTitle>
-            <CardDescription>Top 4 active projects completion status</CardDescription>
+            <CardTitle>Top Project Progress</CardTitle>
+            <CardDescription>Completion status of active projects</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={projectProgress} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" domain={[0, 100]} />
-                <YAxis dataKey="project" type="category" width={100} />
+                <YAxis dataKey="project" type="category" width={150} />
                 <Tooltip />
                 <Bar dataKey="progress" fill="#6366f1" name="Progress %" />
               </BarChart>
@@ -179,9 +240,13 @@ export default function Dashboard() {
             <CardDescription>Items awaiting your approval</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {pendingApprovals.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                <div 
+                  key={index} 
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
+                  onClick={() => navigate(item.path)}
+                >
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-primary/10 rounded-lg">
                       <item.icon className="h-5 w-5 text-primary" />
@@ -204,13 +269,18 @@ export default function Dashboard() {
 
       {/* Recent Activity */}
       <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Latest updates across all modules</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Recent Activity</CardTitle>
+            <CardDescription>Latest updates across all modules</CardDescription>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => navigate('/notifications')}>
+            View All
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-start gap-3 p-3 border-l-4 border-green-500 bg-green-50 rounded">
+            <div className="flex items-start gap-3 p-4 border-l-4 border-l-green-500 bg-green-50 dark:bg-green-950 rounded-lg">
               <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
               <div className="flex-1">
                 <p className="font-medium">Purchase Order Approved</p>
@@ -219,30 +289,39 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 border-l-4 border-blue-500 bg-blue-50 rounded">
-              <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div className="flex items-start gap-3 p-4 border-l-4 border-l-blue-500 bg-blue-50 dark:bg-blue-950 rounded-lg">
+              <Activity className="h-5 w-5 text-blue-600 mt-0.5" />
               <div className="flex-1">
                 <p className="font-medium">New Material Requisition</p>
-                <p className="text-sm text-muted-foreground">MR-2024-003 from Green Valley project</p>
+                <p className="text-sm text-muted-foreground">MR-2024-003 from Green Valley Residency</p>
                 <p className="text-xs text-muted-foreground mt-1">5 hours ago</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 border-l-4 border-amber-500 bg-amber-50 rounded">
+            <div className="flex items-start gap-3 p-4 border-l-4 border-l-amber-500 bg-amber-50 dark:bg-amber-950 rounded-lg">
               <Clock className="h-5 w-5 text-amber-600 mt-0.5" />
               <div className="flex-1">
                 <p className="font-medium">RA Bill Pending</p>
-                <p className="text-sm text-muted-foreground">RA-002 from Metro Builders awaiting approval</p>
+                <p className="text-sm text-muted-foreground">RA-002 from Metro Builders awaiting approval - ₹2.85L</p>
                 <p className="text-xs text-muted-foreground mt-1">1 day ago</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 border-l-4 border-red-500 bg-red-50 rounded">
+            <div className="flex items-start gap-3 p-4 border-l-4 border-l-purple-500 bg-purple-50 dark:bg-purple-950 rounded-lg">
+              <Building2 className="h-5 w-5 text-purple-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-medium">Project Milestone Completed</p>
+                <p className="text-sm text-muted-foreground">Smart Office Complex - Foundation work completed</p>
+                <p className="text-xs text-muted-foreground mt-1">2 days ago</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 p-4 border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950 rounded-lg">
               <XCircle className="h-5 w-5 text-red-600 mt-0.5" />
               <div className="flex-1">
                 <p className="font-medium">SLA Breach Alert</p>
-                <p className="text-sm text-muted-foreground">Journal Entry approval exceeded target time</p>
-                <p className="text-xs text-muted-foreground mt-1">2 days ago</p>
+                <p className="text-sm text-muted-foreground">Journal Entry approval exceeded target time by 3 days</p>
+                <p className="text-xs text-muted-foreground mt-1">3 days ago</p>
               </div>
             </div>
           </div>
