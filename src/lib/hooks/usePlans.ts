@@ -6,8 +6,8 @@ export function usePlans() {
   return useQuery({
     queryKey: ['plans'],
     queryFn: async () => {
-      const response = await plansApi.getAll() as any;
-      return response.data || response;
+      const response = await plansApi.getAll();
+      return response.data;
     },
   });
 }
@@ -16,8 +16,8 @@ export function usePlan(id: string) {
   return useQuery({
     queryKey: ['plans', id],
     queryFn: async () => {
-      const response = await plansApi.getById(id) as any;
-      return response.data || response;
+      const response = await plansApi.getById(id);
+      return response.data;
     },
     enabled: !!id,
   });

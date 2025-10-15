@@ -18,7 +18,7 @@ async function apiCall(endpoint: string, options?: RequestInit) {
     throw new Error(result.message || 'Request failed');
   }
 
-  return result.data || result;
+  return result; // Return full { success, data, message } structure
 }
 
 // Projects API
@@ -61,7 +61,7 @@ export const documentsApi = {
     if (!response.ok || !result.success) {
       throw new Error(result.message || 'Upload failed');
     }
-    return result.data || result;
+    return result; // Return full { success, data, message } structure
   },
   update: (id: string, data: any) => apiCall(`/engineering/documents/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: string) => apiCall(`/engineering/documents/${id}`, { method: 'DELETE' }),

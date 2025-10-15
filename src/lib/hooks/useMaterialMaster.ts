@@ -6,14 +6,20 @@ import { toast } from 'sonner';
 export const useMaterialMaster = () => {
   return useQuery({
     queryKey: ['materials'],
-    queryFn: materialMasterApi.getAll,
+    queryFn: async () => {
+      const response = await materialMasterApi.getAll();
+      return response.data;
+    },
   });
 };
 
 export const useMaterial = (id: string) => {
   return useQuery({
     queryKey: ['materials', id],
-    queryFn: () => materialMasterApi.getById(id),
+    queryFn: async () => {
+      const response = await materialMasterApi.getById(id);
+      return response.data;
+    },
     enabled: !!id,
   });
 };
@@ -21,7 +27,10 @@ export const useMaterial = (id: string) => {
 export const useMaterialsByCategory = (category: string) => {
   return useQuery({
     queryKey: ['materials', 'category', category],
-    queryFn: () => materialMasterApi.getByCategory(category),
+    queryFn: async () => {
+      const response = await materialMasterApi.getByCategory(category);
+      return response.data;
+    },
     enabled: !!category,
   });
 };
@@ -29,7 +38,10 @@ export const useMaterialsByCategory = (category: string) => {
 export const useSearchMaterials = (query: string) => {
   return useQuery({
     queryKey: ['materials', 'search', query],
-    queryFn: () => materialMasterApi.search(query),
+    queryFn: async () => {
+      const response = await materialMasterApi.search(query);
+      return response.data;
+    },
     enabled: query.length > 2,
   });
 };
@@ -80,14 +92,20 @@ export const useDeleteMaterial = () => {
 export const useBOQs = () => {
   return useQuery({
     queryKey: ['boq'],
-    queryFn: boqApi.getAll,
+    queryFn: async () => {
+      const response = await boqApi.getAll();
+      return response.data;
+    },
   });
 };
 
 export const useBOQ = (id: string) => {
   return useQuery({
     queryKey: ['boq', id],
-    queryFn: () => boqApi.getById(id),
+    queryFn: async () => {
+      const response = await boqApi.getById(id);
+      return response.data;
+    },
     enabled: !!id,
   });
 };
@@ -95,7 +113,10 @@ export const useBOQ = (id: string) => {
 export const useBOQsByProject = (projectId: string) => {
   return useQuery({
     queryKey: ['boq', 'project', projectId],
-    queryFn: () => boqApi.getByProject(projectId),
+    queryFn: async () => {
+      const response = await boqApi.getByProject(projectId);
+      return response.data;
+    },
     enabled: !!projectId,
   });
 };
@@ -103,7 +124,10 @@ export const useBOQsByProject = (projectId: string) => {
 export const useBOQByEstimate = (estimateId: string) => {
   return useQuery({
     queryKey: ['boq', 'estimate', estimateId],
-    queryFn: () => boqApi.getByEstimate(estimateId),
+    queryFn: async () => {
+      const response = await boqApi.getByEstimate(estimateId);
+      return response.data;
+    },
     enabled: !!estimateId,
   });
 };
@@ -197,7 +221,10 @@ export const useGenerateMRFromBOQ = () => {
 export const useMRsByBOQ = (boqId: string) => {
   return useQuery({
     queryKey: ['mrs', 'boq', boqId],
-    queryFn: () => mrFromBOQApi.getMRsByBOQ(boqId),
+    queryFn: async () => {
+      const response = await mrFromBOQApi.getMRsByBOQ(boqId);
+      return response.data;
+    },
     enabled: !!boqId,
   });
 };

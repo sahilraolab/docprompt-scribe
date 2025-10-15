@@ -61,19 +61,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(result.message || 'Login failed');
       }
 
-      const accessToken = result.accessToken;
+      // Backend returns tokens at top level (not nested in data)
+      const { accessToken, refreshToken, user } = result;
       
-      if (!accessToken) {
-        throw new Error('No access token received');
+      if (!accessToken || !user) {
+        throw new Error('Invalid response from server');
       }
 
-      setUser(result.user);
+      setUser(user);
       setToken(accessToken);
       localStorage.setItem(TOKEN_KEY, accessToken);
-      localStorage.setItem(USER_KEY, JSON.stringify(result.user));
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
       
-      if (result.refreshToken) {
-        localStorage.setItem('erp_refresh_token', result.refreshToken);
+      if (refreshToken) {
+        localStorage.setItem('erp_refresh_token', refreshToken);
       }
 
       toast.success('Login successful');

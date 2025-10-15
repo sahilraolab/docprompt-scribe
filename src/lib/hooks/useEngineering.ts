@@ -8,7 +8,7 @@ export function useProjects() {
     queryKey: ['projects'],
     queryFn: async () => {
       const response = await projectsApi.getAll();
-      return response;
+      return response.data; // Extract data array from { success, data, message }
     },
   });
 }
@@ -16,7 +16,10 @@ export function useProjects() {
 export function useProject(id: string) {
   return useQuery({
     queryKey: ['projects', id],
-    queryFn: () => projectsApi.getById(id),
+    queryFn: async () => {
+      const response = await projectsApi.getById(id);
+      return response.data;
+    },
     enabled: !!id,
   });
 }
@@ -67,14 +70,20 @@ export function useDeleteProject() {
 export function useEstimates() {
   return useQuery({
     queryKey: ['estimates'],
-    queryFn: estimatesApi.getAll,
+    queryFn: async () => {
+      const response = await estimatesApi.getAll();
+      return response.data;
+    },
   });
 }
 
 export function useEstimate(id: string) {
   return useQuery({
     queryKey: ['estimates', id],
-    queryFn: () => estimatesApi.getById(id),
+    queryFn: async () => {
+      const response = await estimatesApi.getById(id);
+      return response.data;
+    },
     enabled: !!id,
   });
 }
@@ -82,7 +91,10 @@ export function useEstimate(id: string) {
 export function useEstimatesByProject(projectId: string) {
   return useQuery({
     queryKey: ['estimates', 'project', projectId],
-    queryFn: () => estimatesApi.getByProject(projectId),
+    queryFn: async () => {
+      const response = await estimatesApi.getByProject(projectId);
+      return response.data;
+    },
     enabled: !!projectId,
   });
 }
@@ -175,14 +187,20 @@ export function useRejectEstimate() {
 export function useDocuments() {
   return useQuery({
     queryKey: ['documents'],
-    queryFn: documentsApi.getAll,
+    queryFn: async () => {
+      const response = await documentsApi.getAll();
+      return response.data;
+    },
   });
 }
 
 export function useDocument(id: string) {
   return useQuery({
     queryKey: ['documents', id],
-    queryFn: () => documentsApi.getById(id),
+    queryFn: async () => {
+      const response = await documentsApi.getById(id);
+      return response.data;
+    },
     enabled: !!id,
   });
 }
@@ -190,7 +208,10 @@ export function useDocument(id: string) {
 export function useDocumentsByProject(projectId: string) {
   return useQuery({
     queryKey: ['documents', 'project', projectId],
-    queryFn: () => documentsApi.getByProject(projectId),
+    queryFn: async () => {
+      const response = await documentsApi.getByProject(projectId);
+      return response.data;
+    },
     enabled: !!projectId,
   });
 }
@@ -241,14 +262,20 @@ export function useDeleteDocument() {
 export function usePlans() {
   return useQuery({
     queryKey: ['plans'],
-    queryFn: plansApi.getAll,
+    queryFn: async () => {
+      const response = await plansApi.getAll();
+      return response.data;
+    },
   });
 }
 
 export function usePlan(id: string) {
   return useQuery({
     queryKey: ['plans', id],
-    queryFn: () => plansApi.getById(id),
+    queryFn: async () => {
+      const response = await plansApi.getById(id);
+      return response.data;
+    },
     enabled: !!id,
   });
 }
@@ -256,7 +283,10 @@ export function usePlan(id: string) {
 export function usePlansByProject(projectId: string) {
   return useQuery({
     queryKey: ['plans', 'project', projectId],
-    queryFn: () => plansApi.getByProject(projectId),
+    queryFn: async () => {
+      const response = await plansApi.getByProject(projectId);
+      return response.data;
+    },
     enabled: !!projectId,
   });
 }

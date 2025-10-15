@@ -33,14 +33,13 @@ async function apiRequest<T>(
     headers,
   });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({
-      message: 'An error occurred',
-    }));
-    throw new Error(error.message || `HTTP ${response.status}`);
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || `HTTP ${response.status}`);
   }
 
-  return response.json();
+  return result; // Return full { success, data, message } structure
 }
 
 // ============= SUPPLIERS =============

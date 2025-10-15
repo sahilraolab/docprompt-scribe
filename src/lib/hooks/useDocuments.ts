@@ -6,8 +6,8 @@ export function useDocuments() {
   return useQuery({
     queryKey: ['documents'],
     queryFn: async () => {
-      const response = await documentsApi.getAll() as any;
-      return response.data || response;
+      const response = await documentsApi.getAll();
+      return response.data;
     },
   });
 }
@@ -16,8 +16,8 @@ export function useDocument(id: string) {
   return useQuery({
     queryKey: ['documents', id],
     queryFn: async () => {
-      const response = await documentsApi.getById(id) as any;
-      return response.data || response;
+      const response = await documentsApi.getById(id);
+      return response.data;
     },
     enabled: !!id,
   });

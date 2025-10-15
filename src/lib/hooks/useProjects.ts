@@ -10,7 +10,7 @@ export function useProjects() {
     queryFn: async () => {
       try {
         const response = await projectsApi.getAll();
-        return response && response.length > 0 ? response : mockProjects;
+        return response.data && response.data.length > 0 ? response.data : mockProjects;
       } catch (error) {
         console.warn('Projects API not available, using mock data');
         return mockProjects;
@@ -22,7 +22,10 @@ export function useProjects() {
 export function useProject(id: string) {
   return useQuery({
     queryKey: ['projects', id],
-    queryFn: () => projectsApi.getById(id),
+    queryFn: async () => {
+      const response = await projectsApi.getById(id);
+      return response.data;
+    },
     enabled: !!id,
   });
 }

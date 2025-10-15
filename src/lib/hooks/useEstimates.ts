@@ -6,8 +6,8 @@ export function useEstimates() {
   return useQuery({
     queryKey: ['estimates'],
     queryFn: async () => {
-      const response = await estimatesApi.getAll() as any;
-      return response.data || response;
+      const response = await estimatesApi.getAll();
+      return response.data;
     },
   });
 }
@@ -16,8 +16,8 @@ export function useEstimate(id: string) {
   return useQuery({
     queryKey: ['estimates', id],
     queryFn: async () => {
-      const response = await estimatesApi.getById(id) as any;
-      return response.data || response;
+      const response = await estimatesApi.getById(id);
+      return response.data;
     },
     enabled: !!id,
   });

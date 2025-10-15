@@ -5,14 +5,20 @@ import { toast } from 'sonner';
 export function useUsers() {
   return useQuery({
     queryKey: ['users'],
-    queryFn: userApi.getAll,
+    queryFn: async () => {
+      const response = await userApi.getAll();
+      return response.data;
+    },
   });
 }
 
 export function useUser(id: string) {
   return useQuery({
     queryKey: ['users', id],
-    queryFn: () => userApi.getById(id),
+    queryFn: async () => {
+      const response = await userApi.getById(id);
+      return response.data;
+    },
     enabled: !!id,
   });
 }

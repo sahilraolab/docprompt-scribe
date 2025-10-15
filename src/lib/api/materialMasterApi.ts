@@ -17,7 +17,7 @@ async function apiCall(endpoint: string, options?: RequestInit) {
     throw new Error(result.message || 'Request failed');
   }
 
-  return result.data || result;
+  return result; // Return full { success, data, message } structure
 }
 
 // Material Master API (Shared across Engineering & Purchase)

@@ -5,14 +5,20 @@ import { toast } from 'sonner';
 export function useBOQs() {
   return useQuery({
     queryKey: ['boqs'],
-    queryFn: boqApi.getAll,
+    queryFn: async () => {
+      const response = await boqApi.getAll();
+      return response.data;
+    },
   });
 }
 
 export function useBOQ(id: string) {
   return useQuery({
     queryKey: ['boqs', id],
-    queryFn: () => boqApi.getById(id),
+    queryFn: async () => {
+      const response = await boqApi.getById(id);
+      return response.data;
+    },
     enabled: !!id,
   });
 }
