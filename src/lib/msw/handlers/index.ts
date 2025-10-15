@@ -17,6 +17,8 @@ import { labourRatesHandlers } from './labour-rates';
 import { auditTrailHandlers } from './audit-trail';
 import { materialRateHandlers } from './material-rates';
 import { materialHandlers } from './materials';
+import { engineeringHandlers } from './engineering';
+import { boqHandlers } from './boq';
 
 export const handlers = [
   ...authHandlers,
@@ -38,4 +40,6 @@ export const handlers = [
   ...auditTrailHandlers,
   ...materialRateHandlers,
   ...materialHandlers,
+  ...engineeringHandlers,
+  ...boqHandlers,
 ];
