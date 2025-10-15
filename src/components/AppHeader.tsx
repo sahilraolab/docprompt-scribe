@@ -18,15 +18,17 @@ export function AppHeader() {
   const navigate = useNavigate();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-full items-center justify-between px-4">
+    <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border/50 bg-background/80 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60 shadow-sm">
+      <div className="flex h-full items-center justify-between px-6">
         <div className="flex items-center gap-4">
-          <SidebarTrigger className="-ml-1" />
+          <SidebarTrigger className="-ml-1 hover:bg-accent/50 transition-colors" />
           <div className="flex items-center gap-3">
-            <Building2Icon className="h-6 w-6 text-primary" />
+            <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-accent shadow-md">
+              <Building2Icon className="h-5 w-5 text-white" />
+            </div>
             <div>
-              <h1 className="text-lg font-semibold">Construction ERP</h1>
-              <Badge variant="outline" className="text-xs">
+              <h1 className="text-lg font-bold tracking-tight">Construction ERP</h1>
+              <Badge variant="outline" className="text-xs font-medium">
                 Mock Environment
               </Badge>
             </div>
@@ -38,40 +40,42 @@ export function AppHeader() {
             variant="ghost"
             size="icon"
             onClick={() => navigate('/notifications')}
-            className="relative"
+            className="relative hover:bg-accent/50 transition-all"
           >
             <Bell className="h-5 w-5" />
-            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
+            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive shadow-lg shadow-destructive/50 animate-pulse" />
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="gap-2">
-                <User className="h-5 w-5" />
-                <span className="hidden md:inline">{user?.name}</span>
+              <Button variant="ghost" className="gap-2 hover:bg-accent/50 transition-all">
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
+                  <User className="h-4 w-4 text-white" />
+                </div>
+                <span className="hidden md:inline font-medium">{user?.name}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-64 shadow-premium-lg">
               <DropdownMenuLabel>
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium">{user?.name}</p>
+                <div className="flex flex-col space-y-2 p-2">
+                  <p className="text-sm font-semibold">{user?.name}</p>
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
-                  <Badge variant="secondary" className="w-fit text-xs">
+                  <Badge variant="secondary" className="w-fit text-xs font-medium shadow-sm">
                     {user?.role}
                   </Badge>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/profile')}>
+              <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
                 <User className="mr-2 h-4 w-4" />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/settings')}>
+              <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer">
                 <SettingsIcon className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout}>
+              <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
               </DropdownMenuItem>
