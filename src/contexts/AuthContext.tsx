@@ -48,26 +48,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (credentials: LoginCredentials) => {
     try {
-      console.log('Attempting login...');
-      const response = await fetch('http://localhost:5005/api/auth/login', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
       });
 
-      console.log('Login response status:', response.status);
-
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Login failed');
+        throw new Error(error.message || 'Login failed');
       }
 
       const data = await response.json();
-      console.log('Login successful, user:', data.user.name);
       
       setUser(data.user);
-      setToken(data.token);
-      localStorage.setItem(TOKEN_KEY, data.token);
+      setToken(data.accessToken);
+      localStorage.setItem(TOKEN_KEY, data.accessToken);
       localStorage.setItem(USER_KEY, JSON.stringify(data.user));
 
       toast.success('Login successful');

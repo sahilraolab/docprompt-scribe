@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useUsers } from '@/lib/hooks/useAdmin';
+import { useNavigate } from 'react-router-dom';
+import { useUsers, useDeleteUser } from '@/lib/hooks/useUsers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -17,7 +18,9 @@ import {
 } from '@/components/ui/table';
 
 export default function UsersList() {
+  const navigate = useNavigate();
   const { data: users, isLoading } = useUsers();
+  const deleteUser = useDeleteUser();
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredUsers = users?.filter((u) =>
@@ -50,7 +53,7 @@ export default function UsersList() {
           <h1 className="text-3xl font-bold">User Management</h1>
           <p className="text-muted-foreground">Manage system users and permissions</p>
         </div>
-        <Button>
+        <Button onClick={() => navigate('/admin/users/new')}>
           <Plus className="h-4 w-4 mr-2" />
           Add User
         </Button>
@@ -86,6 +89,7 @@ export default function UsersList() {
                     <TableRow
                       key={user.id}
                       className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate(`/admin/users/${user.id}`)}
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">
