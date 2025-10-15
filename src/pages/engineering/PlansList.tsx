@@ -21,11 +21,7 @@ import { Progress } from '@/components/ui/progress';
 
 export default function PlansList() {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const { data: plansData, isLoading } = usePlans();
-
-  const plans = plansData?.data || [];
-
+  const { data: plans = [], isLoading } = usePlans();
   const filteredPlans = plans.filter((plan: any) =>
     plan.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     plan.projectId?.name?.toLowerCase().includes(searchQuery.toLowerCase())

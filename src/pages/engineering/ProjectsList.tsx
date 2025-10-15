@@ -22,27 +22,25 @@ import { INDIAN_STATES } from '@/lib/constants';
 
 export default function ProjectsList() {
   const navigate = useNavigate();
-  const { data: projectsData, isLoading } = useProjects();
-  const projects = projectsData?.data || [];
-  
+  const { data: projects = [], isLoading } = useProjects();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [stateFilter, setStateFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
 
   // Filter projects
-  const filteredProjects = projects.filter((project) => {
-    const matchesSearch = 
-      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.city.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    const matchesState = stateFilter === 'all' || project.state === stateFilter;
-    
-    return matchesSearch && matchesStatus && matchesState;
-  }) || [];
+  const filteredProjects = (projects || []).filter((project: any) => {
+    const q = searchQuery.toLowerCase();
+    const name = (project.name || '').toLowerCase();
+    const code = (project.code || '').toLowerCase();
+    const city = (project.city || '').toLowerCase();
+    const matchesSearch = name.includes(q) || code.includes(q) || city.includes(q);
 
+    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+    const matchesState = stateFilter === 'all' || (project.state || '') === stateFilter;
+
+    return matchesSearch && matchesStatus && matchesState;
+  });
   // Sort projects
   const sortedProjects = [...filteredProjects].sort((a, b) => {
     switch (sortBy) {
@@ -55,7 +53,7 @@ export default function ProjectsList() {
       case 'progress':
         return b.progress - a.progress;
       case 'startDate':
-        return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+        return new Date(b.startDate || 0).getTime() - new Date(a.startDate || 0).getTime();
       default:
         return 0;
     }
@@ -76,7 +74,9 @@ export default function ProjectsList() {
       render: (project: any) => (
         <div>
           <p className="font-medium">{project.name}</p>
-          <p className="text-sm text-muted-foreground">{project.city}, {project.state}</p>
+          {(project.city || project.state) ? (
+            <p className="text-sm text-muted-foreground">{project.city || '—'}{project.state ? `, ${project.state}` : ''}</p>
+          ) : null}
         </div>
       ),
     },
@@ -94,7 +94,7 @@ export default function ProjectsList() {
     {
       key: 'spent',
       header: 'Spent',
-      render: (project: any) => formatCurrency(project.spent),
+      render: (project: any) => formatCurrency(project.budgetUtilized ?? project.spent ?? 0),
       className: 'text-right',
     },
     {

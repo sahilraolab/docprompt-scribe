@@ -27,11 +27,7 @@ const buildFileUrl = (u?: string) => {
 
 export default function DocumentsList() {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const { data: documentsData, isLoading } = useDocuments();
-
-  const documents = documentsData?.data || [];
-
+  const { data: documents = [], isLoading } = useDocuments();
   const filteredDocuments = documents.filter((doc: any) =>
     doc.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (doc.projectId?.name || doc.projectName || '')

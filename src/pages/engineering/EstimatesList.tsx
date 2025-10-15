@@ -21,10 +21,7 @@ import { Badge } from '@/components/ui/badge';
 export default function EstimatesList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const { data: estimatesData, isLoading } = useEstimates();
-
-  const estimates = estimatesData?.data || [];
-
+  const { data: estimates = [], isLoading } = useEstimates();
   const filteredEstimates = estimates.filter((est: any) =>
     est.projectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     `v${est.version}`.toLowerCase().includes(searchQuery.toLowerCase())

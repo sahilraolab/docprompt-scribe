@@ -51,7 +51,8 @@ export default function ProjectDetails() {
     );
   }
 
-  const budgetUtilization = (project.spent / project.budget) * 100;
+  const spent = project.budgetUtilized ?? project.spent ?? 0;
+  const budgetUtilization = project.budget ? (spent / project.budget) * 100 : 0;
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
   const API_ORIGIN = (() => { try { return new URL(API_URL).origin; } catch { return (API_URL || '').replace(/\/api$/, ''); } })();
   const buildFileUrl = (u?: string) => {
@@ -92,7 +93,7 @@ export default function ProjectDetails() {
         />
         <KPICard
           title="Spent"
-          value={formatCurrency(project.spent)}
+          value={formatCurrency(spent)}
           icon={TrendingUp}
           description={`${formatPercent(budgetUtilization)} utilized`}
         />
@@ -180,7 +181,7 @@ export default function ProjectDetails() {
                 </div>
                 <div className="flex justify-between mt-2 text-sm">
                   <span className="text-muted-foreground">
-                    Spent: {formatCurrency(project.spent)}
+                    Spent: {formatCurrency(spent)}
                   </span>
                   <span className="text-muted-foreground">
                     Budget: {formatCurrency(project.budget)}
@@ -207,7 +208,7 @@ export default function ProjectDetails() {
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-              ) : estimatesData?.data && estimatesData.data.length > 0 ? (
+              ) : estimatesData && estimatesData.length > 0 ? (
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
@@ -221,7 +222,7 @@ export default function ProjectDetails() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {estimatesData.data.map((est: any) => (
+                      {estimatesData.map((est: any) => (
                         <TableRow key={est._id}>
                           <TableCell className="font-medium">v{est.version}</TableCell>
                           <TableCell>{est.description || 'No description'}</TableCell>
@@ -267,7 +268,7 @@ export default function ProjectDetails() {
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-              ) : documentsData?.data && documentsData.data.length > 0 ? (
+              ) : documentsData && documentsData.length > 0 ? (
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
@@ -281,7 +282,7 @@ export default function ProjectDetails() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {documentsData.data.map((doc: any) => (
+                      {documentsData.map((doc: any) => (
                         <TableRow key={doc._id}>
                           <TableCell className="font-medium">{doc.name}</TableCell>
                           <TableCell>
@@ -343,7 +344,7 @@ export default function ProjectDetails() {
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-              ) : plansData?.data && plansData.data.length > 0 ? (
+              ) : plansData && plansData.length > 0 ? (
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
@@ -357,7 +358,7 @@ export default function ProjectDetails() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {plansData.data.map((plan: any) => (
+                      {plansData.map((plan: any) => (
                         <TableRow key={plan._id}>
                           <TableCell className="font-medium">{plan.name}</TableCell>
                           <TableCell>
