@@ -18,13 +18,13 @@ export function AppHeader() {
   const navigate = useNavigate();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b bg-card shadow-sm">
+    <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b supports-[backdrop-filter]:bg-background/60 bg-background/80 backdrop-blur-xl">
       <div className="flex h-full items-center justify-between px-6">
         <div className="flex items-center gap-4">
           <SidebarTrigger className="-ml-1" />
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg">
-              <Building2 className="h-6 w-6 text-primary-foreground" />
+            <div className="flex items-center justify-center w-11 h-11 rounded-xl border border-border/60 bg-card/40 backdrop-blur-sm">
+              <Building2 className="h-6 w-6 text-primary" />
             </div>
             <div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">

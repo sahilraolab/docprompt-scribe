@@ -118,7 +118,7 @@ export default function ProjectInvestmentsList() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate(`/partners/investments/${inv.id}/view`)}
+          onClick={() => navigate(`/partners/investments/${inv.id}`)}
         >
           <Eye className="h-4 w-4" />
         </Button>

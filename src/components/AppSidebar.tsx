@@ -48,18 +48,17 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r">
-      <SidebarHeader className="h-16 border-b flex items-center px-4">
-        {!collapsed && (
+      <SidebarHeader className="h-16 border-b flex items-center px-4 supports-[backdrop-filter]:bg-background/60 bg-background/80 backdrop-blur-xl">
+        {!collapsed ? (
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80">
-              <Building2 className="h-4 w-4 text-primary-foreground" />
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg border border-border/60 bg-card/40 backdrop-blur-sm">
+              <Building2 className="h-4 w-4 text-primary" />
             </div>
             <span className="font-semibold text-sm">Construction ERP</span>
           </div>
-        )}
-        {collapsed && (
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 mx-auto">
-            <Building2 className="h-4 w-4 text-primary-foreground" />
+        ) : (
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg border border-border/60 bg-card/40 backdrop-blur-sm mx-auto">
+            <Building2 className="h-4 w-4 text-primary" />
           </div>
         )}
       </SidebarHeader>

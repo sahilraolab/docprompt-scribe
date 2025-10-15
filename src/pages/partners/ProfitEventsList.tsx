@@ -124,7 +124,7 @@ export default function ProfitEventsList() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate(`/partners/profit-events/${event.id}/view`)}
+          onClick={() => navigate(`/partners/profit-events/${event.id}`)}
         >
           <Eye className="h-4 w-4" />
         </Button>

@@ -9,13 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { PageHeader } from '@/components/PageHeader';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { SearchableSelect } from '@/components/SearchableSelect';
 import { ArrowLeft, Save } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -114,18 +108,15 @@ export default function PartnerForm() {
 
               <div className="space-y-2">
                 <Label htmlFor="type">Type *</Label>
-                <Select
+                <SearchableSelect
+                  options={[
+                    { value: 'Individual', label: 'Individual' },
+                    { value: 'Company', label: 'Company' },
+                  ]}
                   value={partnerType}
-                  onValueChange={(value) => setValue('type', value as 'Individual' | 'Company')}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Individual">Individual</SelectItem>
-                    <SelectItem value="Company">Company</SelectItem>
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => setValue('type', value as 'Individual' | 'Company')}
+                  placeholder="Select type"
+                />
                 {errors.type && (
                   <p className="text-sm text-destructive">{errors.type.message}</p>
                 )}
