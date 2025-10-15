@@ -40,11 +40,13 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4">
-          <div className="flex items-center justify-center gap-3">
-            <Building2 className="h-10 w-10 text-primary" />
-            <div>
-              <CardTitle className="text-2xl">Construction ERP</CardTitle>
-              <CardDescription className="text-xs">Mock Environment</CardDescription>
+          <div className="flex items-center justify-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 shadow-sm">
+              <Building2 className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div className="text-left">
+              <CardTitle className="text-xl font-semibold">Construction ERP</CardTitle>
+              <CardDescription className="text-[10px]">Mock Environment</CardDescription>
             </div>
           </div>
           <CardDescription>Enter your credentials to access the system</CardDescription>

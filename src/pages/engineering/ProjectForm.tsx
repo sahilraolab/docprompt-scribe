@@ -18,13 +18,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { SearchableSelect } from '@/components/SearchableSelect';
 import { ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -186,20 +179,20 @@ export default function ProjectForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Status *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Planning">Planning</SelectItem>
-                          <SelectItem value="Active">Active</SelectItem>
-                          <SelectItem value="OnHold">On Hold</SelectItem>
-                          <SelectItem value="Completed">Completed</SelectItem>
-                          <SelectItem value="Cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SearchableSelect
+                          options={[
+                            { value: 'Planning', label: 'Planning' },
+                            { value: 'Active', label: 'Active' },
+                            { value: 'OnHold', label: 'On Hold' },
+                            { value: 'Completed', label: 'Completed' },
+                            { value: 'Cancelled', label: 'Cancelled' },
+                          ]}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select status"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -264,18 +257,16 @@ export default function ProjectForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Project Manager *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || currentUserId}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select manager" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem key={currentUserId} value={currentUserId}>
-                            {currentUserName} (You)
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SearchableSelect
+                          options={[
+                            { value: currentUserId, label: `${currentUserName} (You)` },
+                          ]}
+                          value={field.value || currentUserId}
+                          onChange={field.onChange}
+                          placeholder="Select manager"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

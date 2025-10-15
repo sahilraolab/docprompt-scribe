@@ -22,15 +22,13 @@ export function AppHeader() {
       <div className="flex h-full items-center justify-between px-6">
         <div className="flex items-center gap-4">
           <SidebarTrigger className="-ml-1" />
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-11 h-11 rounded-xl border border-border/60 bg-card/40 backdrop-blur-sm">
-              <Building2 className="h-6 w-6 text-primary" />
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 shadow-sm">
+              <Building2 className="h-4 w-4 text-primary-foreground" />
             </div>
-            <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                Construction ERP
-              </h1>
-              <p className="text-xs text-muted-foreground font-medium">Enterprise Resource Planning</p>
+            <div className="flex flex-col leading-none">
+              <h1 className="text-base font-semibold tracking-tight">Construction ERP</h1>
+              <p className="text-[10px] text-muted-foreground">Enterprise Resource Planning</p>
             </div>
           </div>
         </div>

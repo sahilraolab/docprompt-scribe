@@ -15,13 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { SearchableSelect } from '@/components/SearchableSelect';
 import { Switch } from '@/components/ui/switch';
 import { ArrowLeft } from 'lucide-react';
 
@@ -163,22 +157,22 @@ export default function UserForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Role</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Admin">Admin</SelectItem>
-                        <SelectItem value="ProjectManager">Project Manager</SelectItem>
-                        <SelectItem value="PurchaseOfficer">Purchase Officer</SelectItem>
-                        <SelectItem value="SiteEngineer">Site Engineer</SelectItem>
-                        <SelectItem value="Accountant">Accountant</SelectItem>
-                        <SelectItem value="Approver">Approver</SelectItem>
-                        <SelectItem value="Viewer">Viewer</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <SearchableSelect
+                        options={[
+                          { value: 'Admin', label: 'Admin' },
+                          { value: 'ProjectManager', label: 'Project Manager' },
+                          { value: 'PurchaseOfficer', label: 'Purchase Officer' },
+                          { value: 'SiteEngineer', label: 'Site Engineer' },
+                          { value: 'Accountant', label: 'Accountant' },
+                          { value: 'Approver', label: 'Approver' },
+                          { value: 'Viewer', label: 'Viewer' },
+                        ]}
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select a role"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -190,21 +184,21 @@ export default function UserForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Department</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select department" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Engineering">Engineering</SelectItem>
-                        <SelectItem value="Purchase">Purchase</SelectItem>
-                        <SelectItem value="Site">Site</SelectItem>
-                        <SelectItem value="Accounts">Accounts</SelectItem>
-                        <SelectItem value="Contracts">Contracts</SelectItem>
-                        <SelectItem value="Admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <SearchableSelect
+                        options={[
+                          { value: 'Engineering', label: 'Engineering' },
+                          { value: 'Purchase', label: 'Purchase' },
+                          { value: 'Site', label: 'Site' },
+                          { value: 'Accounts', label: 'Accounts' },
+                          { value: 'Contracts', label: 'Contracts' },
+                          { value: 'Admin', label: 'Admin' },
+                        ]}
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select department"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

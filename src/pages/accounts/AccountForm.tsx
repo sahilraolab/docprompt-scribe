@@ -15,13 +15,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { SearchableSelect } from '@/components/SearchableSelect';
 import { Switch } from '@/components/ui/switch';
 import { ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -118,20 +112,20 @@ export default function AccountForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Account Type *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Asset">Asset</SelectItem>
-                          <SelectItem value="Liability">Liability</SelectItem>
-                          <SelectItem value="Equity">Equity</SelectItem>
-                          <SelectItem value="Income">Income</SelectItem>
-                          <SelectItem value="Expense">Expense</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SearchableSelect
+                          options={[
+                            { value: 'Asset', label: 'Asset' },
+                            { value: 'Liability', label: 'Liability' },
+                            { value: 'Equity', label: 'Equity' },
+                            { value: 'Income', label: 'Income' },
+                            { value: 'Expense', label: 'Expense' },
+                          ]}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select type"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -158,21 +152,20 @@ export default function AccountForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Parent Account</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select parent account (optional)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="">None (Top Level)</SelectItem>
-                        {parentAccounts.map((account) => (
-                          <SelectItem key={account.id} value={account.id}>
-                            {account.code} - {account.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <SearchableSelect
+                        options={[
+                          { value: '', label: 'None (Top Level)' },
+                          ...parentAccounts.map((account) => ({
+                            value: account.id,
+                            label: `${account.code} - ${account.name}`,
+                          })),
+                        ]}
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select parent account (optional)"
+                      />
+                    </FormControl>
                     <FormDescription>
                       Create sub-accounts by selecting a parent
                     </FormDescription>

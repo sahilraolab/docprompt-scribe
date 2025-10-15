@@ -20,6 +20,7 @@ import MaterialMasterList from "./pages/engineering/MaterialMasterList";
 import MaterialMasterForm from "./pages/engineering/MaterialMasterForm";
 import BOQList from "./pages/engineering/BOQList";
 import BOQDetails from "./pages/engineering/BOQDetails";
+import BOQForm from "./pages/engineering/BOQForm";
 import EstimatesList from "./pages/engineering/EstimatesList";
 import EstimateForm from "./pages/engineering/EstimateForm";
 import DocumentsList from "./pages/engineering/DocumentsList";
@@ -160,6 +161,8 @@ const App = () => (
             <Route path="/engineering/materials/new" element={<ProtectedRoute><AppLayout><MaterialMasterForm /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/materials/:id" element={<ProtectedRoute><AppLayout><MaterialMasterForm /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/boq" element={<ProtectedRoute><AppLayout><BOQList /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/boq/new" element={<ProtectedRoute><AppLayout><BOQForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/boq/:id/edit" element={<ProtectedRoute><AppLayout><BOQForm /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/boq/:id" element={<ProtectedRoute><AppLayout><BOQDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/estimates" element={<ProtectedRoute><AppLayout><EstimatesList /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/estimates/new" element={<ProtectedRoute><AppLayout><EstimateForm /></AppLayout></ProtectedRoute>} />

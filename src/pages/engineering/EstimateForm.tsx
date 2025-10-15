@@ -16,13 +16,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { SearchableSelect } from '@/components/SearchableSelect';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus, Trash, Loader2 } from 'lucide-react';
@@ -279,25 +272,16 @@ export default function EstimateForm() {
                       />
                     </div>
 
-                    <Select
+                    <SearchableSelect
+                      options={itemTypes.map(type => ({ value: type, label: type }))}
                       value={item.type}
-                      onValueChange={(value) => {
+                      onChange={(value) => {
                         const newItems = [...items];
                         newItems[index].type = value as 'Material' | 'Labour' | 'Equipment' | 'Overhead';
                         setItems(newItems);
                       }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {itemTypes.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select type"
+                    />
 
                     <SearchableSelect
                       options={units.map(unit => ({ value: unit, label: unit }))}
