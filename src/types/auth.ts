@@ -22,9 +22,12 @@ export interface User {
   email: string;
   phone?: string;
   role: Role;
+  department?: 'Engineering' | 'Purchase' | 'Site' | 'Accounts' | 'Contracts' | 'Admin';
   avatarUrl?: string;
   active: boolean;
   preferences?: UserPrefs;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AuthState {

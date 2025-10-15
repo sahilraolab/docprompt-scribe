@@ -26,7 +26,8 @@ export default function UsersList() {
   const filteredUsers = users?.filter((u) =>
     u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.role.toLowerCase().includes(searchQuery.toLowerCase())
+    u.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.department?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const getRoleColor = (role: string) => {

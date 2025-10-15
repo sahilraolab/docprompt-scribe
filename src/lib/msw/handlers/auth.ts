@@ -12,18 +12,52 @@ export const authHandlers = [
 
     if (!user || password !== MOCK_PASSWORD) {
       return HttpResponse.json(
-        { error: 'Invalid credentials' },
+        { success: false, message: 'Invalid credentials' },
         { status: 401 }
       );
     }
 
-    // Mock token
-    const token = btoa(`${user.id}:${Date.now()}`);
+    // Mock tokens
+    const accessToken = btoa(`${user.id}:${Date.now()}`);
+    const refreshToken = btoa(`refresh:${user.id}:${Date.now()}`);
 
     return HttpResponse.json({
+      success: true,
+      accessToken,
+      refreshToken,
       user,
-      token,
     });
+  }),
+
+  http.post('/api/auth/refresh', async ({ request }) => {
+    const body = await request.json() as { refreshToken: string };
+    
+    try {
+      const decoded = atob(body.refreshToken);
+      const userId = decoded.split(':')[1];
+      const user = findUserById(userId);
+
+      if (!user) {
+        return HttpResponse.json(
+          { success: false, message: 'Invalid refresh token' },
+          { status: 401 }
+        );
+      }
+
+      const accessToken = btoa(`${user.id}:${Date.now()}`);
+      const refreshToken = btoa(`refresh:${user.id}:${Date.now()}`);
+
+      return HttpResponse.json({
+        success: true,
+        accessToken,
+        refreshToken,
+      });
+    } catch {
+      return HttpResponse.json(
+        { success: false, message: 'Invalid refresh token' },
+        { status: 401 }
+      );
+    }
   }),
 
   http.get('/api/auth/me', ({ request }) => {

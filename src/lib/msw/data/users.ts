@@ -7,6 +7,7 @@ export const users: User[] = [
     email: 'admin@erp.local',
     phone: '+91 98765 43210',
     role: 'Admin',
+    department: 'Admin',
     avatarUrl: undefined,
     active: true,
     preferences: {
@@ -22,6 +23,7 @@ export const users: User[] = [
     email: 'pm@erp.local',
     phone: '+91 98765 43211',
     role: 'ProjectManager',
+    department: 'Engineering',
     active: true,
     preferences: {
       timezone: 'Asia/Kolkata',
@@ -35,6 +37,7 @@ export const users: User[] = [
     email: 'po@erp.local',
     phone: '+91 98765 43212',
     role: 'PurchaseOfficer',
+    department: 'Purchase',
     active: true,
     preferences: {
       timezone: 'Asia/Kolkata',
@@ -48,6 +51,7 @@ export const users: User[] = [
     email: 'se@erp.local',
     phone: '+91 98765 43213',
     role: 'SiteEngineer',
+    department: 'Site',
     active: true,
     preferences: {
       timezone: 'Asia/Kolkata',
@@ -61,6 +65,7 @@ export const users: User[] = [
     email: 'acc@erp.local',
     phone: '+91 98765 43214',
     role: 'Accountant',
+    department: 'Accounts',
     active: true,
     preferences: {
       timezone: 'Asia/Kolkata',
@@ -74,6 +79,7 @@ export const users: User[] = [
     email: 'apr@erp.local',
     phone: '+91 98765 43215',
     role: 'Approver',
+    department: 'Admin',
     active: true,
     preferences: {
       timezone: 'Asia/Kolkata',

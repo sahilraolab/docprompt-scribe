@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useAuditTrail } from '@/lib/hooks/useAudit';
 import { Input } from '@/components/ui/input';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/EmptyState';
 import { formatDateTime } from '@/lib/utils/format';
@@ -25,76 +27,23 @@ export default function AuditTrailList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [actionFilter, setActionFilter] = useState('all');
 
-  // Mock data
-  const auditLogs = [
-    {
-      id: '1',
-      timestamp: '2024-01-20T14:30:00',
-      user: 'John Doe',
-      action: 'Create',
-      module: 'Purchase',
-      entity: 'Material Requisition',
-      entityId: 'MR-2024-001',
-      ipAddress: '192.168.1.10',
-      details: 'Created new MR for Green Valley project',
-    },
-    {
-      id: '2',
-      timestamp: '2024-01-20T15:45:00',
-      user: 'Jane Smith',
-      action: 'Approve',
-      module: 'Purchase',
-      entity: 'Purchase Order',
-      entityId: 'PO-2024-001',
-      ipAddress: '192.168.1.15',
-      details: 'Approved PO for ABC Suppliers',
-    },
-    {
-      id: '3',
-      timestamp: '2024-01-20T16:20:00',
-      user: 'Mike Johnson',
-      action: 'Update',
-      module: 'Contracts',
-      entity: 'Work Order',
-      entityId: 'WO-2024-001',
-      ipAddress: '192.168.1.12',
-      details: 'Updated WO amount and delivery date',
-    },
-    {
-      id: '4',
-      timestamp: '2024-01-20T17:10:00',
-      user: 'Sarah Lee',
-      action: 'Delete',
-      module: 'Site',
-      entity: 'Stock Item',
-      entityId: 'ITEM-045',
-      ipAddress: '192.168.1.20',
-      details: 'Deleted obsolete stock item',
-    },
-    {
-      id: '5',
-      timestamp: '2024-01-20T18:00:00',
-      user: 'Admin User',
-      action: 'Create',
-      module: 'Admin',
-      entity: 'User',
-      entityId: 'USR-025',
-      ipAddress: '192.168.1.5',
-      details: 'Created new user account for contractor',
-    },
-  ];
+  const { data: auditLogs = [], isLoading } = useAuditTrail();
 
-  const filteredLogs = auditLogs.filter((log) => {
+  const filteredLogs = auditLogs.filter((log: any) => {
     const matchesSearch =
-      log.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      log.entity.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      log.entityId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      log.details.toLowerCase().includes(searchQuery.toLowerCase());
+      log.userName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      log.entityType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      log.entityId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      log.module?.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesAction = actionFilter === 'all' || log.action === actionFilter;
 
     return matchesSearch && matchesAction;
   });
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
 
   const getActionBadgeColor = (action: string) => {
     switch (action) {
@@ -161,19 +110,19 @@ export default function AuditTrailList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredLogs.map((log) => (
+                  {filteredLogs.map((log: any) => (
                     <TableRow key={log.id}>
                       <TableCell className="font-medium">
                         {formatDateTime(log.timestamp)}
                       </TableCell>
-                      <TableCell>{log.user}</TableCell>
+                      <TableCell>{log.userName}</TableCell>
                       <TableCell>
                         <Badge className={getActionBadgeColor(log.action)} variant="secondary">
                           {log.action}
                         </Badge>
                       </TableCell>
                       <TableCell>{log.module}</TableCell>
-                      <TableCell>{log.entity}</TableCell>
+                      <TableCell>{log.entityType}</TableCell>
                       <TableCell className="font-mono text-sm">{log.entityId}</TableCell>
                       <TableCell className="font-mono text-sm">{log.ipAddress}</TableCell>
                       <TableCell className="max-w-md truncate">{log.details}</TableCell>
