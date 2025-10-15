@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useChangePassword } from '@/lib/hooks/useProfile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,9 +22,30 @@ import {
 import { formatDate } from '@/lib/utils/format';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
+import { useNavigate } from 'react-router-dom';
 
 export default function UserProfile() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const changePassword = useChangePassword();
+  
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      return;
+    }
+    await changePassword.mutateAsync({
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword,
+    });
+    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  };
 
   // Mock additional user data
   const userData = {
@@ -77,7 +100,7 @@ export default function UserProfile() {
                   {userData.department}
                 </Badge>
               </div>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={() => navigate('/profile/edit')}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Profile
               </Button>
@@ -131,35 +154,36 @@ export default function UserProfile() {
               </TabsList>
 
               <TabsContent value="general" className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Full Name</Label>
-                    <Input defaultValue={userData.name} />
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    View your profile information. Click "Edit Profile" above to make changes.
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Full Name</Label>
+                      <Input defaultValue={userData.name} disabled />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Employee ID</Label>
+                      <Input defaultValue={userData.employeeId} disabled />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <Input type="email" defaultValue={userData.email} disabled />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Phone</Label>
+                      <Input defaultValue={userData.phone} disabled />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Department</Label>
+                      <Input defaultValue={userData.department} disabled />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Role</Label>
+                      <Input defaultValue={userData.role} disabled />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Employee ID</Label>
-                    <Input defaultValue={userData.employeeId} disabled />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input type="email" defaultValue={userData.email} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Phone</Label>
-                    <Input defaultValue={userData.phone} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Department</Label>
-                    <Input defaultValue={userData.department} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Role</Label>
-                    <Input defaultValue={userData.role} disabled />
-                  </div>
-                </div>
-                <div className="flex gap-4 pt-4">
-                  <Button>Save Changes</Button>
-                  <Button variant="outline">Cancel</Button>
                 </div>
               </TabsContent>
 
@@ -169,23 +193,47 @@ export default function UserProfile() {
                     <CardTitle className="text-base">Change Password</CardTitle>
                     <CardDescription>Update your password to keep your account secure</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Current Password</Label>
-                      <Input type="password" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>New Password</Label>
-                      <Input type="password" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Confirm New Password</Label>
-                      <Input type="password" />
-                    </div>
-                    <Button>
-                      <Key className="h-4 w-4 mr-2" />
-                      Update Password
-                    </Button>
+                  <CardContent>
+                    <form onSubmit={handlePasswordChange} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="currentPassword">Current Password</Label>
+                        <Input
+                          id="currentPassword"
+                          type="password"
+                          value={passwordData.currentPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="newPassword">New Password</Label>
+                        <Input
+                          id="newPassword"
+                          type="password"
+                          value={passwordData.newPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                        <Input
+                          id="confirmPassword"
+                          type="password"
+                          value={passwordData.confirmPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                          required
+                        />
+                      </div>
+                      {passwordData.newPassword && passwordData.confirmPassword && 
+                       passwordData.newPassword !== passwordData.confirmPassword && (
+                        <p className="text-sm text-destructive">Passwords do not match</p>
+                      )}
+                      <Button type="submit" disabled={changePassword.isPending}>
+                        <Key className="h-4 w-4 mr-2" />
+                        {changePassword.isPending ? 'Updating...' : 'Update Password'}
+                      </Button>
+                    </form>
                   </CardContent>
                 </Card>
 
@@ -199,12 +247,13 @@ export default function UserProfile() {
                       <span className="font-medium">{formatDate(userData.lastLogin)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Active Sessions:</span>
-                      <span className="font-medium">1</span>
+                      <span className="text-muted-foreground">Session Status:</span>
+                      <Badge variant="secondary">Active</Badge>
                     </div>
-                    <Button variant="destructive" size="sm" className="mt-4">
-                      Sign Out All Devices
-                    </Button>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Login Time:</span>
+                      <span className="font-medium">{formatDate(new Date().toISOString())}</span>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>

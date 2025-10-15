@@ -1,5 +1,6 @@
 import { authHandlers } from './auth';
 import { userHandlers } from './users';
+import { profileHandlers } from './profile';
 import { projectHandlers } from './projects';
 import { supplierHandlers } from './suppliers';
 import { purchaseHandlers } from './purchase';
@@ -20,6 +21,7 @@ import { materialHandlers } from './materials';
 export const handlers = [
   ...authHandlers,
   ...userHandlers,
+  ...profileHandlers,
   ...projectHandlers,
   ...supplierHandlers,
   ...purchaseHandlers,

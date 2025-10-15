@@ -5,7 +5,13 @@ export const useNotifications = () => {
   return useQuery<Notification[]>({
     queryKey: ['notifications'],
     queryFn: async () => {
-      const res = await fetch('/api/notifications');
+      const token = localStorage.getItem('erp_auth_token');
+      const res = await fetch('/api/notifications', {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        credentials: 'include',
+      });
       const data = await res.json();
       return data.data;
     },
@@ -17,8 +23,13 @@ export const useMarkNotificationRead = () => {
   
   return useMutation({
     mutationFn: async (id: string) => {
+      const token = localStorage.getItem('erp_auth_token');
       const res = await fetch(`/api/notifications/${id}/read`, {
-        method: 'POST',
+        method: 'PATCH',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        credentials: 'include',
       });
       return res.json();
     },

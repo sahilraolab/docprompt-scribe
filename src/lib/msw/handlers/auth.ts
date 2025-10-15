@@ -17,23 +17,37 @@ export const authHandlers = [
       );
     }
 
-    // Mock tokens
     const accessToken = btoa(`${user.id}:${Date.now()}`);
     const refreshToken = btoa(`refresh:${user.id}:${Date.now()}`);
 
-    return HttpResponse.json({
-      success: true,
-      accessToken,
-      refreshToken,
-      user,
-    });
+    return new HttpResponse(
+      JSON.stringify({
+        success: true,
+        accessToken,
+        user,
+      }),
+      {
+        status: 200,
+        headers: {
+          'Set-Cookie': `refreshToken=${refreshToken}; HttpOnly; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=Lax`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
   }),
 
-  http.post('/api/auth/refresh', async ({ request }) => {
-    const body = await request.json() as { refreshToken: string };
+  http.post('/api/auth/refresh', async ({ request, cookies }) => {
+    const refreshToken = cookies.refreshToken;
+    
+    if (!refreshToken) {
+      return HttpResponse.json(
+        { success: false, message: 'No refresh token provided' },
+        { status: 401 }
+      );
+    }
     
     try {
-      const decoded = atob(body.refreshToken);
+      const decoded = atob(refreshToken);
       const userId = decoded.split(':')[1];
       const user = findUserById(userId);
 
@@ -45,13 +59,21 @@ export const authHandlers = [
       }
 
       const accessToken = btoa(`${user.id}:${Date.now()}`);
-      const refreshToken = btoa(`refresh:${user.id}:${Date.now()}`);
+      const newRefreshToken = btoa(`refresh:${user.id}:${Date.now()}`);
 
-      return HttpResponse.json({
-        success: true,
-        accessToken,
-        refreshToken,
-      });
+      return new HttpResponse(
+        JSON.stringify({
+          success: true,
+          accessToken,
+        }),
+        {
+          status: 200,
+          headers: {
+            'Set-Cookie': `refreshToken=${newRefreshToken}; HttpOnly; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=Lax`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
     } catch {
       return HttpResponse.json(
         { success: false, message: 'Invalid refresh token' },
@@ -82,6 +104,15 @@ export const authHandlers = [
   }),
 
   http.post('/api/auth/logout', () => {
-    return HttpResponse.json({ success: true });
+    return new HttpResponse(
+      JSON.stringify({ success: true }),
+      {
+        status: 200,
+        headers: {
+          'Set-Cookie': 'refreshToken=; HttpOnly; Path=/; Max-Age=0',
+          'Content-Type': 'application/json',
+        },
+      }
+    );
   }),
 ];

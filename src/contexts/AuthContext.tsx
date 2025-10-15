@@ -52,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Include cookies
         body: JSON.stringify(credentials),
       });
 
@@ -61,8 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(result.message || 'Login failed');
       }
 
-      // Backend returns tokens at top level (not nested in data)
-      const { accessToken, refreshToken, user } = result;
+      const { accessToken, user } = result;
       
       if (!accessToken || !user) {
         throw new Error('Invalid response from server');
@@ -72,10 +72,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(accessToken);
       localStorage.setItem(TOKEN_KEY, accessToken);
       localStorage.setItem(USER_KEY, JSON.stringify(user));
-      
-      if (refreshToken) {
-        localStorage.setItem('erp_refresh_token', refreshToken);
-      }
 
       toast.success('Login successful');
       navigate('/dashboard');
@@ -86,7 +82,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+      await fetch(`${API_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    
     setUser(null);
     setToken(null);
     localStorage.removeItem(TOKEN_KEY);

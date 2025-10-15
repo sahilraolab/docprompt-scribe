@@ -4,6 +4,7 @@ async function apiCall(endpoint: string, options?: RequestInit) {
   const token = localStorage.getItem('erp_auth_token');
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': token ? `Bearer ${token}` : '',

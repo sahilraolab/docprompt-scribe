@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Forbidden from "./pages/Forbidden";
 import UserProfile from "./pages/profile/UserProfile";
+import ProfileEdit from "./pages/profile/ProfileEdit";
 
 // Engineering
 import EngineeringIndex from "./pages/engineering/index";
@@ -295,6 +296,7 @@ const App = () => (
 
             {/* Profile */}
             <Route path="/profile" element={<ProtectedRoute><AppLayout><UserProfile /></AppLayout></ProtectedRoute>} />
+            <Route path="/profile/edit" element={<ProtectedRoute><AppLayout><ProfileEdit /></AppLayout></ProtectedRoute>} />
             
             {/* Error Pages */}
             <Route path="/403" element={<Forbidden />} />
