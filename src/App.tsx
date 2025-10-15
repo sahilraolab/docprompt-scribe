@@ -102,6 +102,13 @@ import UsersList from "./pages/admin/UsersList";
 import UserForm from "./pages/admin/UserForm";
 import AuditTrailList from "./pages/admin/AuditTrailList";
 
+// Partners
+import PartnersIndex from "./pages/partners/index";
+import PartnersList from "./pages/partners/PartnersList";
+import PartnerForm from "./pages/partners/PartnerForm";
+import ProjectInvestmentsList from "./pages/partners/ProjectInvestmentsList";
+import ProfitEventsList from "./pages/partners/ProfitEventsList";
+
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -264,6 +271,14 @@ const App = () => (
             {/* Settings */}
             <Route path="/settings" element={<ProtectedRoute><AppLayout><Settings /></AppLayout></ProtectedRoute>} />
             <Route path="/settings/general" element={<ProtectedRoute><AppLayout><SettingsPage /></AppLayout></ProtectedRoute>} />
+            
+            {/* Partners */}
+            <Route path="/partners" element={<ProtectedRoute><AppLayout><PartnersIndex /></AppLayout></ProtectedRoute>} />
+            <Route path="/partners/list" element={<ProtectedRoute><AppLayout><PartnersList /></AppLayout></ProtectedRoute>} />
+            <Route path="/partners/list/new" element={<ProtectedRoute><AppLayout><PartnerForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/partners/list/:id" element={<ProtectedRoute><AppLayout><PartnerForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/partners/investments" element={<ProtectedRoute><AppLayout><ProjectInvestmentsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/partners/profit-events" element={<ProtectedRoute><AppLayout><ProfitEventsList /></AppLayout></ProtectedRoute>} />
             
             {/* Profile */}
             <Route path="/profile" element={<ProtectedRoute><AppLayout><UserProfile /></AppLayout></ProtectedRoute>} />

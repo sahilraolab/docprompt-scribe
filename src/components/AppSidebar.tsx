@@ -10,6 +10,7 @@ import {
   Settings,
   Bell,
   Users,
+  TrendingUp,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -30,6 +31,7 @@ const mainNav = [
   { title: 'Contracts', url: '/contracts', icon: FileText },
   { title: 'Site & Inventory', url: '/site', icon: Package },
   { title: 'Accounts', url: '/accounts', icon: Calculator },
+  { title: 'Partners', url: '/partners', icon: TrendingUp },
   { title: 'Workflow', url: '/workflow', icon: GitBranch },
 ];
 
