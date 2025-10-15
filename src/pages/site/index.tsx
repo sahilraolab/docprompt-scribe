@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Warehouse, PackageCheck, Send, ArrowRightLeft, ClipboardCheck } from 'lucide-react';
+import { Package, Warehouse, PackageCheck, Send, ArrowRightLeft, ClipboardCheck, TrendingDown, AlertTriangle } from 'lucide-react';
+import { KPICard } from '@/components/KPICard';
 
 export default function SiteIndex() {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ export default function SiteIndex() {
       icon: Package,
       path: '/site/items',
       color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
     },
     {
       title: 'Stock',
@@ -19,6 +21,7 @@ export default function SiteIndex() {
       icon: Warehouse,
       path: '/site/stock',
       color: 'text-green-600',
+      bgColor: 'bg-green-50',
     },
     {
       title: 'GRN',
@@ -26,6 +29,7 @@ export default function SiteIndex() {
       icon: PackageCheck,
       path: '/site/grn',
       color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
     },
     {
       title: 'Issues',
@@ -33,6 +37,7 @@ export default function SiteIndex() {
       icon: Send,
       path: '/site/issues',
       color: 'text-amber-600',
+      bgColor: 'bg-amber-50',
     },
     {
       title: 'Transfers',
@@ -40,6 +45,7 @@ export default function SiteIndex() {
       icon: ArrowRightLeft,
       path: '/site/transfers',
       color: 'text-cyan-600',
+      bgColor: 'bg-cyan-50',
     },
     {
       title: 'Quality Control',
@@ -47,6 +53,7 @@ export default function SiteIndex() {
       icon: ClipboardCheck,
       path: '/site/qc',
       color: 'text-rose-600',
+      bgColor: 'bg-rose-50',
     },
   ];
 
@@ -54,25 +61,56 @@ export default function SiteIndex() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Site & Store Management</h1>
-        <p className="text-muted-foreground">Inventory and material management</p>
+        <p className="text-muted-foreground mt-1">Inventory and material management</p>
       </div>
 
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <KPICard
+          title="Total Items"
+          value="342"
+          description="In catalog"
+          icon={Package}
+        />
+        <KPICard
+          title="Stock Value"
+          value="₹42.5L"
+          description="Current inventory"
+          icon={Warehouse}
+        />
+        <KPICard
+          title="Low Stock Items"
+          value="15"
+          description="Below reorder level"
+          icon={AlertTriangle}
+        />
+        <KPICard
+          title="Pending GRNs"
+          value="8"
+          description="Awaiting receipt"
+          icon={TrendingDown}
+        />
+      </div>
+
+      {/* Module Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {modules.map((module) => (
           <Card
             key={module.path}
-            className="cursor-pointer hover:shadow-lg transition-shadow"
+            className="cursor-pointer hover:shadow-md transition-all"
             onClick={() => navigate(module.path)}
           >
             <CardHeader>
               <div className="flex items-center gap-3">
-                <module.icon className={`h-8 w-8 ${module.color}`} />
-                <CardTitle className="text-lg">{module.title}</CardTitle>
+                <div className={`p-3 rounded-lg ${module.bgColor}`}>
+                  <module.icon className={`h-6 w-6 ${module.color}`} />
+                </div>
+                <div className="flex-1">
+                  <CardTitle className="text-base">{module.title}</CardTitle>
+                  <CardDescription className="text-sm mt-1">{module.description}</CardDescription>
+                </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <CardDescription>{module.description}</CardDescription>
-            </CardContent>
           </Card>
         ))}
       </div>

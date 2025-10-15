@@ -1,4 +1,4 @@
-import { Bell, User, LogOut, Settings as SettingsIcon } from 'lucide-react';
+import { Bell, User, LogOut, Settings as SettingsIcon, Building2 } from 'lucide-react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,14 +18,16 @@ export function AppHeader() {
   const navigate = useNavigate();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-full items-center justify-between px-4">
+    <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b bg-card shadow-sm">
+      <div className="flex h-full items-center justify-between px-6">
         <div className="flex items-center gap-4">
           <SidebarTrigger className="-ml-1" />
           <div className="flex items-center gap-3">
-            <Building2Icon className="h-6 w-6 text-primary" />
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary">
+              <Building2 className="h-5 w-5 text-primary-foreground" />
+            </div>
             <div>
-              <h1 className="text-lg font-semibold">Construction ERP</h1>
+              <h1 className="text-lg font-bold text-foreground">Construction ERP</h1>
               <Badge variant="outline" className="text-xs">
                 Mock Environment
               </Badge>
@@ -41,14 +43,16 @@ export function AppHeader() {
             className="relative"
           >
             <Bell className="h-5 w-5" />
-            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
+            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive" />
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="gap-2">
-                <User className="h-5 w-5" />
-                <span className="hidden md:inline">{user?.name}</span>
+                <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                  <User className="h-4 w-4 text-primary-foreground" />
+                </div>
+                <span className="hidden md:inline font-medium">{user?.name}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -56,7 +60,7 @@ export function AppHeader() {
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium">{user?.name}</p>
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
-                  <Badge variant="secondary" className="w-fit text-xs">
+                  <Badge variant="secondary" className="w-fit text-xs mt-1">
                     {user?.role}
                   </Badge>
                 </div>
@@ -71,7 +75,7 @@ export function AppHeader() {
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout}>
+              <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
               </DropdownMenuItem>
@@ -80,30 +84,5 @@ export function AppHeader() {
         </div>
       </div>
     </header>
-  );
-}
-
-function Building2Icon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
-      <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" />
-      <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" />
-      <path d="M10 6h4" />
-      <path d="M10 10h4" />
-      <path d="M10 14h4" />
-      <path d="M10 18h4" />
-    </svg>
   );
 }
