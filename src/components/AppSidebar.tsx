@@ -21,6 +21,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarHeader,
   useSidebar,
 } from '@/components/ui/sidebar';
 
@@ -47,7 +48,22 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r">
-      <SidebarContent className="mt-16">
+      <SidebarHeader className="h-16 border-b flex items-center px-4">
+        {!collapsed && (
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80">
+              <Building2 className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <span className="font-semibold text-sm">Construction ERP</span>
+          </div>
+        )}
+        {collapsed && (
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 mx-auto">
+            <Building2 className="h-4 w-4 text-primary-foreground" />
+          </div>
+        )}
+      </SidebarHeader>
+      <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>

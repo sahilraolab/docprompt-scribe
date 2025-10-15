@@ -107,7 +107,9 @@ import PartnersIndex from "./pages/partners/index";
 import PartnersList from "./pages/partners/PartnersList";
 import PartnerForm from "./pages/partners/PartnerForm";
 import ProjectInvestmentsList from "./pages/partners/ProjectInvestmentsList";
+import ProjectInvestmentForm from "./pages/partners/ProjectInvestmentForm";
 import ProfitEventsList from "./pages/partners/ProfitEventsList";
+import ProfitEventForm from "./pages/partners/ProfitEventForm";
 
 const queryClient = new QueryClient();
 
@@ -278,7 +280,11 @@ const App = () => (
             <Route path="/partners/list/new" element={<ProtectedRoute><AppLayout><PartnerForm /></AppLayout></ProtectedRoute>} />
             <Route path="/partners/list/:id" element={<ProtectedRoute><AppLayout><PartnerForm /></AppLayout></ProtectedRoute>} />
             <Route path="/partners/investments" element={<ProtectedRoute><AppLayout><ProjectInvestmentsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/partners/investments/new" element={<ProtectedRoute><AppLayout><ProjectInvestmentForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/partners/investments/:id" element={<ProtectedRoute><AppLayout><ProjectInvestmentForm /></AppLayout></ProtectedRoute>} />
             <Route path="/partners/profit-events" element={<ProtectedRoute><AppLayout><ProfitEventsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/partners/profit-events/new" element={<ProtectedRoute><AppLayout><ProfitEventForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/partners/profit-events/:id" element={<ProtectedRoute><AppLayout><ProfitEventForm /></AppLayout></ProtectedRoute>} />
             
             {/* Profile */}
             <Route path="/profile" element={<ProtectedRoute><AppLayout><UserProfile /></AppLayout></ProtectedRoute>} />
