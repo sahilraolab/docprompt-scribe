@@ -230,10 +230,24 @@ export default function MRForm() {
 
                   <div className="space-y-2">
                     <Label>UOM *</Label>
-                    <Input
+                    <SearchableSelect
+                      options={[
+                        { value: 'Nos', label: 'Nos' },
+                        { value: 'Kgs', label: 'Kgs' },
+                        { value: 'MT', label: 'MT' },
+                        { value: 'Ltr', label: 'Ltr' },
+                        { value: 'Sqm', label: 'Sqm' },
+                        { value: 'Cum', label: 'Cum' },
+                        { value: 'Bag', label: 'Bag' },
+                        { value: 'Box', label: 'Box' },
+                        { value: 'Bundle', label: 'Bundle' },
+                        { value: 'Roll', label: 'Roll' },
+                        { value: 'Feet', label: 'Feet' },
+                        { value: 'Meter', label: 'Meter' },
+                      ]}
                       value={item.uom}
-                      onChange={(e) => updateItem(index, 'uom', e.target.value)}
-                      placeholder="Unit of measurement"
+                      onChange={(value) => updateItem(index, 'uom', value)}
+                      placeholder="Select UOM"
                     />
                   </div>
 

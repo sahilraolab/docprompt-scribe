@@ -299,25 +299,16 @@ export default function EstimateForm() {
                       </SelectContent>
                     </Select>
 
-                    <Select
+                    <SearchableSelect
+                      options={units.map(unit => ({ value: unit, label: unit }))}
                       value={item.unit}
-                      onValueChange={(value) => {
+                      onChange={(value) => {
                         const newItems = [...items];
                         newItems[index].unit = value;
                         setItems(newItems);
                       }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Unit" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {units.map((unit) => (
-                          <SelectItem key={unit} value={unit}>
-                            {unit}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select unit"
+                    />
 
                     <Input
                       type="number"

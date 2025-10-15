@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/SearchableSelect';
 import { Switch } from '@/components/ui/switch';
 import { PageHeader } from '@/components/PageHeader';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
@@ -114,16 +114,12 @@ const MaterialMasterForm = () => {
 
             <div className="space-y-2">
               <Label htmlFor="category">Category *</Label>
-              <Select value={form.watch('category')} onValueChange={(value) => form.setValue('category', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                options={categories.map(cat => ({ value: cat, label: cat }))}
+                value={form.watch('category')}
+                onChange={(value) => form.setValue('category', value)}
+                placeholder="Select category"
+              />
               {form.formState.errors.category && (
                 <p className="text-sm text-destructive">{form.formState.errors.category.message}</p>
               )}
@@ -136,16 +132,12 @@ const MaterialMasterForm = () => {
 
             <div className="space-y-2">
               <Label htmlFor="uom">UOM *</Label>
-              <Select value={form.watch('uom')} onValueChange={(value) => form.setValue('uom', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select UOM" />
-                </SelectTrigger>
-                <SelectContent>
-                  {uoms.map((uom) => (
-                    <SelectItem key={uom} value={uom}>{uom}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                options={uoms.map(uom => ({ value: uom, label: uom }))}
+                value={form.watch('uom')}
+                onChange={(value) => form.setValue('uom', value)}
+                placeholder="Select UOM"
+              />
             </div>
 
             <div className="space-y-2">

@@ -111,6 +111,7 @@ import ProjectInvestmentForm from "./pages/partners/ProjectInvestmentForm";
 import ProfitEventsList from "./pages/partners/ProfitEventsList";
 import ProfitEventForm from "./pages/partners/ProfitEventForm";
 import DistributionsList from "./pages/partners/DistributionsList";
+import DistributionDetails from "./pages/partners/DistributionDetails";
 
 const queryClient = new QueryClient();
 
@@ -287,7 +288,8 @@ const App = () => (
             <Route path="/partners/profit-events/new" element={<ProtectedRoute><AppLayout><ProfitEventForm /></AppLayout></ProtectedRoute>} />
             <Route path="/partners/profit-events/:id" element={<ProtectedRoute><AppLayout><ProfitEventForm /></AppLayout></ProtectedRoute>} />
             <Route path="/partners/distributions" element={<ProtectedRoute><AppLayout><DistributionsList /></AppLayout></ProtectedRoute>} />
-            
+            <Route path="/partners/distributions/:id" element={<ProtectedRoute><AppLayout><DistributionDetails /></AppLayout></ProtectedRoute>} />
+
             {/* Profile */}
             <Route path="/profile" element={<ProtectedRoute><AppLayout><UserProfile /></AppLayout></ProtectedRoute>} />
             
