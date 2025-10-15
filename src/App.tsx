@@ -101,6 +101,7 @@ import SLAForm from "./pages/workflow/SLAForm";
 import Admin from "./pages/admin/index";
 import UsersList from "./pages/admin/UsersList";
 import UserForm from "./pages/admin/UserForm";
+import UserDetails from "./pages/admin/UserDetails";
 import AuditTrailList from "./pages/admin/AuditTrailList";
 
 // Partners
@@ -270,9 +271,8 @@ const App = () => (
             <Route path="/admin" element={<ProtectedRoute><AppLayout><Admin /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute><AppLayout><UsersList /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/users/new" element={<ProtectedRoute><AppLayout><UserForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/admin/users/:id" element={<ProtectedRoute><AppLayout><UserForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/admin/users/new" element={<ProtectedRoute><AppLayout><UserForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/admin/users/:id" element={<ProtectedRoute><AppLayout><UserForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/users/:id/edit" element={<ProtectedRoute><AppLayout><UserForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/users/:id" element={<ProtectedRoute><AppLayout><UserDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/audit" element={<ProtectedRoute><AppLayout><AuditTrailList /></AppLayout></ProtectedRoute>} />
             
             {/* Settings */}

@@ -106,7 +106,7 @@ export default function UsersList() {
                       <TableCell>{user.phone || 'N/A'}</TableCell>
                       <TableCell>
                         <Badge variant={getRoleColor(user.role)}>
-                          {user.role.replace(/([A-Z])/g, ' $1').trim()}
+                          {user.role ? user.role.replace(/([A-Z])/g, ' $1').trim() : 'N/A'}
                         </Badge>
                       </TableCell>
                       <TableCell>
