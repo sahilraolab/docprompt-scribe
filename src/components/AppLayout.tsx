@@ -5,11 +5,11 @@ import { AppHeader } from './AppHeader';
 export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="min-h-screen flex w-full">
         <AppSidebar />
         <div className="flex-1 flex flex-col">
           <AppHeader />
-          <main className="flex-1 pt-16 p-6">
+          <main className="flex-1 pt-16 p-6 bg-muted/30">
             {children}
           </main>
         </div>
