@@ -11,12 +11,13 @@ async function apiCall(endpoint: string, options?: RequestInit) {
     },
   });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Request failed' }));
-    throw new Error(error.message || `HTTP ${response.status}`);
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || 'Request failed');
   }
 
-  return response.json();
+  return result.data || result;
 }
 
 export const userApi = {

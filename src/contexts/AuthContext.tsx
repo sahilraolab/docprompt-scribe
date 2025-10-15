@@ -55,17 +55,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify(credentials),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Login failed');
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Login failed');
       }
 
-      const data = await response.json();
+      const accessToken = result.accessToken;
       
-      setUser(data.user);
-      setToken(data.accessToken);
-      localStorage.setItem(TOKEN_KEY, data.accessToken);
-      localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+      if (!accessToken) {
+        throw new Error('No access token received');
+      }
+
+      setUser(result.user);
+      setToken(accessToken);
+      localStorage.setItem(TOKEN_KEY, accessToken);
+      localStorage.setItem(USER_KEY, JSON.stringify(result.user));
+      
+      if (result.refreshToken) {
+        localStorage.setItem('erp_refresh_token', result.refreshToken);
+      }
 
       toast.success('Login successful');
       navigate('/dashboard');

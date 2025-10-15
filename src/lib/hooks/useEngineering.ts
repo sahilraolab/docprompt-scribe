@@ -6,7 +6,10 @@ import { toast } from 'sonner';
 export function useProjects() {
   return useQuery({
     queryKey: ['projects'],
-    queryFn: projectsApi.getAll,
+    queryFn: async () => {
+      const response = await projectsApi.getAll();
+      return response;
+    },
   });
 }
 

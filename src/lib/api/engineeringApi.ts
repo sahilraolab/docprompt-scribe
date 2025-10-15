@@ -1,6 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-// Helper function for API calls
+// Helper function for API calls matching backend { success, data, message } format
 async function apiCall(endpoint: string, options?: RequestInit) {
   const token = localStorage.getItem('erp_auth_token');
   const response = await fetch(`${API_URL}${endpoint}`, {
@@ -12,12 +12,13 @@ async function apiCall(endpoint: string, options?: RequestInit) {
     },
   });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Request failed' }));
-    throw new Error(error.message || `HTTP ${response.status}`);
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || 'Request failed');
   }
 
-  return response.json();
+  return result.data || result;
 }
 
 // Projects API
@@ -56,11 +57,11 @@ export const documentsApi = {
       },
       body: data,
     });
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Upload failed' }));
-      throw new Error(error.message || `HTTP ${response.status}`);
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Upload failed');
     }
-    return response.json();
+    return result.data || result;
   },
   update: (id: string, data: any) => apiCall(`/engineering/documents/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: string) => apiCall(`/engineering/documents/${id}`, { method: 'DELETE' }),
