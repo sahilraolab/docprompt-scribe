@@ -59,23 +59,29 @@ const MaterialMasterForm = () => {
 
   useEffect(() => {
     if (material) {
-      form.reset(material);
+      const mapped: any = {
+        ...material,
+        subCategory: (material as any).subCategory || (material as any).subcategory || '',
+      };
+      form.reset(mapped);
     }
   }, [material, form]);
 
   const onSubmit = (data: MaterialFormData) => {
+    const { subCategory, ...rest } = data as any;
+    const payload: any = { ...rest, subcategory: subCategory };
     if (isEdit) {
-      updateMaterial.mutate({ id: id!, data }, {
+      updateMaterial.mutate({ id: id!, data: payload }, {
         onSuccess: () => navigate('/engineering/materials'),
       });
     } else {
-      createMaterial.mutate(data, {
+      createMaterial.mutate(payload, {
         onSuccess: () => navigate('/engineering/materials'),
       });
     }
   };
 
-  const categories = ['Cement', 'Steel', 'Sand', 'Aggregates', 'Bricks', 'Paint', 'Electrical', 'Plumbing', 'Hardware', 'Other'];
+  const categories = ['Cement', 'Steel', 'Sand', 'Aggregate', 'Bricks', 'Paint', 'Electrical', 'Plumbing', 'Hardware', 'Other'];
   const uoms = ['Nos', 'Kgs', 'MT', 'Ltr', 'Sqm', 'Cum', 'Bag', 'Box', 'Bundle', 'Roll', 'Feet', 'Meter'];
 
   if (isLoading) return <LoadingSpinner />;

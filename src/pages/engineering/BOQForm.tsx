@@ -2,9 +2,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useBOQ, useCreateBOQ, useUpdateBOQ } from '@/lib/hooks/useBOQ';
 import { useProjects } from '@/lib/hooks/useEngineering';
+import { useMaterialMaster } from '@/lib/hooks/useMaterialMaster';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -19,14 +20,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { SearchableSelect } from '@/components/SearchableSelect';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Plus, Trash, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const boqSchema = z.object({
   projectId: z.string().min(1, 'Project is required'),
   name: z.string().min(1, 'BOQ name is required'),
   description: z.string().optional(),
-  version: z.string().min(1, 'Version is required'),
   status: z.enum(['Draft', 'Approved', 'Revised', 'Archived']),
 });
 
@@ -48,10 +48,34 @@ export default function BOQForm() {
       projectId: '',
       name: '',
       description: '',
-      version: '1',
       status: 'Draft',
     },
   });
+
+  const { data: materialsData } = useMaterialMaster();
+  type BOQItemUI = { materialId?: string; description: string; uom: string; qty: string; rate: string };
+  const [items, setItems] = useState<BOQItemUI[]>([
+    { description: '', uom: '', qty: '', rate: '' },
+  ]);
+
+  const materials = ((materialsData as any)?.data || (materialsData as any) || []) as any[];
+  const materialOptions = materials.map((m: any) => ({
+    value: m._id || m.id,
+    label: `${m.code || ''} - ${m.name}`,
+    uom: m.uom,
+    rate: m.standardRate,
+  }));
+
+  const units = ['SQM', 'CUM', 'RMT', 'NOS', 'KG', 'TON', 'BAG', 'LTR'];
+
+  const addItem = () => setItems([...items, { description: '', uom: '', qty: '', rate: '' }]);
+  const removeItem = (index: number) => setItems(items.filter((_, i) => i !== index));
+  const calculateItemAmount = (qty: string, rate: string) => {
+    const q = parseFloat(qty || '0');
+    const r = parseFloat(rate || '0');
+    return (isNaN(q) || isNaN(r)) ? 0 : q * r;
+  };
+  const calculateTotal = () => items.reduce((sum, it) => sum + calculateItemAmount(it.qty, it.rate), 0);
 
   useEffect(() => {
     if (boqData && isEdit) {
@@ -59,22 +83,56 @@ export default function BOQForm() {
         projectId: boqData.projectId || '',
         name: boqData.name || '',
         description: boqData.description || '',
-        version: String(boqData.version || '1'),
         status: boqData.status || 'Draft',
       });
+      if (Array.isArray(boqData.items) && boqData.items.length) {
+        setItems(
+          boqData.items.map((it: any) => ({
+            materialId: it.itemId || it.item?._id || it.itemId?._id,
+            description: it.description || it.itemName || '',
+            uom: it.uom || '',
+            qty: String(it.qty ?? ''),
+            rate: String(it.rate ?? it.estimatedRate ?? ''),
+          }))
+        );
+      }
     }
   }, [boqData, isEdit, form]);
 
   const onSubmit = async (data: BOQFormData) => {
     try {
+      if (!items.length) {
+        toast.error('Add at least one BOQ item');
+        return;
+      }
+      for (const [idx, it] of items.entries()) {
+        const hasAll = (it.description?.trim() || it.materialId) && it.uom && it.qty && it.rate;
+        const q = parseFloat(it.qty);
+        const r = parseFloat(it.rate);
+        if (!hasAll || isNaN(q) || isNaN(r) || q <= 0 || r < 0) {
+          toast.error(`Please complete item ${idx + 1} with valid quantity and rate`);
+          return;
+        }
+      }
+
+      const mappedItems = items.map((it) => ({
+        itemId: it.materialId,
+        description: it.description,
+        qty: parseFloat(it.qty),
+        uom: it.uom,
+        rate: parseFloat(it.rate),
+        amount: parseFloat(it.qty) * parseFloat(it.rate),
+      }));
+
+      const totalAmount = mappedItems.reduce((sum, i) => sum + i.amount, 0);
+
       const payload: any = {
         projectId: data.projectId,
         name: data.name,
         description: data.description,
-        version: parseInt(data.version),
         status: data.status,
-        items: [],
-        totalAmount: 0,
+        items: mappedItems,
+        totalAmount,
       };
 
       if (isEdit && id) {
@@ -171,24 +229,7 @@ export default function BOQForm() {
                 )}
               />
 
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="version"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Version *</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} placeholder="1" />
-                      </FormControl>
-                      <FormDescription>
-                        BOQ version number
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
+              <div className="grid grid-cols-1 gap-4">
                 <FormField
                   control={form.control}
                   name="status"
@@ -212,8 +253,112 @@ export default function BOQForm() {
             </CardContent>
           </Card>
 
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>BOQ Items</CardTitle>
+                <Button type="button" variant="outline" size="sm" onClick={addItem}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Item
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {items.map((it, index) => (
+                <div key={index} className="p-4 border rounded-lg space-y-4">
+                  <div className="flex items-start justify-between">
+                    <h4 className="font-medium">Item {index + 1}</h4>
+                    {items.length > 1 && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(index)}>
+                        <Trash className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <SearchableSelect
+                      options={materialOptions}
+                      value={it.materialId || ''}
+                      onChange={(value) => {
+                        const opt: any = materialOptions.find((o: any) => o.value === value);
+                        const next = [...items];
+                        next[index].materialId = value;
+                        if (opt) {
+                          next[index].uom = opt.uom || next[index].uom;
+                          if (!next[index].description) next[index].description = opt.label.split(' - ').slice(1).join(' - ');
+                          if (!next[index].rate && opt.rate != null) next[index].rate = String(opt.rate);
+                        }
+                        setItems(next);
+                      }}
+                      placeholder="Select material (optional)"
+                      searchPlaceholder="Search materials..."
+                    />
+
+                    <Input
+                      placeholder="Description *"
+                      value={it.description}
+                      onChange={(e) => {
+                        const next = [...items];
+                        next[index].description = e.target.value;
+                        setItems(next);
+                      }}
+                    />
+
+                    <SearchableSelect
+                      options={units.map(u => ({ value: u, label: u }))}
+                      value={it.uom}
+                      onChange={(value) => {
+                        const next = [...items];
+                        next[index].uom = value;
+                        setItems(next);
+                      }}
+                      placeholder="Select UOM"
+                    />
+
+                    <Input
+                      type="number"
+                      placeholder="Quantity"
+                      value={it.qty}
+                      onChange={(e) => {
+                        const next = [...items];
+                        next[index].qty = e.target.value;
+                        setItems(next);
+                      }}
+                    />
+
+                    <Input
+                      type="number"
+                      placeholder="Rate (₹)"
+                      value={it.rate}
+                      onChange={(e) => {
+                        const next = [...items];
+                        next[index].rate = e.target.value;
+                        setItems(next);
+                      }}
+                    />
+
+                    <div className="flex items-center justify-between p-3 bg-muted rounded">
+                      <span className="text-sm text-muted-foreground">Amount:</span>
+                      <span className="font-semibold">₹{calculateItemAmount(it.qty, it.rate).toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <div className="flex justify-end p-4 bg-muted rounded-lg">
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">Total BOQ</p>
+                  <p className="text-2xl font-bold">₹{calculateTotal().toLocaleString('en-IN')}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="flex gap-4">
             <Button type="submit" disabled={createBOQ.isPending || updateBOQ.isPending}>
+              {(createBOQ.isPending || updateBOQ.isPending) && (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              )}
               {isEdit ? 'Update BOQ' : 'Create BOQ'}
             </Button>
             <Button type="button" variant="outline" onClick={() => navigate('/engineering/boq')}>
