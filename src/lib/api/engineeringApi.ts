@@ -1,18 +1,8 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import { apiClient } from './client';
 
 // Helper function for API calls matching backend { success, data, message } format
 async function apiCall(endpoint: string, options?: RequestInit) {
-  const token = localStorage.getItem('erp_auth_token');
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
-      ...options?.headers,
-    },
-  });
-
+  const response = await apiClient.request(endpoint, options);
   const result = await response.json();
 
   if (!response.ok || !result.success) {
@@ -50,14 +40,9 @@ export const documentsApi = {
   getById: (id: string) => apiCall(`/engineering/documents/${id}`),
   getByProject: (projectId: string) => apiCall(`/engineering/documents?projectId=${projectId}`),
   create: async (data: FormData) => {
-    const token = localStorage.getItem('erp_auth_token');
-    const response = await fetch(`${API_URL}/engineering/documents`, {
+    const response = await apiClient.request('/engineering/documents', {
       method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Authorization': token ? `Bearer ${token}` : '',
-      },
-      body: data,
+      body: data as any,
     });
     const result = await response.json();
     if (!response.ok || !result.success) {

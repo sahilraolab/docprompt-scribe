@@ -1,11 +1,112 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building, FileText, FolderOpen, Calendar, Package, ListChecks, TrendingUp, DollarSign } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Building, FileText, FolderOpen, Calendar, Package, ListChecks, DollarSign, Download } from 'lucide-react';
 import { KPICard } from '@/components/KPICard';
 import { formatCurrency } from '@/lib/utils/format';
+import { projectsApi, estimatesApi, documentsApi, plansApi } from '@/lib/api/engineeringApi';
+import { exportToCSV, exportToExcel, printElement, downloadJSON } from '@/lib/utils/export';
 
 export default function EngineeringIndex() {
   const navigate = useNavigate();
+
+  // Basic SEO
+  useEffect(() => {
+    document.title = 'Engineering Dashboard | ERP';
+    const desc = 'Engineering module overview, KPIs, and data exports (CSV, Excel, PDF, MSP, P6).';
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.setAttribute('content', desc);
+    else {
+      const m = document.createElement('meta');
+      m.name = 'description';
+      m.content = desc;
+      document.head.appendChild(m);
+    }
+  }, []);
+
+  // Data state
+  const [projectsData, setProjectsData] = useState<any[]>([]);
+  const [estimatesData, setEstimatesData] = useState<any[]>([]);
+  const [documentsData, setDocumentsData] = useState<any[]>([]);
+  const [stats, setStats] = useState({ projects: 0, estimates: 0, documents: 0, totalBudget: 0 });
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [proj, est, docs] = await Promise.all([
+          projectsApi.getAll(),
+          estimatesApi.getAll(),
+          documentsApi.getAll(),
+        ]);
+        const projects = proj.data || [];
+        const estimates = est.data || [];
+        const documents = docs.data || [];
+        setProjectsData(projects);
+        setEstimatesData(estimates);
+        setDocumentsData(documents);
+        const totalBudget = projects.reduce((sum: number, p: any) => sum + (p.budget || 0), 0);
+        setStats({ projects: projects.length, estimates: estimates.length, documents: documents.length, totalBudget });
+      } catch (e) {
+        console.error('Failed to load engineering stats', e);
+      }
+    })();
+  }, []);
+
+  // Export helpers
+  const getCombinedRows = () => {
+    return [
+      ...projectsData.map((p: any) => ({ type: 'Project', id: p.id, code: p.code, name: p.name, status: p.status, budget: p.budget })),
+      ...estimatesData.map((e: any) => ({ type: 'Estimate', id: e.id, code: e.code, name: e.name || e.title, status: e.status, projectId: e.projectId })),
+      ...documentsData.map((d: any) => ({ type: 'Document', id: d.id, code: d.code, name: d.name, projectId: d.projectId, typeLabel: d.type })),
+    ];
+  };
+
+  const downloadTextFile = (content: string, filename: string, mime = 'application/xml') => {
+    const blob = new Blob([content], { type: mime });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportMSPXml = () => {
+    // Minimal MSPDI-like XML (tasks only)
+    const tasks = projectsData.map((p: any, idx: number) => `
+      <Task>
+        <UID>${idx + 1}</UID>
+        <ID>${idx + 1}</ID>
+        <Name>${p.name || p.code}</Name>
+        <Active>1</Active>
+      </Task>
+    `).join('');
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Project xmlns="http://schemas.microsoft.com/project">
+  <Name>Engineering Export</Name>
+  <Tasks>${tasks}</Tasks>
+</Project>`;
+    downloadTextFile(xml, 'engineering-msp.xml');
+  };
+
+  const exportP6Xml = () => {
+    // Minimal Primavera P6-like XML (activities list)
+    const activities = projectsData.map((p: any, idx: number) => `
+      <Activity>
+        <Id>${p.code || `ACT-${idx + 1}`}</Id>
+        <Name>${p.name || p.code}</Name>
+      </Activity>
+    `).join('');
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Primavera>
+  <Project>
+    <Name>Engineering Export</Name>
+    <Activities>${activities}</Activities>
+  </Project>
+</Primavera>`;
+    downloadTextFile(xml, 'engineering-p6.xml');
+  };
 
   const modules = [
     {
@@ -66,17 +167,17 @@ export default function EngineeringIndex() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div id="engineering-dashboard" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
           title="Active Projects"
-          value="11"
-          description="+2 this month"
+          value={stats.projects}
+          description="Current active projects"
           icon={Building}
-          trend={{ value: 18, isPositive: true }}
+          trend={{ value: 5, isPositive: true }}
         />
         <KPICard
           title="Total Budget"
-          value={formatCurrency(45000000, 'short')}
+          value={formatCurrency(stats.totalBudget, 'short')}
           description="All projects"
           icon={DollarSign}
         />
@@ -88,11 +189,38 @@ export default function EngineeringIndex() {
         />
         <KPICard
           title="Documents"
-          value="342"
+          value={stats.documents}
           description="Uploaded"
           icon={FolderOpen}
         />
       </div>
+
+      {/* Exports */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Exports</CardTitle>
+          <CardDescription>Download engineering data in common formats</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3">
+            <Button variant="default" onClick={() => exportToCSV(getCombinedRows(), 'engineering-data')}>
+              <Download className="mr-2 h-4 w-4" /> CSV
+            </Button>
+            <Button variant="secondary" onClick={() => exportToExcel(getCombinedRows(), 'engineering-data')}>
+              <Download className="mr-2 h-4 w-4" /> Excel
+            </Button>
+            <Button variant="outline" onClick={() => printElement('engineering-dashboard')}>
+              <Download className="mr-2 h-4 w-4" /> PDF (Print)
+            </Button>
+            <Button variant="outline" onClick={exportMSPXml}>
+              <Download className="mr-2 h-4 w-4" /> MSP XML
+            </Button>
+            <Button variant="outline" onClick={exportP6Xml}>
+              <Download className="mr-2 h-4 w-4" /> P6 XML
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Module Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
