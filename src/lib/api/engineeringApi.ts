@@ -63,3 +63,13 @@ export const plansApi = {
   update: (id: string, data: any) => apiCall(`/engineering/plans/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: string) => apiCall(`/engineering/plans/${id}`, { method: 'DELETE' }),
 };
+
+// BOQ API
+export const boqApi = {
+  getAll: () => apiCall('/engineering/boq'),
+  getById: (id: string) => apiCall(`/engineering/boq/${id}`),
+  getByProject: (projectId: string) => apiCall(`/engineering/boq?projectId=${projectId}`),
+  create: (data: any) => apiCall('/engineering/boq', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: any) => apiCall(`/engineering/boq/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: string) => apiCall(`/engineering/boq/${id}`, { method: 'DELETE' }),
+};
