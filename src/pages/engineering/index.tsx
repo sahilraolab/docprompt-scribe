@@ -141,7 +141,7 @@ export default function EngineeringIndex() {
 
     // City filter
     if (cityFilter !== 'all') {
-      filteredProjects = filteredProjects.filter((p: any) => p.city === cityFilter);
+      filteredProjects = filteredProjects.filter((p: any) => (p.location || p.city) === cityFilter);
     }
 
     // Filter related data based on filtered projects
@@ -269,7 +269,7 @@ export default function EngineeringIndex() {
   };
 
   const getUniqueCities = () => {
-    const cities = new Set(projectsData.map((p: any) => p.city).filter(Boolean));
+    const cities = new Set(projectsData.map((p: any) => p.location || p.city).filter(Boolean));
     return Array.from(cities).sort();
   };
 

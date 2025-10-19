@@ -20,8 +20,12 @@ export default function DocumentUpload() {
   const [uploading, setUploading] = useState(false);
   const [projectId, setProjectId] = useState('');
   const [documentType, setDocumentType] = useState('');
+  const [category, setCategory] = useState('');
   const [name, setName] = useState('');
-  const [version, setVersion] = useState('1');
+  const [version, setVersion] = useState('1.0');
+  const [revision, setRevision] = useState('A');
+  const [drawingNumber, setDrawingNumber] = useState('');
+  const [status, setStatus] = useState('Draft');
   const [description, setDescription] = useState('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,12 +54,17 @@ export default function DocumentUpload() {
       formData.append('projectId', projectId);
       formData.append('name', name);
       formData.append('type', documentType);
+      formData.append('category', category);
       formData.append('version', version);
+      formData.append('revision', revision);
+      formData.append('status', status);
+      if (drawingNumber) formData.append('drawingNumber', drawingNumber);
       if (description) formData.append('description', description);
       
-      files.forEach((file) => {
-        formData.append('files', file);
-      });
+      // For single file upload as per backend controller
+      if (files[0]) {
+        formData.append('file', files[0]);
+      }
 
       await createDocument.mutateAsync(formData);
       navigate('/engineering/documents');
@@ -100,16 +109,18 @@ export default function DocumentUpload() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="category">Document Type *</Label>
+                <Label htmlFor="documentType">Document Type *</Label>
                 <Select required value={documentType} onValueChange={setDocumentType}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Plan">Plan</SelectItem>
-                    <SelectItem value="Permit">Permit</SelectItem>
-                    <SelectItem value="Report">Report</SelectItem>
                     <SelectItem value="Drawing">Drawing</SelectItem>
+                    <SelectItem value="Report">Report</SelectItem>
+                    <SelectItem value="Specification">Specification</SelectItem>
+                    <SelectItem value="Certificate">Certificate</SelectItem>
+                    <SelectItem value="RERA">RERA</SelectItem>
+                    <SelectItem value="Permit">Permit</SelectItem>
                     <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
@@ -127,13 +138,63 @@ export default function DocumentUpload() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Input 
+                  id="category" 
+                  placeholder="e.g., Structural, Architectural" 
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
                 <Label htmlFor="version">Version</Label>
                 <Input 
                   id="version" 
-                  placeholder="e.g., 1" 
+                  placeholder="e.g., 1.0" 
                   value={version}
                   onChange={(e) => setVersion(e.target.value)}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="revision">Revision</Label>
+                <Input 
+                  id="revision" 
+                  placeholder="e.g., A" 
+                  value={revision}
+                  onChange={(e) => setRevision(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="drawingNumber">Drawing Number</Label>
+                <Input 
+                  id="drawingNumber" 
+                  placeholder="e.g., DWG-001" 
+                  value={drawingNumber}
+                  onChange={(e) => setDrawingNumber(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Draft">Draft</SelectItem>
+                    <SelectItem value="UnderReview">Under Review</SelectItem>
+                    <SelectItem value="Approved">Approved</SelectItem>
+                    <SelectItem value="Rejected">Rejected</SelectItem>
+                    <SelectItem value="Superseded">Superseded</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

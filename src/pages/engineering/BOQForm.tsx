@@ -17,14 +17,17 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { SearchableSelect } from '@/components/SearchableSelect';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 const boqSchema = z.object({
   projectId: z.string().min(1, 'Project is required'),
+  name: z.string().min(1, 'BOQ name is required'),
+  description: z.string().optional(),
   version: z.string().min(1, 'Version is required'),
-  status: z.enum(['Draft', 'Approved', 'Active', 'Completed']),
+  status: z.enum(['Draft', 'Approved', 'Revised', 'Archived']),
 });
 
 type BOQFormData = z.infer<typeof boqSchema>;
@@ -43,6 +46,8 @@ export default function BOQForm() {
     resolver: zodResolver(boqSchema),
     defaultValues: {
       projectId: '',
+      name: '',
+      description: '',
       version: '1',
       status: 'Draft',
     },
@@ -52,6 +57,8 @@ export default function BOQForm() {
     if (boqData && isEdit) {
       form.reset({
         projectId: boqData.projectId || '',
+        name: boqData.name || '',
+        description: boqData.description || '',
         version: String(boqData.version || '1'),
         status: boqData.status || 'Draft',
       });
@@ -62,10 +69,12 @@ export default function BOQForm() {
     try {
       const payload: any = {
         projectId: data.projectId,
+        name: data.name,
+        description: data.description,
         version: parseInt(data.version),
         status: data.status,
         items: [],
-        totalCost: 0,
+        totalAmount: 0,
       };
 
       if (isEdit && id) {
@@ -89,8 +98,8 @@ export default function BOQForm() {
   const statusOptions = [
     { value: 'Draft', label: 'Draft' },
     { value: 'Approved', label: 'Approved' },
-    { value: 'Active', label: 'Active' },
-    { value: 'Completed', label: 'Completed' },
+    { value: 'Revised', label: 'Revised' },
+    { value: 'Archived', label: 'Archived' },
   ];
 
   return (
@@ -114,27 +123,55 @@ export default function BOQForm() {
               <CardTitle>BOQ Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="projectId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Project *</FormLabel>
-                      <FormControl>
-                        <SearchableSelect
-                          options={projectOptions}
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="Select project"
-                          searchPlaceholder="Search projects..."
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="projectId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project *</FormLabel>
+                    <FormControl>
+                      <SearchableSelect
+                        options={projectOptions}
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select project"
+                        searchPlaceholder="Search projects..."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>BOQ Name *</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Main Building BOQ" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} placeholder="BOQ description..." rows={3} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="version"
@@ -151,27 +188,27 @@ export default function BOQForm() {
                     </FormItem>
                   )}
                 />
-              </div>
 
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status *</FormLabel>
-                    <FormControl>
-                      <SearchableSelect
-                        options={statusOptions}
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Select status"
-                        searchPlaceholder="Search status..."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status *</FormLabel>
+                      <FormControl>
+                        <SearchableSelect
+                          options={statusOptions}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select status"
+                          searchPlaceholder="Search status..."
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </CardContent>
           </Card>
 

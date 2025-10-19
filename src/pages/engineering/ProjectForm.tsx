@@ -26,15 +26,16 @@ const projectSchema = z.object({
   code: z.string().optional(),
   name: z.string().min(1, 'Project name is required').max(100),
   description: z.string().optional(),
+  location: z.string().min(1, 'Location is required'),
+  clientName: z.string().optional(),
+  clientContact: z.string().optional(),
+  category: z.enum(['Residential', 'Commercial', 'Infrastructure', 'Industrial']).optional(),
   status: z.enum(['Planning', 'Active', 'OnHold', 'Completed', 'Cancelled']),
   budget: z.string().min(1, 'Budget is required'),
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().optional(),
-  city: z.string().min(1, 'City is required'),
-  state: z.string().min(1, 'State is required'),
-  address: z.string().optional(),
-  reraId: z.string().optional(),
-  managerId: z.string().min(1, 'Project manager is required'),
+  projectManager: z.string().min(1, 'Project manager is required'),
+  siteEngineer: z.string().optional(),
 });
 
 type ProjectFormData = z.infer<typeof projectSchema>;
@@ -64,15 +65,16 @@ export default function ProjectForm() {
       code: '',
       name: '',
       description: '',
+      location: '',
+      clientName: '',
+      clientContact: '',
+      category: undefined,
       status: 'Planning',
       budget: '',
       startDate: new Date().toISOString().split('T')[0],
       endDate: '',
-      city: '',
-      state: '',
-      address: '',
-      reraId: '',
-      managerId: (user as any)?._id || user?.id || '',
+      projectManager: (user as any)?._id || user?.id || '',
+      siteEngineer: '',
     },
   });
 
@@ -82,15 +84,16 @@ export default function ProjectForm() {
         code: projectData.code || '',
         name: projectData.name,
         description: projectData.description || '',
+        location: projectData.location || '',
+        clientName: projectData.clientName || '',
+        clientContact: projectData.clientContact || '',
+        category: projectData.category,
         status: projectData.status,
         budget: String(projectData.budget ?? ''),
         startDate: (projectData.startDate || '').split('T')[0],
         endDate: projectData.endDate ? projectData.endDate.split('T')[0] : '',
-        city: projectData.city,
-        state: projectData.state,
-        address: '',
-        reraId: projectData.reraId || '',
-        managerId: (projectData.managerId && (projectData.managerId._id || projectData.managerId.id || projectData.managerId)) || '',
+        projectManager: (projectData.projectManager && (projectData.projectManager._id || projectData.projectManager.id || projectData.projectManager)) || '',
+        siteEngineer: (projectData.siteEngineer && (projectData.siteEngineer._id || projectData.siteEngineer.id || projectData.siteEngineer)) || '',
       });
     }
   }, [projectData, isEdit, form]);
@@ -101,17 +104,18 @@ export default function ProjectForm() {
       const projectPayload: any = {
         name: data.name,
         description: data.description,
+        location: data.location,
+        clientName: data.clientName,
+        clientContact: data.clientContact,
+        category: data.category,
         status: data.status,
         budget: parseFloat(data.budget),
+        budgetUtilized: 0,
         startDate: data.startDate,
         endDate: data.endDate,
-        city: data.city,
-        state: data.state,
-        address: data.address,
-        reraId: data.reraId,
-        managerId: data.managerId || currentUserId,
+        projectManager: data.projectManager || currentUserId,
+        siteEngineer: data.siteEngineer,
         progress: 0,
-        spent: 0,
       };
 
       // Only include code when editing (backend auto-generates for new projects)
@@ -234,6 +238,30 @@ export default function ProjectForm() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <FormControl>
+                        <SearchableSelect
+                          options={[
+                            { value: 'Residential', label: 'Residential' },
+                            { value: 'Commercial', label: 'Commercial' },
+                            { value: 'Infrastructure', label: 'Infrastructure' },
+                            { value: 'Industrial', label: 'Industrial' },
+                          ]}
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          placeholder="Select category"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="budget"
                   render={({ field }) => (
                     <FormItem>
@@ -250,10 +278,42 @@ export default function ProjectForm() {
                     </FormItem>
                   )}
                 />
+              </div>
 
-                 <FormField
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
                   control={form.control}
-                  name="managerId"
+                  name="clientName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Client Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Client name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="clientContact"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Client Contact</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="+91 XXXXX XXXXX" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="projectManager"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Project Manager *</FormLabel>
@@ -265,6 +325,27 @@ export default function ProjectForm() {
                           value={field.value || currentUserId}
                           onChange={field.onChange}
                           placeholder="Select manager"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="siteEngineer"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Site Engineer</FormLabel>
+                      <FormControl>
+                        <SearchableSelect
+                          options={[
+                            { value: currentUserId, label: `${currentUserName} (You)` },
+                          ]}
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          placeholder="Select engineer"
                         />
                       </FormControl>
                       <FormMessage />
@@ -317,71 +398,17 @@ export default function ProjectForm() {
               <CardTitle>Location</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>City *</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Mumbai" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>State *</FormLabel>
-                      <FormControl>
-                        <SearchableSelect
-                          options={indianStates.map(state => ({ value: state, label: state }))}
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="Select state"
-                          searchPlaceholder="Search states..."
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
               <FormField
                 control={form.control}
-                name="address"
+                name="location"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Address</FormLabel>
+                    <FormLabel>Location *</FormLabel>
                     <FormControl>
-                      <Textarea
-                        {...field}
-                        placeholder="Complete project address"
-                        rows={2}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="reraId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>RERA ID</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="RERA registration number" />
+                      <Input {...field} placeholder="Mumbai, Maharashtra" />
                     </FormControl>
                     <FormDescription>
-                      Real Estate Regulatory Authority registration
+                      City, State or full address
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

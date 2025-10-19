@@ -30,7 +30,9 @@ const estimateItemSchema = z.object({
 
 const estimateSchema = z.object({
   projectId: z.string().min(1, 'Project is required'),
+  name: z.string().min(1, 'Estimate name is required'),
   version: z.string().min(1, 'Version is required'),
+  taxRate: z.string().optional(),
   description: z.string().optional(),
 });
 
@@ -56,7 +58,9 @@ export default function EstimateForm() {
     resolver: zodResolver(estimateSchema),
     defaultValues: {
       projectId: '',
-      version: '1',
+      name: '',
+      version: '1.0',
+      taxRate: '18',
       description: '',
     },
   });
@@ -65,7 +69,9 @@ export default function EstimateForm() {
     if (estimateData && isEdit) {
       form.reset({
         projectId: (estimateData.projectId && (estimateData.projectId._id || estimateData.projectId.id || estimateData.projectId)) || '',
-        version: estimateData.version?.toString() || '1',
+        name: estimateData.name || '',
+        version: estimateData.version?.toString() || '1.0',
+        taxRate: estimateData.taxRate?.toString() || '18',
         description: estimateData.description || '',
       });
       if (estimateData.items && estimateData.items.length > 0) {
@@ -107,16 +113,19 @@ export default function EstimateForm() {
       }));
 
       const subtotal = estimateItems.reduce((sum, item) => sum + item.amount, 0);
-      const tax = subtotal * 0.18; // 18% GST
+      const taxRate = parseFloat(data.taxRate || '18');
+      const taxAmount = (subtotal * taxRate) / 100;
 
       const estimatePayload = {
         projectId: data.projectId,
-        version: parseInt(data.version),
+        name: data.name,
+        version: data.version,
+        taxRate,
         description: data.description,
         items: estimateItems,
         subtotal,
-        tax,
-        total: subtotal + tax,
+        taxAmount,
+        totalAmount: subtotal + taxAmount,
         status: 'Draft',
       };
 
@@ -177,24 +186,52 @@ export default function EstimateForm() {
               <CardTitle>Estimate Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="projectId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project *</FormLabel>
+                    <FormControl>
+                      <SearchableSelect
+                        options={projects.map((project: any) => ({
+                          value: project._id || project.id,
+                          label: `${project.code} - ${project.name}`
+                        }))}
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select project"
+                        searchPlaceholder="Search projects..."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Estimate Name *</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Phase 1 Estimate" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="projectId"
+                  name="version"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Project *</FormLabel>
+                      <FormLabel>Version *</FormLabel>
                       <FormControl>
-                        <SearchableSelect
-                          options={projects.map((project: any) => ({
-                            value: project._id || project.id,
-                            label: `${project.code} - ${project.name}`
-                          }))}
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="Select project"
-                          searchPlaceholder="Search projects..."
-                        />
+                        <Input {...field} placeholder="1.0" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -203,12 +240,12 @@ export default function EstimateForm() {
 
                 <FormField
                   control={form.control}
-                  name="version"
+                  name="taxRate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Version *</FormLabel>
+                      <FormLabel>Tax Rate (%)</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="v1.0" />
+                        <Input type="number" step="0.01" {...field} placeholder="18" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
