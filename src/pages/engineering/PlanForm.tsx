@@ -34,6 +34,15 @@ interface Task {
   endDate: string;
   status: string;
   priority: string;
+  assignedTo?: string;
+  progress?: number;
+}
+
+interface Milestone {
+  _id?: string;
+  name: string;
+  date: string;
+  completed: boolean;
 }
 
 export default function PlanForm() {
@@ -48,6 +57,7 @@ export default function PlanForm() {
   const updatePlan = useUpdatePlan();
 
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [showTaskForm, setShowTaskForm] = useState(false);
 
   const projects = projectsData?.data || [];
@@ -80,6 +90,9 @@ export default function PlanForm() {
       if (plan.tasks) {
         setTasks(plan.tasks);
       }
+      if (plan.milestones) {
+        setMilestones(plan.milestones);
+      }
     }
   }, [plan, isEdit, form]);
 
@@ -87,8 +100,9 @@ export default function PlanForm() {
     try {
       const payload = {
         ...data,
-        assignedTo: data.assignedTo || undefined, // Convert empty string to undefined
+        assignedTo: data.assignedTo || undefined,
         tasks,
+        milestones,
       };
 
       if (isEdit) {
@@ -112,6 +126,7 @@ export default function PlanForm() {
       endDate: '',
       status: 'NotStarted',
       priority: 'Medium',
+      progress: 0,
     };
     setTasks([...tasks, newTask]);
     setShowTaskForm(true);
@@ -121,10 +136,29 @@ export default function PlanForm() {
     setTasks(tasks.filter((_, i) => i !== index));
   };
 
-  const updateTask = (index: number, field: keyof Task, value: string) => {
+  const updateTask = (index: number, field: keyof Task, value: string | number) => {
     const updatedTasks = [...tasks];
     updatedTasks[index] = { ...updatedTasks[index], [field]: value };
     setTasks(updatedTasks);
+  };
+
+  const addMilestone = () => {
+    const newMilestone: Milestone = {
+      name: '',
+      date: '',
+      completed: false,
+    };
+    setMilestones([...milestones, newMilestone]);
+  };
+
+  const removeMilestone = (index: number) => {
+    setMilestones(milestones.filter((_, i) => i !== index));
+  };
+
+  const updateMilestone = (index: number, field: keyof Milestone, value: string | boolean) => {
+    const updatedMilestones = [...milestones];
+    updatedMilestones[index] = { ...updatedMilestones[index], [field]: value };
+    setMilestones(updatedMilestones);
   };
 
   const projectOptions = projects.map((p: any) => ({
@@ -368,6 +402,52 @@ export default function PlanForm() {
                         </div>
                       </CardContent>
                     </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Milestones</CardTitle>
+                <Button type="button" variant="outline" size="sm" onClick={addMilestone}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Milestone
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {milestones.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  No milestones added yet. Click "Add Milestone" to create milestones.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {milestones.map((milestone, index) => (
+                    <div key={index} className="flex items-center gap-4 p-4 border rounded-lg">
+                      <div className="flex-1 grid grid-cols-2 gap-4">
+                        <Input
+                          placeholder="Milestone name"
+                          value={milestone.name}
+                          onChange={(e) => updateMilestone(index, 'name', e.target.value)}
+                        />
+                        <Input
+                          type="date"
+                          value={milestone.date}
+                          onChange={(e) => updateMilestone(index, 'date', e.target.value)}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeMilestone(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   ))}
                 </div>
               )}

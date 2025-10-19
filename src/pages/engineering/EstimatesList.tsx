@@ -84,7 +84,7 @@ export default function EstimatesList() {
                       </TableCell>
                       <TableCell>v{est.version}</TableCell>
                       <TableCell className="font-medium">
-                        {formatCurrency(est.total)}
+                        {formatCurrency(est.totalAmount || est.total || 0)}
                       </TableCell>
                       <TableCell>{est.createdBy?.name || est.createdBy || 'N/A'}</TableCell>
                       <TableCell>{formatDate(est.createdAt)}</TableCell>

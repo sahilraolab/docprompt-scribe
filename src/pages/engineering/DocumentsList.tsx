@@ -107,16 +107,16 @@ export default function DocumentsList() {
                         </Badge>
                       </TableCell>
                       <TableCell>{doc.projectId?.name || doc.projectName || 'N/A'}</TableCell>
-                      <TableCell>v{doc.version}</TableCell>
-                      <TableCell>{doc.size ? `${(doc.size / 1024 / 1024).toFixed(2)} MB` : 'N/A'}</TableCell>
-                      <TableCell>{doc.uploadedBy?.name || doc.createdBy?.name || 'N/A'}</TableCell>
+                      <TableCell>v{doc.version || '1.0'}</TableCell>
+                      <TableCell>{doc.fileSize || doc.size ? `${((doc.fileSize || doc.size) / 1024 / 1024).toFixed(2)} MB` : 'N/A'}</TableCell>
+                      <TableCell>{doc.createdBy?.name || doc.uploadedBy?.name || 'N/A'}</TableCell>
                       <TableCell>{formatDate(doc.createdAt)}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => window.open(buildFileUrl(doc.url), '_blank', 'noopener') }>
+                          <Button variant="ghost" size="sm" onClick={() => window.open(buildFileUrl(doc.fileUrl || doc.url), '_blank', 'noopener') }>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => window.open(buildFileUrl(doc.url), '_blank', 'noopener') }>
+                          <Button variant="ghost" size="sm" onClick={() => window.open(buildFileUrl(doc.fileUrl || doc.url), '_blank', 'noopener') }>
                             <Download className="h-4 w-4" />
                           </Button>
                         </div>

@@ -33,11 +33,11 @@ export default function ProjectsList() {
     const q = searchQuery.toLowerCase();
     const name = (project.name || '').toLowerCase();
     const code = (project.code || '').toLowerCase();
-    const city = (project.city || '').toLowerCase();
-    const matchesSearch = name.includes(q) || code.includes(q) || city.includes(q);
+    const location = (project.location || '').toLowerCase();
+    const matchesSearch = name.includes(q) || code.includes(q) || location.includes(q);
 
     const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    const matchesState = stateFilter === 'all' || (project.state || '') === stateFilter;
+    const matchesState = stateFilter === 'all' || (project.location || '').toLowerCase().includes(stateFilter.toLowerCase());
 
     return matchesSearch && matchesStatus && matchesState;
   });
@@ -74,9 +74,9 @@ export default function ProjectsList() {
       render: (project: any) => (
         <div>
           <p className="font-medium">{project.name}</p>
-          {(project.city || project.state) ? (
-            <p className="text-sm text-muted-foreground">{project.city || '—'}{project.state ? `, ${project.state}` : ''}</p>
-          ) : null}
+          {project.location && (
+            <p className="text-sm text-muted-foreground">{project.location}</p>
+          )}
         </div>
       ),
     },
@@ -126,14 +126,13 @@ export default function ProjectsList() {
     const exportData = sortedProjects.map(p => ({
       Code: p.code,
       Name: p.name,
-      City: p.city,
-      State: p.state,
+      Location: p.location,
       Status: p.status,
       Budget: p.budget,
-      Spent: p.spent,
+      Spent: p.budgetUtilized || 0,
       Progress: `${p.progress}%`,
       'Start Date': formatDate(p.startDate),
-      Manager: p.managerName || 'N/A',
+      Manager: p.projectManager?.name || 'N/A',
     }));
     exportToCSV(exportData, 'projects');
   };
@@ -142,14 +141,13 @@ export default function ProjectsList() {
     const exportData = sortedProjects.map(p => ({
       Code: p.code,
       Name: p.name,
-      City: p.city,
-      State: p.state,
+      Location: p.location,
       Status: p.status,
       Budget: p.budget,
-      Spent: p.spent,
+      Spent: p.budgetUtilized || 0,
       Progress: `${p.progress}%`,
       'Start Date': formatDate(p.startDate),
-      Manager: p.managerName || 'N/A',
+      Manager: p.projectManager?.name || 'N/A',
     }));
     exportToExcel(exportData, 'projects');
   };

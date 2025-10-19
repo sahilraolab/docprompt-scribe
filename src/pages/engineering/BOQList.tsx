@@ -20,24 +20,35 @@ const BOQList = () => {
   const { data: boqs, isLoading } = useBOQs();
   const deleteBOQ = useDeleteBOQ();
 
-  const filteredBOQs = (Array.isArray(boqs) ? boqs : []).filter((boq: BOQ) =>
-    boq.projectName?.toLowerCase().includes(search.toLowerCase()) ||
-    boq.id.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredBOQs = (Array.isArray(boqs) ? boqs : []).filter((boq: any) => {
+    const projectName = boq.projectId?.name || boq.projectName || '';
+    const code = boq.code || '';
+    return projectName.toLowerCase().includes(search.toLowerCase()) ||
+      code.toLowerCase().includes(search.toLowerCase());
+  });
 
   const handleExport = () => {
     exportToCSV(filteredBOQs, 'boq-list.csv');
   };
 
   const columns = [
-    { key: 'id', header: 'BOQ ID', label: 'BOQ ID' },
-    { key: 'projectName', header: 'Project', label: 'Project' },
-    { key: 'version', header: 'Version', label: 'Version' },
+    { key: 'code', header: 'BOQ Code', label: 'BOQ Code' },
+    { 
+      key: 'projectId', 
+      header: 'Project', 
+      label: 'Project',
+      render: (projectId: any) => projectId?.name || 'N/A'
+    },
+    { 
+      key: 'name', 
+      header: 'BOQ Name', 
+      label: 'BOQ Name' 
+    },
     {
-      key: 'totalCost',
-      header: 'Total Cost',
-      label: 'Total Cost',
-      render: (value: number) => `₹${value.toLocaleString()}`,
+      key: 'totalAmount',
+      header: 'Total Amount',
+      label: 'Total Amount',
+      render: (value: number) => `₹${(value || 0).toLocaleString()}`,
     },
     {
       key: 'status',
@@ -47,8 +58,8 @@ const BOQList = () => {
         const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
           Draft: 'secondary',
           Approved: 'default',
-          Active: 'default',
-          Completed: 'outline',
+          Revised: 'outline',
+          Archived: 'destructive',
         };
         return <Badge variant={variants[value] || 'secondary'}>{value}</Badge>;
       },
@@ -107,7 +118,7 @@ const BOQList = () => {
         <DataTable
           data={filteredBOQs}
           columns={columns}
-          onRowClick={(boq) => navigate(`/engineering/boq/${boq.id}`)}
+          onRowClick={(boq) => navigate(`/engineering/boq/${boq._id || boq.id}`)}
         />
       )}
     </div>

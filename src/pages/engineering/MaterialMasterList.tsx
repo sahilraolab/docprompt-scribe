@@ -22,7 +22,7 @@ const MaterialMasterList = () => {
   const { data: materials, isLoading } = useMaterialMaster();
   const deleteMaterial = useDeleteMaterial();
 
-  const categories = ['Cement', 'Steel', 'Sand', 'Aggregates', 'Bricks', 'Paint', 'Electrical', 'Plumbing', 'Hardware', 'Other'];
+  const categories = ['Cement', 'Steel', 'Sand', 'Aggregate', 'Bricks', 'Paint', 'Electrical', 'Plumbing', 'Hardware', 'Other'];
 
   const filteredMaterials = (Array.isArray(materials) ? materials : []).filter((material: MaterialMaster) => {
     const matchesSearch = material.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -127,7 +127,7 @@ const MaterialMasterList = () => {
         <DataTable
           data={filteredMaterials}
           columns={columns}
-          onRowClick={(material) => navigate(`/engineering/materials/${material.id}`)}
+          onRowClick={(material) => navigate(`/engineering/materials/${material._id || material.id}`)}
         />
       )}
     </div>
