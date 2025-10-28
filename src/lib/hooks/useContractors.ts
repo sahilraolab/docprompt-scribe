@@ -1,46 +1,41 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api/client';
 import { Contractor, WO, RABill, LabourRate } from '@/types';
 
+const API_BASE = '/contracts/contractors';
+
+// ✅ ----------- FETCH FUNCTIONS -----------
 async function fetchContractors(): Promise<Contractor[]> {
-  const response = await fetch('/api/contractors');
-  if (!response.ok) throw new Error('Failed to fetch contractors');
-  const data = await response.json();
+  const data = await apiClient.request(`${API_BASE}`, { method: 'GET' });
   return data.data;
 }
 
 async function fetchContractor(id: string): Promise<Contractor> {
-  const response = await fetch(`/api/contractors/${id}`);
-  if (!response.ok) throw new Error('Failed to fetch contractor');
-  return response.json();
+  const data = await apiClient.request(`${API_BASE}/${id}`, { method: 'GET' });
+  return data.data;
 }
 
 async function fetchWorkOrders(): Promise<WO[]> {
-  const response = await fetch('/api/work-orders');
-  if (!response.ok) throw new Error('Failed to fetch work orders');
-  const data = await response.json();
+  const data = await apiClient.request('/api/work-orders', { method: 'GET' });
   return data.data;
 }
 
 async function fetchWorkOrder(id: string): Promise<WO> {
-  const response = await fetch(`/api/work-orders/${id}`);
-  if (!response.ok) throw new Error('Failed to fetch work order');
-  return response.json();
+  const data = await apiClient.request(`/api/work-orders/${id}`, { method: 'GET' });
+  return data.data;
 }
 
 async function fetchRABills(): Promise<RABill[]> {
-  const response = await fetch('/api/ra-bills');
-  if (!response.ok) throw new Error('Failed to fetch RA bills');
-  const data = await response.json();
+  const data = await apiClient.request('/api/ra-bills', { method: 'GET' });
   return data.data;
 }
 
 async function fetchLabourRates(): Promise<LabourRate[]> {
-  const response = await fetch('/api/labour-rates');
-  if (!response.ok) throw new Error('Failed to fetch labour rates');
-  const data = await response.json();
+  const data = await apiClient.request('/api/labour-rates', { method: 'GET' });
   return data.data;
 }
 
+// ✅ ----------- QUERIES -----------
 export function useContractors() {
   return useQuery({
     queryKey: ['contractors'],
@@ -82,5 +77,54 @@ export function useLabourRates() {
   return useQuery({
     queryKey: ['labour-rates'],
     queryFn: fetchLabourRates,
+  });
+}
+
+// ✅ ----------- MUTATIONS -----------
+
+// Create Contractor
+export function useCreateContractor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: Partial<Contractor>) => {
+      const data = await apiClient.request(API_BASE, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contractors'] });
+    },
+  });
+}
+
+// Update Contractor
+export function useUpdateContractor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, payload }: { id: string; payload: Partial<Contractor> }) => {
+      const data = await apiClient.request(`${API_BASE}/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contractors'] });
+    },
+  });
+}
+
+// Delete Contractor
+export function useDeleteContractor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await apiClient.request(`${API_BASE}/${id}`, { method: 'DELETE' });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contractors'] });
+    },
   });
 }

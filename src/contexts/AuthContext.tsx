@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, LoginCredentials } from '@/types';
+// src/contexts/AuthContext.tsx
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { apiClient } from '@/lib/api/client';
+import type { User, LoginCredentials } from '@/types';
 
 interface AuthContextType {
   user: User | null;
@@ -9,96 +11,109 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>; // ✅ add this
+  setToken: React.Dispatch<React.SetStateAction<string | null>>; // ✅ add this
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
-
-const TOKEN_KEY = 'erp_auth_token';
 const USER_KEY = 'erp_user';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(apiClient.getToken());
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Load user from localStorage on mount
+  // Restore from localStorage
   useEffect(() => {
-    const initAuth = async () => {
-      const storedToken = localStorage.getItem(TOKEN_KEY);
-      const storedUser = localStorage.getItem(USER_KEY);
-
-      if (storedToken && storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          setToken(storedToken);
-          setUser(parsedUser);
-        } catch (error) {
-          console.error('Failed to parse stored user:', error);
-          localStorage.removeItem(TOKEN_KEY);
-          localStorage.removeItem(USER_KEY);
-        }
+    const storedUser = localStorage.getItem(USER_KEY);
+    const storedToken = apiClient.getToken();
+    if (storedUser && storedToken) {
+      try {
+        setUser(JSON.parse(storedUser));
+        setToken(storedToken);
+      } catch {
+        localStorage.removeItem(USER_KEY);
+        apiClient.setToken(null);
       }
-      setIsLoading(false);
-    };
-
-    initAuth();
+    }
+    setIsLoading(false);
   }, []);
 
+  // Handle session expiration globally
+  useEffect(() => {
+    const handleApiError = (event: CustomEvent<{ error: Error }>) => {
+      const err = event.detail.error;
+      if ((err as any).code === 'SESSION_EXPIRED') {
+        toast.error('Session expired, please log in again.');
+        logout();
+      }
+    };
+    window.addEventListener('api-error', handleApiError as EventListener);
+    return () => window.removeEventListener('api-error', handleApiError as EventListener);
+  }, []);
+
+  // Auto-refresh access token if possible
+  useEffect(() => {
+    const tryRestore = async () => {
+      if (!user) {
+        try {
+          const data = await apiClient.request('/auth/refresh', { method: 'POST' });
+          if (data?.accessToken) {
+            apiClient.setToken(data.accessToken);
+            setToken(data.accessToken);
+          }
+        } catch {
+          // ignore expired refresh
+        }
+      }
+    };
+    tryRestore();
+  }, [user]);
+
+  // LOGIN
   const login = async (credentials: LoginCredentials) => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
-      const response = await fetch(`${API_URL}/auth/login`, {
+      const res = await fetch(`${apiClient.API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // Include cookies
+        credentials: 'include',
         body: JSON.stringify(credentials),
       });
 
-      const result = await response.json();
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Login failed');
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || 'Login failed');
-      }
-
-      const { accessToken, user } = result;
-      
-      if (!accessToken || !user) {
-        throw new Error('Invalid response from server');
-      }
-
-      setUser(user);
+      const { accessToken, user } = data;
+      apiClient.setToken(accessToken);
       setToken(accessToken);
-      localStorage.setItem(TOKEN_KEY, accessToken);
+      setUser(user);
       localStorage.setItem(USER_KEY, JSON.stringify(user));
 
-      toast.success('Login successful');
+      toast.success(`Welcome back, ${user.name || 'User'}!`);
       navigate('/dashboard');
-    } catch (error) {
-      console.error('Login error:', error);
-      toast.error(error instanceof Error ? error.message : 'Login failed');
-      throw error;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Login failed';
+      toast.error(msg);
+      throw err;
     }
   };
 
+  // LOGOUT
   const logout = async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
-      await fetch(`${API_URL}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-    } catch (error) {
-      console.error('Logout error:', error);
+      await apiClient.request('/auth/logout', { method: 'POST' });
+    } catch {
+      /* ignore */
+    } finally {
+      apiClient.setToken(null);
+      setToken(null);
+      setUser(null);
+      localStorage.removeItem(USER_KEY);
+      toast.info('Logged out successfully');
+      navigate('/login');
     }
-    
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    toast.info('Logged out successfully');
-    navigate('/login');
   };
 
   return (
@@ -110,6 +125,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         login,
         logout,
+        setUser,  // ✅ expose to consumers
+        setToken, // ✅ expose to consumers
       }}
     >
       {children}
@@ -118,9 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 }

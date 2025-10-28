@@ -2,7 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProject, useCreateProject, useUpdateProject } from '@/lib/hooks/useEngineering';
 import { Button } from '@/components/ui/button';
@@ -40,14 +40,6 @@ const projectSchema = z.object({
 
 type ProjectFormData = z.infer<typeof projectSchema>;
 
-const indianStates = [
-  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
-  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
-  'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram',
-  'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
-  'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
-];
-
 export default function ProjectForm() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -58,6 +50,10 @@ export default function ProjectForm() {
   const { data: projectData } = useProject(id || '');
   const createProject = useCreateProject();
   const updateProject = useUpdateProject();
+
+  // ✅ Users state
+  const [users, setUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
@@ -73,11 +69,41 @@ export default function ProjectForm() {
       budget: '',
       startDate: new Date().toISOString().split('T')[0],
       endDate: '',
-      projectManager: (user as any)?._id || user?.id || '',
+      projectManager: '',
       siteEngineer: '',
     },
   });
 
+  // ✅ Fetch all users
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoadingUsers(true);
+        const token = localStorage.getItem('erp_auth_token');
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5005/api'}/users`, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: token ? `Bearer ${token}` : '',
+          },
+        });
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          setUsers(data.data);
+        } else {
+          console.error('Failed to fetch users:', data);
+          toast({ title: 'Failed to fetch users', variant: 'destructive' });
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        toast({ title: 'Error fetching users', variant: 'destructive' });
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+    fetchUsers();
+  }, [toast]);
+
+  // ✅ Reset form if editing
   useEffect(() => {
     if (projectData && isEdit) {
       form.reset({
@@ -92,15 +118,28 @@ export default function ProjectForm() {
         budget: String(projectData.budget ?? ''),
         startDate: (projectData.startDate || '').split('T')[0],
         endDate: projectData.endDate ? projectData.endDate.split('T')[0] : '',
-        projectManager: (projectData.projectManager && (projectData.projectManager._id || projectData.projectManager.id || projectData.projectManager)) || '',
-        siteEngineer: (projectData.siteEngineer && (projectData.siteEngineer._id || projectData.siteEngineer.id || projectData.siteEngineer)) || '',
+        projectManager:
+          projectData.projectManager?._id ||
+          projectData.projectManager?.id ||
+          projectData.projectManager ||
+          '',
+        siteEngineer:
+          projectData.siteEngineer?._id ||
+          projectData.siteEngineer?.id ||
+          projectData.siteEngineer ||
+          '',
       });
     }
   }, [projectData, isEdit, form]);
 
+  // ✅ Dynamic user options
+  const userOptions = users.map((u) => ({
+    value: u._id,
+    label: `${u.name} (${u.email})`,
+  }));
+
   const onSubmit = async (data: ProjectFormData) => {
     try {
-      const currentUserId = (user as any)?._id || user?.id || '';
       const projectPayload: any = {
         name: data.name,
         description: data.description,
@@ -110,36 +149,35 @@ export default function ProjectForm() {
         category: data.category,
         status: data.status,
         budget: parseFloat(data.budget),
-        budgetUtilized: 0,
         startDate: data.startDate,
         endDate: data.endDate,
-        projectManager: data.projectManager || currentUserId,
+        projectManager: data.projectManager,
         siteEngineer: data.siteEngineer,
         progress: 0,
       };
 
-      // Only include code when editing (backend auto-generates for new projects)
       if (isEdit && data.code) {
         projectPayload.code = data.code;
       }
 
       if (isEdit && id) {
         await updateProject.mutateAsync({ id, data: projectPayload });
+        toast({ title: 'Project updated successfully!' });
       } else {
         await createProject.mutateAsync(projectPayload);
+        toast({ title: 'Project created successfully!' });
       }
+
       navigate('/engineering/projects');
     } catch (error) {
       console.error('Failed to save project:', error);
+      toast({ title: 'Error saving project', variant: 'destructive' });
     }
   };
 
-  const currentUserId = (user as any)?._id || user?.id || '';
-  const currentUserName = user?.name || 'Me';
-  // Using current user as manager by default
-
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate('/engineering/projects')}>
           <ArrowLeft className="h-4 w-4" />
@@ -152,8 +190,10 @@ export default function ProjectForm() {
         </div>
       </div>
 
+      {/* Form */}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* ========== BASIC INFO ========== */}
           <Card>
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>
@@ -169,9 +209,7 @@ export default function ProjectForm() {
                       <FormControl>
                         <Input {...field} placeholder="Auto-generated by system" disabled />
                       </FormControl>
-                      <FormDescription>
-                        Automatically generated by the system
-                      </FormDescription>
+                      <FormDescription>Automatically generated by the system</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -224,11 +262,7 @@ export default function ProjectForm() {
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea
-                        {...field}
-                        placeholder="Brief description of the project"
-                        rows={3}
-                      />
+                      <Textarea {...field} placeholder="Brief description of the project" rows={3} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -267,12 +301,7 @@ export default function ProjectForm() {
                     <FormItem>
                       <FormLabel>Budget (₹) *</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          {...field}
-                          placeholder="10000000"
-                        />
+                        <Input type="number" step="0.01" {...field} placeholder="10000000" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -280,6 +309,7 @@ export default function ProjectForm() {
                 />
               </div>
 
+              {/* CLIENT INFO */}
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -294,7 +324,6 @@ export default function ProjectForm() {
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="clientContact"
@@ -310,6 +339,7 @@ export default function ProjectForm() {
                 />
               </div>
 
+              {/* TEAM ASSIGNMENT */}
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -318,14 +348,16 @@ export default function ProjectForm() {
                     <FormItem>
                       <FormLabel>Project Manager *</FormLabel>
                       <FormControl>
-                        <SearchableSelect
-                          options={[
-                            { value: currentUserId, label: `${currentUserName} (You)` },
-                          ]}
-                          value={field.value || currentUserId}
-                          onChange={field.onChange}
-                          placeholder="Select manager"
-                        />
+                        {loadingUsers ? (
+                          <div className="text-sm text-muted-foreground">Loading users...</div>
+                        ) : (
+                          <SearchableSelect
+                            options={userOptions}
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Select project manager"
+                          />
+                        )}
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -339,14 +371,16 @@ export default function ProjectForm() {
                     <FormItem>
                       <FormLabel>Site Engineer</FormLabel>
                       <FormControl>
-                        <SearchableSelect
-                          options={[
-                            { value: currentUserId, label: `${currentUserName} (You)` },
-                          ]}
-                          value={field.value || ''}
-                          onChange={field.onChange}
-                          placeholder="Select engineer"
-                        />
+                        {loadingUsers ? (
+                          <div className="text-sm text-muted-foreground">Loading users...</div>
+                        ) : (
+                          <SearchableSelect
+                            options={userOptions}
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Select site engineer"
+                          />
+                        )}
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -356,6 +390,7 @@ export default function ProjectForm() {
             </CardContent>
           </Card>
 
+          {/* ========== TIMELINE ========== */}
           <Card>
             <CardHeader>
               <CardTitle>Timeline</CardTitle>
@@ -375,7 +410,6 @@ export default function ProjectForm() {
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="endDate"
@@ -393,6 +427,7 @@ export default function ProjectForm() {
             </CardContent>
           </Card>
 
+          {/* ========== LOCATION ========== */}
           <Card>
             <CardHeader>
               <CardTitle>Location</CardTitle>
@@ -407,9 +442,7 @@ export default function ProjectForm() {
                     <FormControl>
                       <Input {...field} placeholder="Mumbai, Maharashtra" />
                     </FormControl>
-                    <FormDescription>
-                      City, State or full address
-                    </FormDescription>
+                    <FormDescription>City, State or full address</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -417,10 +450,9 @@ export default function ProjectForm() {
             </CardContent>
           </Card>
 
+          {/* ========== BUTTONS ========== */}
           <div className="flex gap-4">
-            <Button type="submit">
-              {isEdit ? 'Update Project' : 'Create Project'}
-            </Button>
+            <Button type="submit">{isEdit ? 'Update Project' : 'Create Project'}</Button>
             <Button type="button" variant="outline" onClick={() => navigate('/engineering/projects')}>
               Cancel
             </Button>

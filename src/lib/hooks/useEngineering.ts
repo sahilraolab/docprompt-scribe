@@ -8,8 +8,8 @@ export function useProjects() {
     queryKey: ['projects'],
     queryFn: async () => {
       const response = await projectsApi.getAll();
-      return response.data; // Extract data array from { success, data, message }
-    },
+      return response.data;
+    }
   });
 }
 

@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  useSuppliers, 
-  useItems, 
-  useMaterialRate, 
-  useCreateMaterialRate, 
-  useUpdateMaterialRate 
+import {
+  useSuppliers,
+  useItems,
+  useMaterialRate,
+  useCreateMaterialRate,
+  useUpdateMaterialRate,
 } from '@/lib/hooks/usePurchaseBackend';
 import { SearchableSelect } from '@/components/SearchableSelect';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -27,19 +27,35 @@ const rateSchema = z.object({
   effectiveFrom: z.string().min(1, 'Effective date is required'),
   effectiveTo: z.string().optional(),
   isActive: z.boolean().default(true),
+  remarks: z.string().optional(),
 });
 
 type RateFormData = z.infer<typeof rateSchema>;
+
+// ✅ Static UOM list
+const UOM_OPTIONS = [
+  { value: 'kg', label: 'Kilogram (kg)' },
+  { value: 'g', label: 'Gram (g)' },
+  { value: 'mg', label: 'Milligram (mg)' },
+  { value: 'ltr', label: 'Litre (ltr)' },
+  { value: 'ml', label: 'Millilitre (ml)' },
+  { value: 'm', label: 'Meter (m)' },
+  { value: 'cm', label: 'Centimeter (cm)' },
+  { value: 'pcs', label: 'Pieces (pcs)' },
+  { value: 'box', label: 'Box' },
+  { value: 'pack', label: 'Pack' },
+  { value: 'set', label: 'Set' },
+];
 
 export default function RateForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   const { data: suppliers, isLoading: suppliersLoading } = useSuppliers();
   const { data: items, isLoading: itemsLoading } = useItems();
   const { data: existingRate, isLoading: rateLoading } = useMaterialRate(id || '');
-  
+
   const createMutation = useCreateMaterialRate();
   const updateMutation = useUpdateMaterialRate();
 
@@ -60,32 +76,54 @@ export default function RateForm() {
 
   const itemId = watch('itemId');
   const supplierId = watch('supplierId');
+  const uom = watch('uom');
   const isActive = watch('isActive');
 
+  // ✅ Prefill form when editing (wait for all data)
   useEffect(() => {
-    if (existingRate) {
+    console.log("existingRate:", existingRate);
+    console.log("items:", items);
+    console.log("suppliers:", suppliers);
+
+    // handle both cases: rate object or { data: rate }
+    const rate = existingRate?.data ?? existingRate;
+
+    if (rate && items?.length && suppliers?.length) {
+      console.log("Prefilling rate:", rate);
+
       reset({
-        itemId: existingRate.itemId,
-        supplierId: existingRate.supplierId,
-        rate: existingRate.rate,
-        uom: existingRate.uom,
-        effectiveFrom: existingRate.effectiveFrom,
-        effectiveTo: existingRate.effectiveTo || '',
-        isActive: existingRate.isActive,
+        itemId: rate.itemId?._id || rate.itemId || '',
+        supplierId: rate.supplierId?._id || rate.supplierId || '',
+        rate: rate.rate ?? 0,
+        uom: rate.uom ?? '',
+        effectiveFrom: rate.effectiveFrom
+          ? rate.effectiveFrom.split('T')[0]
+          : new Date().toISOString().split('T')[0],
+        effectiveTo: rate.effectiveTo ? rate.effectiveTo.split('T')[0] : '',
+        isActive: rate.active ?? true,
+        remarks: rate.remarks ?? '',
       });
     }
-  }, [existingRate, reset]);
+  }, [existingRate, items, suppliers, reset]);
 
+
+
+  // ✅ Submit handler
   const onSubmit = async (data: RateFormData) => {
     try {
+      const payload = { ...data, active: data.isActive };
+      delete (payload as any).isActive;
+
       if (id) {
-        await updateMutation.mutateAsync({ id, data });
+        await updateMutation.mutateAsync({ id, data: payload });
+        toast({ description: 'Material rate updated successfully.' });
       } else {
-        await createMutation.mutateAsync(data);
+        await createMutation.mutateAsync(payload);
+        toast({ description: 'Material rate created successfully.' });
       }
       navigate('/purchase/rates');
     } catch (error) {
-      // Error toast is handled by the mutation hooks
+      console.error('Error saving rate:', error);
     }
   };
 
@@ -100,18 +138,19 @@ export default function RateForm() {
     );
   }
 
-  const itemOptions = (Array.isArray(items) ? items : []).map(item => ({
-    value: item.id,
+  const itemOptions = (Array.isArray(items) ? items : []).map((item: any) => ({
+    value: item._id || item.id,
     label: `${item.name} (${item.code})`,
   }));
 
-  const supplierOptions = (Array.isArray(suppliers) ? suppliers : []).map(supplier => ({
-    value: supplier.id,
+  const supplierOptions = (Array.isArray(suppliers) ? suppliers : []).map((supplier: any) => ({
+    value: supplier._id || supplier.id,
     label: `${supplier.name} (${supplier.code})`,
   }));
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate('/purchase/rates')}>
           <ArrowLeft className="h-4 w-4" />
@@ -122,6 +161,7 @@ export default function RateForm() {
         </div>
       </div>
 
+      {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <Card>
           <CardHeader>
@@ -129,24 +169,24 @@ export default function RateForm() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
+              {/* Item */}
               <div className="space-y-2">
                 <Label htmlFor="itemId">Item *</Label>
                 <SearchableSelect
                   options={itemOptions}
-                  value={itemId}
+                  value={itemOptions.find((opt) => opt.value === itemId)?.value || ''}
                   onChange={(value) => setValue('itemId', value)}
                   placeholder="Search items..."
                 />
-                {errors.itemId && (
-                  <p className="text-sm text-destructive">{errors.itemId.message}</p>
-                )}
+                {errors.itemId && <p className="text-sm text-destructive">{errors.itemId.message}</p>}
               </div>
 
+              {/* Supplier */}
               <div className="space-y-2">
                 <Label htmlFor="supplierId">Supplier *</Label>
                 <SearchableSelect
                   options={supplierOptions}
-                  value={supplierId}
+                  value={supplierOptions.find((opt) => opt.value === supplierId)?.value || ''}
                   onChange={(value) => setValue('supplierId', value)}
                   placeholder="Search suppliers..."
                 />
@@ -155,6 +195,7 @@ export default function RateForm() {
                 )}
               </div>
 
+              {/* Rate */}
               <div className="space-y-2">
                 <Label htmlFor="rate">Rate *</Label>
                 <Input
@@ -163,22 +204,22 @@ export default function RateForm() {
                   {...register('rate', { valueAsNumber: true })}
                   placeholder="0.00"
                 />
-                {errors.rate && (
-                  <p className="text-sm text-destructive">{errors.rate.message}</p>
-                )}
+                {errors.rate && <p className="text-sm text-destructive">{errors.rate.message}</p>}
               </div>
 
+              {/* UOM */}
               <div className="space-y-2">
                 <Label htmlFor="uom">Unit of Measure *</Label>
-                <Input
-                  {...register('uom')}
-                  placeholder="e.g., kg, m, pcs"
+                <SearchableSelect
+                  options={UOM_OPTIONS}
+                  value={UOM_OPTIONS.find((opt) => opt.value === uom)?.value || ''}
+                  onChange={(value) => setValue('uom', value)}
+                  placeholder="Select UOM..."
                 />
-                {errors.uom && (
-                  <p className="text-sm text-destructive">{errors.uom.message}</p>
-                )}
+                {errors.uom && <p className="text-sm text-destructive">{errors.uom.message}</p>}
               </div>
 
+              {/* Dates */}
               <div className="space-y-2">
                 <Label htmlFor="effectiveFrom">Effective From *</Label>
                 <Input type="date" {...register('effectiveFrom')} />
@@ -194,6 +235,13 @@ export default function RateForm() {
               </div>
             </div>
 
+            {/* Remarks */}
+            <div className="space-y-2">
+              <Label htmlFor="remarks">Remarks</Label>
+              <Input {...register('remarks')} placeholder="Optional remarks..." />
+            </div>
+
+            {/* Active toggle */}
             <div className="flex items-center space-x-2">
               <Switch
                 id="isActive"
@@ -207,6 +255,7 @@ export default function RateForm() {
           </CardContent>
         </Card>
 
+        {/* Actions */}
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" onClick={() => navigate('/purchase/rates')}>
             Cancel

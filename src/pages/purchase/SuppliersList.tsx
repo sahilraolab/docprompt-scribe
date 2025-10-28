@@ -30,7 +30,7 @@ export default function SuppliersList() {
 
   const handleExport = () => {
     if (!filteredSuppliers || filteredSuppliers.length === 0) return;
-    
+
     const exportData = prepareDataForExport(filteredSuppliers);
     downloadCSV(
       exportData,
@@ -55,8 +55,8 @@ export default function SuppliersList() {
           <p className="text-muted-foreground">Manage supplier database</p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={handleExport}
             disabled={!filteredSuppliers || filteredSuppliers.length === 0}
           >
@@ -100,9 +100,9 @@ export default function SuppliersList() {
                 <TableBody>
                   {filteredSuppliers.map((supplier) => (
                     <TableRow
-                      key={supplier.id}
+                      key={supplier._id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/purchase/suppliers/${supplier.id}`)}
+                      onClick={() => navigate(`/purchase/suppliers/${supplier._id}`)}
                     >
                       <TableCell className="font-medium">{supplier.name}</TableCell>
                       <TableCell>{supplier.contact}</TableCell>
@@ -137,9 +137,9 @@ export default function SuppliersList() {
               action={
                 !searchQuery
                   ? {
-                      label: "Add Supplier",
-                      onClick: () => navigate('/purchase/suppliers/new'),
-                    }
+                    label: "Add Supplier",
+                    onClick: () => navigate('/purchase/suppliers/new'),
+                  }
                   : undefined
               }
             />

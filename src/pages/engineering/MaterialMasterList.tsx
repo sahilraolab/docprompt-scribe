@@ -18,7 +18,7 @@ const MaterialMasterList = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  
+
   const { data: materials, isLoading } = useMaterialMaster();
   const deleteMaterial = useDeleteMaterial();
 
@@ -44,13 +44,15 @@ const MaterialMasterList = () => {
       key: 'standardRate',
       header: 'Std Rate',
       label: 'Std Rate',
-      render: (value: number) => value ? `₹${value.toLocaleString()}` : '-',
+      render: (item: MaterialMaster) =>
+        item.standardRate ? `₹${item.standardRate.toLocaleString()}` : '-',
     },
     {
       key: 'lastPurchaseRate',
       header: 'Last Rate',
       label: 'Last Rate',
-      render: (value: number) => value ? `₹${value.toLocaleString()}` : '-',
+      render: (item: MaterialMaster) =>
+        item.lastPurchaseRate ? `₹${item.lastPurchaseRate.toLocaleString()}` : '-',
     },
     {
       key: 'active',

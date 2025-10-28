@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProjects } from '@/lib/hooks/useEngineering';
 import { PageHeader } from '@/components/PageHeader';
@@ -19,6 +19,7 @@ import { formatCurrency, formatPercent, formatDate } from '@/lib/utils/format';
 import { exportToCSV, exportToExcel } from '@/lib/utils/export';
 import { Project } from '@/types';
 import { INDIAN_STATES } from '@/lib/constants';
+import { j } from 'node_modules/msw/lib/core/HttpResponse-DzhqZzTK';
 
 export default function ProjectsList() {
   const navigate = useNavigate();
@@ -28,8 +29,14 @@ export default function ProjectsList() {
   const [stateFilter, setStateFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
 
+  useEffect(()=>{
+    console.log("<><><><><L<KLKLK")
+    console.log(projects);
+  }, [projects])
+
   // Filter projects
   const filteredProjects = (projects || []).filter((project: any) => {
+    console.log("Projects Data From Hook:", projects);
     const q = searchQuery.toLowerCase();
     const name = (project.name || '').toLowerCase();
     const code = (project.code || '').toLowerCase();

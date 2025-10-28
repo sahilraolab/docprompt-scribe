@@ -11,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -32,6 +31,15 @@ const boqSchema = z.object({
 
 type BOQFormData = z.infer<typeof boqSchema>;
 
+type BOQItemUI = {
+  materialId?: string;
+  description: string;
+  uom: string;
+  qty: string;
+  rate: string;
+  remarks?: string;
+};
+
 export default function BOQForm() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -39,6 +47,7 @@ export default function BOQForm() {
 
   const { data: boqData } = useBOQ(id || '');
   const { data: projects } = useProjects();
+  const { data: materialsData } = useMaterialMaster();
   const createBOQ = useCreateBOQ();
   const updateBOQ = useUpdateBOQ();
 
@@ -52,13 +61,11 @@ export default function BOQForm() {
     },
   });
 
-  const { data: materialsData } = useMaterialMaster();
-  type BOQItemUI = { materialId?: string; description: string; uom: string; qty: string; rate: string };
   const [items, setItems] = useState<BOQItemUI[]>([
-    { description: '', uom: '', qty: '', rate: '' },
+    { description: '', uom: '', qty: '', rate: '', remarks: '' },
   ]);
 
-  const materials = ((materialsData as any)?.data || (materialsData as any) || []) as any[];
+  const materials = ((materialsData as any)?.data || materialsData || []) as any[];
   const materialOptions = materials.map((m: any) => ({
     value: m._id || m.id,
     label: `${m.code || ''} - ${m.name}`,
@@ -66,38 +73,59 @@ export default function BOQForm() {
     rate: m.standardRate,
   }));
 
+  const projectOptions = (projects || []).map((p) => ({
+    value: p._id || p.id,
+    label: `${p.code || ''} - ${p.name || ''}`,
+  }));
+
+  const statusOptions = [
+    { value: 'Draft', label: 'Draft' },
+    { value: 'Approved', label: 'Approved' },
+    { value: 'Revised', label: 'Revised' },
+    { value: 'Archived', label: 'Archived' },
+  ];
+
   const units = ['SQM', 'CUM', 'RMT', 'NOS', 'KG', 'TON', 'BAG', 'LTR'];
 
-  const addItem = () => setItems([...items, { description: '', uom: '', qty: '', rate: '' }]);
-  const removeItem = (index: number) => setItems(items.filter((_, i) => i !== index));
-  const calculateItemAmount = (qty: string, rate: string) => {
-    const q = parseFloat(qty || '0');
-    const r = parseFloat(rate || '0');
-    return (isNaN(q) || isNaN(r)) ? 0 : q * r;
-  };
-  const calculateTotal = () => items.reduce((sum, it) => sum + calculateItemAmount(it.qty, it.rate), 0);
-
+  // Prefill on edit
   useEffect(() => {
     if (boqData && isEdit) {
       form.reset({
-        projectId: boqData.projectId || '',
+        projectId: boqData.projectId?._id || boqData.projectId || '',
         name: boqData.name || '',
         description: boqData.description || '',
         status: boqData.status || 'Draft',
       });
+
       if (Array.isArray(boqData.items) && boqData.items.length) {
         setItems(
           boqData.items.map((it: any) => ({
-            materialId: it.itemId || it.item?._id || it.itemId?._id,
+            materialId: it.itemId || it.item?._id || it.itemId?._id || '',
             description: it.description || it.itemName || '',
             uom: it.uom || '',
             qty: String(it.qty ?? ''),
             rate: String(it.rate ?? it.estimatedRate ?? ''),
+            remarks: it.remarks || '',
           }))
         );
       }
     }
   }, [boqData, isEdit, form]);
+
+  const addItem = () =>
+    setItems([...items, { description: '', uom: '', qty: '', rate: '', remarks: '' }]);
+
+  const removeItem = (index: number) =>
+    setItems(items.filter((_, i) => i !== index));
+
+  const calculateItemAmount = (qty: string, rate: string) => {
+    const q = parseFloat(qty || '0');
+    const r = parseFloat(rate || '0');
+    return isNaN(q) || isNaN(r) ? 0 : q * r;
+  };
+
+  const calculateTotal = () =>
+    items.reduce((sum, it) => sum + calculateItemAmount(it.qty, it.rate), 0);
 
   const onSubmit = async (data: BOQFormData) => {
     try {
@@ -105,6 +133,7 @@ export default function BOQForm() {
         toast.error('Add at least one BOQ item');
         return;
       }
+
       for (const [idx, it] of items.entries()) {
         const hasAll = (it.description?.trim() || it.materialId) && it.uom && it.qty && it.rate;
         const q = parseFloat(it.qty);
@@ -122,11 +151,12 @@ export default function BOQForm() {
         uom: it.uom,
         rate: parseFloat(it.rate),
         amount: parseFloat(it.qty) * parseFloat(it.rate),
+        remarks: it.remarks || '',
       }));
 
       const totalAmount = mappedItems.reduce((sum, i) => sum + i.amount, 0);
 
-      const payload: any = {
+      const payload = {
         projectId: data.projectId,
         name: data.name,
         description: data.description,
@@ -137,28 +167,18 @@ export default function BOQForm() {
 
       if (isEdit && id) {
         await updateBOQ.mutateAsync({ id, data: payload });
+        toast.success('BOQ updated successfully');
       } else {
         await createBOQ.mutateAsync(payload);
+        toast.success('BOQ created successfully');
       }
-      toast.success(isEdit ? 'BOQ updated successfully' : 'BOQ created successfully');
+
       navigate('/engineering/boq');
     } catch (error) {
       console.error('Failed to save BOQ:', error);
       toast.error('Failed to save BOQ');
     }
   };
-
-  const projectOptions = (projects || []).map(p => ({
-    value: p.id,
-    label: `${p.code} - ${p.name}`,
-  }));
-
-  const statusOptions = [
-    { value: 'Draft', label: 'Draft' },
-    { value: 'Approved', label: 'Approved' },
-    { value: 'Revised', label: 'Revised' },
-    { value: 'Archived', label: 'Archived' },
-  ];
 
   return (
     <div className="space-y-6">
@@ -176,6 +196,7 @@ export default function BOQForm() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* --- BOQ Info --- */}
           <Card>
             <CardHeader>
               <CardTitle>BOQ Information</CardTitle>
@@ -190,8 +211,8 @@ export default function BOQForm() {
                     <FormControl>
                       <SearchableSelect
                         options={projectOptions}
-                        value={field.value}
-                        onChange={field.onChange}
+                        value={String(field.value || '')}
+                        onChange={(val) => field.onChange(String(val))}
                         placeholder="Select project"
                         searchPlaceholder="Search projects..."
                       />
@@ -229,30 +250,29 @@ export default function BOQForm() {
                 )}
               />
 
-              <div className="grid grid-cols-1 gap-4">
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status *</FormLabel>
-                      <FormControl>
-                        <SearchableSelect
-                          options={statusOptions}
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="Select status"
-                          searchPlaceholder="Search status..."
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status *</FormLabel>
+                    <FormControl>
+                      <SearchableSelect
+                        options={statusOptions}
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select status"
+                        searchPlaceholder="Search status..."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 
+          {/* --- BOQ Items --- */}
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -263,13 +283,19 @@ export default function BOQForm() {
                 </Button>
               </div>
             </CardHeader>
+
             <CardContent className="space-y-4">
               {items.map((it, index) => (
                 <div key={index} className="p-4 border rounded-lg space-y-4">
                   <div className="flex items-start justify-between">
                     <h4 className="font-medium">Item {index + 1}</h4>
                     {items.length > 1 && (
-                      <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(index)}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeItem(index)}
+                      >
                         <Trash className="h-4 w-4 text-destructive" />
                       </Button>
                     )}
@@ -280,17 +306,20 @@ export default function BOQForm() {
                       options={materialOptions}
                       value={it.materialId || ''}
                       onChange={(value) => {
-                        const opt: any = materialOptions.find((o: any) => o.value === value);
+                        const selected = materialOptions.find((o) => o.value === value);
                         const next = [...items];
                         next[index].materialId = value;
-                        if (opt) {
-                          next[index].uom = opt.uom || next[index].uom;
-                          if (!next[index].description) next[index].description = opt.label.split(' - ').slice(1).join(' - ');
-                          if (!next[index].rate && opt.rate != null) next[index].rate = String(opt.rate);
+
+                        if (selected) {
+                          next[index].description = selected.label.split(' - ').slice(1).join(' - ');
+                          next[index].uom = selected.uom || '';
+                          next[index].rate =
+                            selected.rate != null ? String(selected.rate) : '';
                         }
+
                         setItems(next);
                       }}
-                      placeholder="Select material (optional)"
+                      placeholder="Select material"
                       searchPlaceholder="Search materials..."
                     />
 
@@ -305,7 +334,7 @@ export default function BOQForm() {
                     />
 
                     <SearchableSelect
-                      options={units.map(u => ({ value: u, label: u }))}
+                      options={units.map((u) => ({ value: u, label: u }))}
                       value={it.uom}
                       onChange={(value) => {
                         const next = [...items];
@@ -337,9 +366,22 @@ export default function BOQForm() {
                       }}
                     />
 
+                    <Textarea
+                      placeholder="Remarks (optional)"
+                      value={it.remarks || ''}
+                      onChange={(e) => {
+                        const next = [...items];
+                        next[index].remarks = e.target.value;
+                        setItems(next);
+                      }}
+                      rows={2}
+                    />
+
                     <div className="flex items-center justify-between p-3 bg-muted rounded">
                       <span className="text-sm text-muted-foreground">Amount:</span>
-                      <span className="font-semibold">₹{calculateItemAmount(it.qty, it.rate).toLocaleString('en-IN')}</span>
+                      <span className="font-semibold">
+                        ₹{calculateItemAmount(it.qty, it.rate).toLocaleString('en-IN')}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -348,12 +390,15 @@ export default function BOQForm() {
               <div className="flex justify-end p-4 bg-muted rounded-lg">
                 <div className="text-right">
                   <p className="text-sm text-muted-foreground">Total BOQ</p>
-                  <p className="text-2xl font-bold">₹{calculateTotal().toLocaleString('en-IN')}</p>
+                  <p className="text-2xl font-bold">
+                    ₹{calculateTotal().toLocaleString('en-IN')}
+                  </p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
+          {/* --- Actions --- */}
           <div className="flex gap-4">
             <Button type="submit" disabled={createBOQ.isPending || updateBOQ.isPending}>
               {(createBOQ.isPending || updateBOQ.isPending) && (
@@ -361,6 +406,7 @@ export default function BOQForm() {
               )}
               {isEdit ? 'Update BOQ' : 'Create BOQ'}
             </Button>
+
             <Button type="button" variant="outline" onClick={() => navigate('/engineering/boq')}>
               Cancel
             </Button>

@@ -580,3 +580,33 @@ export function useDeleteMaterialRate() {
     },
   });
 }
+
+export function useApproveQuotation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data?: any }) =>
+      quotationsApi.approve(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotations'] });
+      toast.success('Quotation approved successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to approve quotation');
+    },
+  });
+}
+
+export function useRejectQuotation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data?: any }) =>
+      quotationsApi.reject(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotations'] });
+      toast.success('Quotation rejected');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to reject quotation');
+    },
+  });
+}

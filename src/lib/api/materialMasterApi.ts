@@ -47,9 +47,12 @@ export const boqApi = {
 
 // Material Requisition from BOQ
 export const mrFromBOQApi = {
-  generateFromBOQ: (boqId: string, data: any) => apiCall(`/purchase/mrs/from-boq/${boqId}`, { 
-    method: 'POST', 
-    body: JSON.stringify(data) 
-  }),
-  getMRsByBOQ: (boqId: string) => apiCall(`/purchase/mrs?boqId=${boqId}`),
+  generateFromBOQ: (boqId: string, data: any) =>
+    apiCall(`/engineering/boq/${boqId}/generate-mr`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getMRsByBOQ: (boqId: string) =>
+    apiCall(`/purchase/mrs?boqId=${boqId}`),
 };

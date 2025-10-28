@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuotations } from '@/lib/hooks/usePurchaseBackend';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
 import { exportData } from '@/lib/utils/export-enhanced';
-import { Plus, Search, FileText, Loader2, Download, Filter } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Search, FileText, Loader2, Download, Eye } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -18,73 +17,90 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function QuotationsList() {
   const navigate = useNavigate();
-  const { data: quotations, isLoading } = useQuotations();
+  const { data, isLoading } = useQuotations();
+
+  // Support both wrapped and direct data
+  const quotations = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('date');
 
-  const filteredQuotations = quotations
-    ?.filter((quot) => {
-      const matchesSearch = 
-        quot.supplierName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        quot.mrCode?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || quot.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    })
-    .sort((a, b) => {
-      if (sortBy === 'date') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      if (sortBy === 'supplier') return (a.supplierName || '').localeCompare(b.supplierName || '');
-      if (sortBy === 'amount') return calculateTotal(b) - calculateTotal(a);
-      return 0;
-    });
+  const calculateTotal = (quotation: any) =>
+    quotation.totalAmount ||
+    quotation.items?.reduce((sum: number, item: any) => sum + (item.amount || 0), 0) ||
+    0;
+
+  const filteredQuotations = useMemo(() => {
+    return quotations
+      .filter((q: any) => {
+        const supplier = q.supplierId?.name?.toLowerCase() || '';
+        const mr = q.mrId?.code?.toLowerCase() || '';
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = supplier.includes(query) || mr.includes(query);
+        const matchesStatus = statusFilter === 'all' || q.status === statusFilter;
+        return matchesSearch && matchesStatus;
+      })
+      .sort((a: any, b: any) => {
+        if (sortBy === 'date') return new Date(b.createdAt) - new Date(a.createdAt);
+        if (sortBy === 'supplier') return (a.supplierId?.name || '').localeCompare(b.supplierId?.name || '');
+        if (sortBy === 'amount') return calculateTotal(b) - calculateTotal(a);
+        return 0;
+      });
+  }, [quotations, searchQuery, statusFilter, sortBy]);
 
   const handleExport = () => {
-    if (!filteredQuotations) return;
-    const data = filteredQuotations.map((quot) => ({
-      'Supplier': quot.supplierName,
-      'MR Code': quot.mrCode,
-      'Items': quot.items.length,
-      'Total Amount': calculateTotal(quot),
-      'Expires On': quot.expiresAt,
-      'Date': quot.createdAt,
-      'Status': quot.status,
+    if (!filteredQuotations.length) return;
+    const rows = filteredQuotations.map((q: any) => ({
+      'Quotation Code': q.code,
+      'Supplier': q.supplierId?.name,
+      'MR Code': q.mrId?.code,
+      'Date': formatDate(q.quotationDate),
+      'Amount': formatCurrency(calculateTotal(q)),
+      'Status': q.status,
     }));
-    exportData(data, { filename: 'quotations', format: 'csv' });
+    exportData(rows, { filename: 'quotations', format: 'csv' });
   };
 
-  if (isLoading) {
+  if (isLoading)
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex justify-center py-10">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
-  }
-
-  const calculateTotal = (quot: any) => {
-    return quot.items.reduce((sum: number, item: any) => sum + item.amount, 0);
-  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Quotations</h1>
           <p className="text-muted-foreground">Manage supplier quotations</p>
         </div>
-        <Button onClick={handleExport} variant="outline">
-          <Download className="h-4 w-4 mr-2" />
-          Export
-        </Button>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="h-4 w-4 mr-2" /> Export
+          </Button>
+          <Button onClick={() => navigate('/purchase/quotations/new')}>
+            <Plus className="h-4 w-4 mr-2" /> New Quotation
+          </Button>
+        </div>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="flex gap-4 flex-wrap">
+            <div className="relative flex-1 min-w-[250px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by supplier or MR code..."
                 value={searchQuery}
@@ -97,10 +113,10 @@ export default function QuotationsList() {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Active">Active</SelectItem>
-                <SelectItem value="Expired">Expired</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="Draft">Draft</SelectItem>
+                <SelectItem value="Selected">Selected</SelectItem>
+                <SelectItem value="Rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
             <Select value={sortBy} onValueChange={setSortBy}>
@@ -116,33 +132,37 @@ export default function QuotationsList() {
           </div>
         </CardHeader>
         <CardContent>
-          {filteredQuotations && filteredQuotations.length > 0 ? (
-            <div className="rounded-md border">
+          {filteredQuotations.length ? (
+            <div className="border rounded-md overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Code</TableHead>
                     <TableHead>Supplier</TableHead>
                     <TableHead>MR Code</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead>Total Amount</TableHead>
-                    <TableHead>Expires On</TableHead>
                     <TableHead>Date</TableHead>
+                    <TableHead>Total</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredQuotations.map((quot) => (
-                    <TableRow key={quot.id}>
-                      <TableCell className="font-medium">{quot.supplierName}</TableCell>
-                      <TableCell>{quot.mrCode}</TableCell>
-                      <TableCell>{quot.items.length} items</TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(calculateTotal(quot))}
-                      </TableCell>
-                      <TableCell>{formatDate(quot.expiresAt)}</TableCell>
-                      <TableCell>{formatDate(quot.createdAt)}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={quot.status} />
+                  {filteredQuotations.map((q: any) => (
+                    <TableRow key={q._id}>
+                      <TableCell>{q.code}</TableCell>
+                      <TableCell>{q.supplierId?.name || '-'}</TableCell>
+                      <TableCell>{q.mrId?.code || '-'}</TableCell>
+                      <TableCell>{formatDate(q.quotationDate)}</TableCell>
+                      <TableCell>{formatCurrency(calculateTotal(q))}</TableCell>
+                      <TableCell><StatusBadge status={q.status} /></TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/purchase/quotations/${q._id}/view`)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -153,11 +173,7 @@ export default function QuotationsList() {
             <EmptyState
               icon={FileText}
               title="No quotations found"
-              description={
-                searchQuery
-                  ? "No quotations match your search criteria"
-                  : "Add quotations from suppliers"
-              }
+              description="Create a new quotation to get started."
             />
           )}
         </CardContent>

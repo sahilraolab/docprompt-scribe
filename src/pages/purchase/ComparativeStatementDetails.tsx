@@ -3,11 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Pencil } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
-import { useQuery } from '@tanstack/react-query';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-
 import { useComparativeStatement } from '@/lib/hooks/usePurchaseBackend';
 
 export default function ComparativeStatementDetails() {
@@ -19,20 +17,40 @@ export default function ComparativeStatementDetails() {
   if (isLoading) return <LoadingSpinner />;
   if (!statement) return <div>Comparative statement not found</div>;
 
+  const supplierName =
+    statement.selectedSupplier?.name ||
+    statement.selectedSupplierName ||
+    'Not selected';
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/purchase/comparative-statements')}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/purchase/comparative')}
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Comparative Statement</h1>
-            <p className="text-muted-foreground">MR: {statement.mrCode}</p>
+            <p className="text-muted-foreground">MR: {statement.mrId?.code}</p>
           </div>
         </div>
+
+        {/* ✅ Edit Button */}
+        <Button
+          variant="default"
+          onClick={() => navigate(`/purchase/comparative/${statement._id}/edit`)}
+        >
+          <Pencil className="h-4 w-4 mr-2" />
+          Edit
+        </Button>
       </div>
 
+      {/* Statement Info */}
       <Card>
         <CardHeader>
           <CardTitle>Statement Information</CardTitle>
@@ -41,35 +59,37 @@ export default function ComparativeStatementDetails() {
           <div className="grid grid-cols-3 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">MR Code</p>
-              <p className="font-medium">{statement.mrCode}</p>
+              <p className="font-medium">{statement.mrId?.code}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Project</p>
+              <p className="font-medium">{statement.projectId?.name || 'N/A'}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Created At</p>
               <p className="font-medium">{formatDate(statement.createdAt)}</p>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Number of Quotations</p>
-              <p className="font-medium">{statement.quotations?.length || 0}</p>
-            </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Analysis */}
       <Card>
         <CardHeader>
           <CardTitle>Analysis</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm">{statement.analysis}</p>
-          {statement.selectedSupplierId && (
+          <p className="text-sm">{statement.remarks || statement.analysis || 'No analysis provided'}</p>
+          {supplierName !== 'Not selected' && (
             <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-600" />
-              <span className="font-medium">Selected Supplier: {statement.selectedSupplierName || 'Supplier ' + statement.selectedSupplierId}</span>
+              <span className="font-medium">Selected Supplier: {supplierName}</span>
             </div>
           )}
         </CardContent>
       </Card>
 
+      {/* Quotation Comparison (if available) */}
       {statement.quotationDetails && statement.quotationDetails.length > 0 && (
         <Card>
           <CardHeader>

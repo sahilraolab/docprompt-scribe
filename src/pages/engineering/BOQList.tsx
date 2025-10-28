@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, FileText, CheckCircle, Download } from 'lucide-react';
+import { Plus, FileText, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,6 @@ import { DataTable } from '@/components/DataTable';
 import { EmptyState } from '@/components/EmptyState';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useBOQs, useDeleteBOQ } from '@/lib/hooks/useMaterialMaster';
-import { BOQ } from '@/types/engineering';
 import { exportToCSV } from '@/lib/utils/export';
 
 const BOQList = () => {
@@ -23,52 +22,69 @@ const BOQList = () => {
   const filteredBOQs = (Array.isArray(boqs) ? boqs : []).filter((boq: any) => {
     const projectName = boq.projectId?.name || boq.projectName || '';
     const code = boq.code || '';
-    return projectName.toLowerCase().includes(search.toLowerCase()) ||
-      code.toLowerCase().includes(search.toLowerCase());
+    return (
+      projectName.toLowerCase().includes(search.toLowerCase()) ||
+      code.toLowerCase().includes(search.toLowerCase())
+    );
   });
 
   const handleExport = () => {
     exportToCSV(filteredBOQs, 'boq-list.csv');
   };
 
+  // ✅ FIXED: all render functions now receive full row (boq), not individual field values
   const columns = [
-    { key: 'code', header: 'BOQ Code', label: 'BOQ Code' },
-    { 
-      key: 'projectId', 
-      header: 'Project', 
-      label: 'Project',
-      render: (projectId: any) => projectId?.name || 'N/A'
+    {
+      key: 'code',
+      header: 'BOQ Code',
+      render: (boq: any) => boq.code || 'N/A',
     },
-    { 
-      key: 'name', 
-      header: 'BOQ Name', 
-      label: 'BOQ Name' 
+    {
+      key: 'projectId',
+      header: 'Project',
+      render: (boq: any) =>
+        boq.projectId
+          ? `${boq.projectId.code || ''} - ${boq.projectId.name || 'N/A'}`
+          : boq.projectName || 'N/A',
+    },
+    {
+      key: 'name',
+      header: 'BOQ Name',
+      render: (boq: any) => boq.name || 'N/A',
     },
     {
       key: 'totalAmount',
       header: 'Total Amount',
-      label: 'Total Amount',
-      render: (value: number) => `₹${(value || 0).toLocaleString()}`,
+      render: (boq: any) =>
+        boq.totalAmount
+          ? `₹${boq.totalAmount.toLocaleString('en-IN')}`
+          : '₹0',
     },
     {
       key: 'status',
       header: 'Status',
-      label: 'Status',
-      render: (value: string) => {
-        const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+      render: (boq: any) => {
+        const variants: Record<
+          string,
+          'default' | 'secondary' | 'destructive' | 'outline'
+        > = {
           Draft: 'secondary',
           Approved: 'default',
           Revised: 'outline',
           Archived: 'destructive',
         };
-        return <Badge variant={variants[value] || 'secondary'}>{value}</Badge>;
+        return (
+          <Badge variant={variants[boq.status] || 'secondary'}>
+            {boq.status || 'Draft'}
+          </Badge>
+        );
       },
     },
     {
       key: 'items',
       header: 'Items',
-      label: 'Items',
-      render: (items: any[]) => items?.length || 0,
+      render: (boq: any) =>
+        Array.isArray(boq.items) ? boq.items.length : 0,
     },
   ];
 
@@ -118,7 +134,9 @@ const BOQList = () => {
         <DataTable
           data={filteredBOQs}
           columns={columns}
-          onRowClick={(boq) => navigate(`/engineering/boq/${boq._id || boq.id}`)}
+          onRowClick={(boq) =>
+            navigate(`/engineering/boq/${boq._id || boq.id}`)
+          }
         />
       )}
     </div>

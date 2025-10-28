@@ -6,16 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { SearchableSelect } from '@/components/SearchableSelect';
-import { Upload, X, FileText } from 'lucide-react';
+import { Upload, X, FileText, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function DocumentUpload() {
   const navigate = useNavigate();
-  const { data: projectsData } = useProjects();
+  const { data: projectsData, isLoading: projectsLoading } = useProjects();
   const createDocument = useCreateDocument();
-  
+
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [projectId, setProjectId] = useState('');
@@ -28,27 +34,29 @@ export default function DocumentUpload() {
   const [status, setStatus] = useState('Draft');
   const [description, setDescription] = useState('');
 
+  // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setFiles([...files, ...Array.from(e.target.files)]);
+      const selected = Array.from(e.target.files);
+      setFiles((prev) => [...prev, ...selected]);
     }
   };
 
+  // Remove file from preview list
   const removeFile = (index: number) => {
     setFiles(files.filter((_, i) => i !== index));
   };
 
-
+  // Submit handler
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (!projectId || !documentType || !name || files.length === 0) {
       toast.error('Please fill all required fields and select at least one file');
       return;
     }
 
     setUploading(true);
-    
     try {
       const formData = new FormData();
       formData.append('projectId', projectId);
@@ -60,56 +68,75 @@ export default function DocumentUpload() {
       formData.append('status', status);
       if (drawingNumber) formData.append('drawingNumber', drawingNumber);
       if (description) formData.append('description', description);
-      
-      // For single file upload as per backend controller
-      if (files[0]) {
-        formData.append('file', files[0]);
-      }
+
+      // Backend expects single file upload (`upload.single('file')`)
+      formData.append('file', files[0]);
 
       await createDocument.mutateAsync(formData);
+      toast.success('Document uploaded successfully');
       navigate('/engineering/documents');
-    } catch (error) {
-      console.error('Failed to upload document:', error);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to upload document');
     } finally {
       setUploading(false);
     }
   };
 
+  // Build project options
+  const projectOptions =
+    Array.isArray(projectsData)
+      ? projectsData.map((p: any) => ({
+          value: p._id || p.id,
+          label: `${p.code ? `${p.code} - ` : ''}${p.name}`,
+        }))
+      : Array.isArray(projectsData?.data)
+      ? projectsData.data.map((p: any) => ({
+          value: p._id || p.id,
+          label: `${p.code ? `${p.code} - ` : ''}${p.name}`,
+        }))
+      : [];
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Upload Documents</h1>
-          <p className="text-muted-foreground">Upload project drawings and files</p>
+          <h1 className="text-3xl font-bold">Upload Document</h1>
+          <p className="text-muted-foreground">
+            Upload project drawings, reports, and other files
+          </p>
         </div>
         <Button variant="outline" onClick={() => navigate('/engineering/documents')}>
           Cancel
         </Button>
       </div>
 
+      {/* Form */}
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader>
             <CardTitle>Document Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Row 1 - Project & Type */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="project">Project *</Label>
-                <SearchableSelect
-                  options={(projectsData?.data || []).map((project: any) => ({
-                    value: project._id || project.id,
-                    label: `${project.code} - ${project.name}`
-                  }))}
-                  value={projectId}
-                  onChange={setProjectId}
-                  placeholder="Select project"
-                  searchPlaceholder="Search projects..."
-                />
+                <Label>Project *</Label>
+                {projectsLoading ? (
+                  <div className="text-sm text-muted-foreground">Loading projects...</div>
+                ) : (
+                  <SearchableSelect
+                    options={projectOptions}
+                    value={projectId}
+                    onChange={setProjectId}
+                    placeholder="Select project"
+                    searchPlaceholder="Search projects..."
+                  />
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="documentType">Document Type *</Label>
+                <Label>Document Type *</Label>
                 <Select required value={documentType} onValueChange={setDocumentType}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
@@ -125,64 +152,61 @@ export default function DocumentUpload() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
 
+            {/* Row 2 - Name & Category */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="title">Document Name *</Label>
-                <Input 
-                  id="title" 
-                  placeholder="Enter document name" 
-                  required 
+                <Label>Document Name *</Label>
+                <Input
+                  placeholder="Enter document name"
+                  required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Input 
-                  id="category" 
-                  placeholder="e.g., Structural, Architectural" 
+                <Label>Category</Label>
+                <Input
+                  placeholder="e.g., Structural, Architectural"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                 />
               </div>
             </div>
 
+            {/* Row 3 - Version, Revision, Drawing Number */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="version">Version</Label>
-                <Input 
-                  id="version" 
-                  placeholder="e.g., 1.0" 
+                <Label>Version</Label>
+                <Input
+                  placeholder="e.g., 1.0"
                   value={version}
                   onChange={(e) => setVersion(e.target.value)}
                 />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="revision">Revision</Label>
-                <Input 
-                  id="revision" 
-                  placeholder="e.g., A" 
+                <Label>Revision</Label>
+                <Input
+                  placeholder="e.g., A"
                   value={revision}
                   onChange={(e) => setRevision(e.target.value)}
                 />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="drawingNumber">Drawing Number</Label>
-                <Input 
-                  id="drawingNumber" 
-                  placeholder="e.g., DWG-001" 
+                <Label>Drawing Number</Label>
+                <Input
+                  placeholder="e.g., DWG-001"
                   value={drawingNumber}
                   onChange={(e) => setDrawingNumber(e.target.value)}
                 />
               </div>
             </div>
 
+            {/* Row 4 - Status */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+                <Label>Status</Label>
                 <Select value={status} onValueChange={setStatus}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
@@ -198,10 +222,10 @@ export default function DocumentUpload() {
               </div>
             </div>
 
+            {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea 
-                id="description" 
+              <Label>Description</Label>
+              <Textarea
                 placeholder="Enter document description"
                 rows={3}
                 value={description}
@@ -209,28 +233,29 @@ export default function DocumentUpload() {
               />
             </div>
 
+            {/* File Upload Section */}
             <div className="space-y-4">
-              <Label>Upload Files *</Label>
-              <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground mb-4">
-                  Drag and drop files here, or click to browse
+              <Label>Upload File *</Label>
+              <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition">
+                <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground mb-3">
+                  Click below to browse and upload file (max 20 MB)
                 </p>
                 <Input
                   type="file"
-                  multiple
                   onChange={handleFileChange}
-                  className="max-w-xs mx-auto"
+                  className="max-w-xs mx-auto cursor-pointer"
                 />
               </div>
 
+              {/* Selected Files List */}
               {files.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">{files.length} file(s) selected:</p>
+                  <p className="text-sm font-medium">{files.length} file selected:</p>
                   {files.map((file, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                      className="flex items-center justify-between bg-muted p-3 rounded-lg"
                     >
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4" />
@@ -245,7 +270,7 @@ export default function DocumentUpload() {
                         size="sm"
                         onClick={() => removeFile(index)}
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
                   ))}
@@ -253,11 +278,26 @@ export default function DocumentUpload() {
               )}
             </div>
 
-            <div className="flex gap-4">
-              <Button type="submit" disabled={uploading || files.length === 0}>
-                {uploading ? 'Uploading...' : 'Upload Documents'}
+            {/* Submit Buttons */}
+            <div className="flex gap-4 pt-4">
+              <Button
+                type="submit"
+                disabled={uploading || files.length === 0}
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Uploading...
+                  </>
+                ) : (
+                  'Upload Document'
+                )}
               </Button>
-              <Button type="button" variant="outline" onClick={() => navigate('/engineering/documents')}>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate('/engineering/documents')}
+              >
                 Cancel
               </Button>
             </div>

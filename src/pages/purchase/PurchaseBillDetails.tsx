@@ -4,9 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Edit, ArrowLeft } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
-import { useQuery } from '@tanstack/react-query';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-
 import { usePurchaseBill } from '@/lib/hooks/usePurchaseBackend';
 
 export default function PurchaseBillDetails() {
@@ -20,6 +18,7 @@ export default function PurchaseBillDetails() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/purchase/bills')}>
@@ -30,6 +29,7 @@ export default function PurchaseBillDetails() {
             <p className="text-muted-foreground">{bill.invoiceNo}</p>
           </div>
         </div>
+
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => navigate(`/purchase/bills/${id}/edit`)}>
             <Edit className="h-4 w-4 mr-2" />
@@ -38,7 +38,9 @@ export default function PurchaseBillDetails() {
         </div>
       </div>
 
+      {/* Main Details */}
       <div className="grid gap-6 md:grid-cols-2">
+        {/* Bill Info */}
         <Card>
           <CardHeader>
             <CardTitle>Bill Information</CardTitle>
@@ -46,8 +48,8 @@ export default function PurchaseBillDetails() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground">Invoice Number</p>
-                <p className="font-medium">{bill.invoiceNo}</p>
+                <p className="text-sm text-muted-foreground">Bill Code</p>
+                <p className="font-medium">{bill.code}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Status</p>
@@ -57,16 +59,25 @@ export default function PurchaseBillDetails() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">PO Code</p>
-                <p className="font-medium">{bill.poCode}</p>
+                <p className="font-medium">{bill.poId?.code || '-'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Invoice Number</p>
+                <p className="font-medium">{bill.invoiceNo}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Invoice Date</p>
                 <p className="font-medium">{formatDate(bill.invoiceDate)}</p>
               </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Remarks</p>
+                <p className="font-medium">{bill.remarks || '-'}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
+        {/* Amount Info */}
         <Card>
           <CardHeader>
             <CardTitle>Amount Details</CardTitle>

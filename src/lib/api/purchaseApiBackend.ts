@@ -42,17 +42,28 @@ export const quotationsApi = {
   create: (data: any) => apiCall('/purchase/quotations', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: any) => apiCall(`/purchase/quotations/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: string) => apiCall(`/purchase/quotations/${id}`, { method: 'DELETE' }),
+  approve: (id: string, data?: any) =>
+    apiCall(`/purchase/quotations/${id}/approve`, {
+      method: 'POST',
+      body: JSON.stringify(data || {}),
+    }),
+  reject: (id: string, data?: any) =>
+    apiCall(`/purchase/quotations/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify(data || {}),
+    }),
+
 };
 
 // Comparative Statements API
 export const csApi = {
-  getAll: () => apiCall('/purchase/comparative'),
-  getById: (id: string) => apiCall(`/purchase/comparative/${id}`),
-  create: (data: any) => apiCall('/purchase/comparative', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: any) => apiCall(`/purchase/comparative/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: string) => apiCall(`/purchase/comparative/${id}`, { method: 'DELETE' }),
+  getAll: () => apiCall('/purchase/comparative-statements'),
+  getById: (id: string) => apiCall(`/purchase/comparative-statements/${id}`),
+  create: (data: any) => apiCall('/purchase/comparative-statements', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: any) => apiCall(`/purchase/comparative-statements/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: string) => apiCall(`/purchase/comparative-statements/${id}`, { method: 'DELETE' }),
   selectSupplier: (id: string, supplierId: string) => 
-    apiCall(`/purchase/comparative/${id}/select-supplier`, { 
+    apiCall(`/purchase/comparative-statements/${id}/select-supplier`, { 
       method: 'POST', 
       body: JSON.stringify({ supplierId }) 
     }),
@@ -60,14 +71,14 @@ export const csApi = {
 
 // Purchase Orders API
 export const posApi = {
-  getAll: () => apiCall('/purchase/po'),
-  getById: (id: string) => apiCall(`/purchase/po/${id}`),
-  create: (data: any) => apiCall('/purchase/po', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: any) => apiCall(`/purchase/po/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: string) => apiCall(`/purchase/po/${id}`, { method: 'DELETE' }),
-  submit: (id: string) => apiCall(`/purchase/po/${id}/submit`, { method: 'POST' }),
-  approve: (id: string, data?: any) => apiCall(`/purchase/po/${id}/approve`, { method: 'POST', body: JSON.stringify(data || {}) }),
-  reject: (id: string, data?: any) => apiCall(`/purchase/po/${id}/reject`, { method: 'POST', body: JSON.stringify(data || {}) }),
+  getAll: () => apiCall('/purchase/pos'),
+  getById: (id: string) => apiCall(`/purchase/pos/${id}`),
+  create: (data: any) => apiCall('/purchase/pos', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: any) => apiCall(`/purchase/pos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: string) => apiCall(`/purchase/pos/${id}`, { method: 'DELETE' }),
+  submit: (id: string) => apiCall(`/purchase/pos/${id}/submit`, { method: 'POST' }),
+  approve: (id: string, data?: any) => apiCall(`/purchase/pos/${id}/approve`, { method: 'POST', body: JSON.stringify(data || {}) }),
+  reject: (id: string, data?: any) => apiCall(`/purchase/pos/${id}/reject`, { method: 'POST', body: JSON.stringify(data || {}) }),
 };
 
 // Purchase Bills API
@@ -100,9 +111,9 @@ export const materialRatesApi = {
 
 // Items API
 export const itemsApi = {
-  getAll: () => apiCall('/items'),
-  getById: (id: string) => apiCall(`/items/${id}`),
-  create: (data: any) => apiCall('/items', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: any) => apiCall(`/items/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: string) => apiCall(`/items/${id}`, { method: 'DELETE' }),
+  getAll: () => apiCall('/site/items'),
+  getById: (id: string) => apiCall(`/site/items/${id}`),
+  create: (data: any) => apiCall('/site/items', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: any) => apiCall(`/site/items/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: string) => apiCall(`/site/items/${id}`, { method: 'DELETE' }),
 };

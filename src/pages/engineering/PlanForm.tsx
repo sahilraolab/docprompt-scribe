@@ -3,15 +3,33 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useProjects, usePlan, useCreatePlan, useUpdatePlan } from '@/lib/hooks/useEngineering';
+import {
+  useProjects,
+  usePlan,
+  useCreatePlan,
+  useUpdatePlan,
+} from '@/lib/hooks/useEngineering';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormControl,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
 import { SearchableSelect } from '@/components/SearchableSelect';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Save, Plus, X } from 'lucide-react';
+import { ArrowLeft, Save, Plus, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const planSchema = z.object({
@@ -34,7 +52,6 @@ interface Task {
   endDate: string;
   status: string;
   priority: string;
-  assignedTo?: string;
   progress?: number;
 }
 
@@ -48,21 +65,21 @@ interface Milestone {
 export default function PlanForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const rawId = id;
-  const isEdit = !!rawId && rawId !== 'new';
+  const isEdit = !!id && id !== 'new';
 
-  const { data: projectsData } = useProjects();
-  const { data: planData } = usePlan(isEdit ? (rawId as string) : '');
+  // Queries & Mutations
+  const { data: projectsData, isLoading: loadingProjects } = useProjects();
+  const { data: planData, isLoading: loadingPlan } = usePlan(isEdit ? id! : '');
   const createPlan = useCreatePlan();
   const updatePlan = useUpdatePlan();
 
+  // Local states
   const [tasks, setTasks] = useState<Task[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
-  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
-  const projects = projectsData?.data || [];
-  const plan = planData?.data;
-
+  // Form setup
   const form = useForm<PlanFormData>({
     resolver: zodResolver(planSchema),
     defaultValues: {
@@ -76,112 +93,159 @@ export default function PlanForm() {
     },
   });
 
+  // ✅ Fetch users (for Assigned To)
   useEffect(() => {
-    if (isEdit && plan) {
+    const fetchUsers = async () => {
+      try {
+        setLoadingUsers(true);
+        const token = localStorage.getItem('erp_auth_token');
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL || 'http://localhost:5005/api'}/users`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          setUsers(data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch users:', err);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  // Fix API shape (projectsApi returns { success, data })
+  const projects = Array.isArray(projectsData)
+    ? projectsData
+    : Array.isArray(projectsData?.data)
+      ? projectsData.data
+      : [];
+
+  const projectOptions =
+    projects.map((p: any) => ({
+      label: `${p.code ? `${p.code} - ` : ''}${p.name}`,
+      value: p._id || p.id,
+    })) || [];
+
+  const userOptions =
+    users.map((u) => ({
+      label: u.name ? `${u.name} (${u.email})` : u.email,
+      value: u._id,
+    })) || [];
+
+  // Load existing plan (Edit mode)
+  useEffect(() => {
+    if (isEdit && planData) {
+      const plan = planData; // ✅ planData is the plan object itself
+
       form.reset({
         projectId: plan.projectId?._id || plan.projectId,
-        name: plan.name,
+        name: plan.name || '',
         description: plan.description || '',
-        startDate: plan.startDate?.split('T')[0],
-        endDate: plan.endDate?.split('T')[0],
-        status: plan.status,
+        startDate: plan.startDate?.split('T')[0] || '',
+        endDate: plan.endDate?.split('T')[0] || '',
+        status: plan.status || 'Draft',
         assignedTo: plan.assignedTo?._id || plan.assignedTo || '',
       });
-      if (plan.tasks) {
-        setTasks(plan.tasks);
-      }
-      if (plan.milestones) {
-        setMilestones(plan.milestones);
-      }
-    }
-  }, [plan, isEdit, form]);
 
+      setTasks(plan.tasks || []);
+      setMilestones(plan.milestones || []);
+    }
+  }, [isEdit, planData, form]);
+
+
+  // Task & Milestone Handlers
+  const addTask = () =>
+    setTasks([
+      ...tasks,
+      {
+        name: '',
+        description: '',
+        startDate: '',
+        endDate: '',
+        status: 'NotStarted',
+        priority: 'Medium',
+        progress: 0,
+      },
+    ]);
+
+  const removeTask = (index: number) => setTasks(tasks.filter((_, i) => i !== index));
+  const updateTask = (index: number, field: keyof Task, value: string | number) => {
+    const updated = [...tasks];
+    updated[index][field] = value;
+    setTasks(updated);
+  };
+
+  const addMilestone = () =>
+    setMilestones([...milestones, { name: '', date: '', completed: false }]);
+  const removeMilestone = (index: number) =>
+    setMilestones(milestones.filter((_, i) => i !== index));
+  const updateMilestone = (
+    index: number,
+    field: keyof Milestone,
+    value: string | boolean
+  ) => {
+    const updated = [...milestones];
+    updated[index][field] = value;
+    setMilestones(updated);
+  };
+
+  // Submit Handler
   const onSubmit = async (data: PlanFormData) => {
     try {
-      const payload = {
+      const payload: any = {
         ...data,
-        assignedTo: data.assignedTo || undefined,
         tasks,
         milestones,
       };
 
+      // 🧠 Fix ObjectId error: remove assignedTo if empty
+      if (!payload.assignedTo) delete payload.assignedTo;
+
       if (isEdit) {
-        await updatePlan.mutateAsync({ id: rawId!, data: payload });
+        await updatePlan.mutateAsync({ id: id!, data: payload });
         toast.success('Plan updated successfully');
       } else {
         await createPlan.mutateAsync(payload);
         toast.success('Plan created successfully');
       }
+
       navigate('/engineering/plans');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to save plan');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to save plan');
     }
   };
 
-  const addTask = () => {
-    const newTask: Task = {
-      name: '',
-      description: '',
-      startDate: '',
-      endDate: '',
-      status: 'NotStarted',
-      priority: 'Medium',
-      progress: 0,
-    };
-    setTasks([...tasks, newTask]);
-    setShowTaskForm(true);
-  };
-
-  const removeTask = (index: number) => {
-    setTasks(tasks.filter((_, i) => i !== index));
-  };
-
-  const updateTask = (index: number, field: keyof Task, value: string | number) => {
-    const updatedTasks = [...tasks];
-    updatedTasks[index] = { ...updatedTasks[index], [field]: value };
-    setTasks(updatedTasks);
-  };
-
-  const addMilestone = () => {
-    const newMilestone: Milestone = {
-      name: '',
-      date: '',
-      completed: false,
-    };
-    setMilestones([...milestones, newMilestone]);
-  };
-
-  const removeMilestone = (index: number) => {
-    setMilestones(milestones.filter((_, i) => i !== index));
-  };
-
-  const updateMilestone = (index: number, field: keyof Milestone, value: string | boolean) => {
-    const updatedMilestones = [...milestones];
-    updatedMilestones[index] = { ...updatedMilestones[index], [field]: value };
-    setMilestones(updatedMilestones);
-  };
-
-  const projectOptions = projects.map((p: any) => ({
-    label: `${p.name} (${p.code})`,
-    value: p._id || p.id,
-  }));
-
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate('/engineering/plans')}
-        >
+        <Button variant="ghost" size="icon" onClick={() => navigate('/engineering/plans')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">{isEdit ? 'Edit Plan' : 'Create New Plan'}</h1>
-          <p className="text-muted-foreground">Define project timeline, milestones and tasks</p>
+          <h1 className="text-3xl font-bold">{isEdit ? 'Edit Plan' : 'Create Plan'}</h1>
+          <p className="text-muted-foreground">
+            Define project timeline, milestones, and tasks
+          </p>
         </div>
       </div>
 
+      {/* Loading State */}
+      {isEdit && loadingPlan && (
+        <div className="flex justify-center py-10 text-muted-foreground">
+          <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading plan...
+        </div>
+      )}
+
+      {/* Form */}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <Card>
@@ -189,6 +253,7 @@ export default function PlanForm() {
               <CardTitle>Plan Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Project */}
               <FormField
                 control={form.control}
                 name="projectId"
@@ -196,18 +261,49 @@ export default function PlanForm() {
                   <FormItem>
                     <FormLabel>Project *</FormLabel>
                     <FormControl>
-                      <SearchableSelect
-                        options={projectOptions}
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Select project"
-                      />
+                      {loadingProjects ? (
+                        <div className="text-sm text-muted-foreground">Loading projects...</div>
+                      ) : (
+                        <SearchableSelect
+                          options={projectOptions}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select project"
+                          searchPlaceholder="Search projects..."
+                        />
+                      )}
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
+              {/* ✅ Assigned To */}
+              <FormField
+                control={form.control}
+                name="assignedTo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assigned To</FormLabel>
+                    <FormControl>
+                      {loadingUsers ? (
+                        <div className="text-sm text-muted-foreground">Loading users...</div>
+                      ) : (
+                        <SearchableSelect
+                          options={userOptions}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select user (optional)"
+                          searchPlaceholder="Search users..."
+                        />
+                      )}
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Name */}
               <FormField
                 control={form.control}
                 name="name"
@@ -222,6 +318,7 @@ export default function PlanForm() {
                 )}
               />
 
+              {/* Description */}
               <FormField
                 control={form.control}
                 name="description"
@@ -229,18 +326,15 @@ export default function PlanForm() {
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Enter plan description..."
-                        rows={3}
-                        {...field}
-                      />
+                      <Textarea placeholder="Enter plan description..." rows={3} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* Dates */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="startDate"
@@ -254,7 +348,6 @@ export default function PlanForm() {
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="endDate"
@@ -270,6 +363,7 @@ export default function PlanForm() {
                 />
               </div>
 
+              {/* Status */}
               <FormField
                 control={form.control}
                 name="status"
@@ -296,174 +390,150 @@ export default function PlanForm() {
             </CardContent>
           </Card>
 
+          {/* ---------- Tasks Section ---------- */}
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Tasks</CardTitle>
-                <Button type="button" variant="outline" size="sm" onClick={addTask}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Task
-                </Button>
-              </div>
+            <CardHeader className="flex justify-between items-center">
+              <CardTitle>Tasks</CardTitle>
+              <Button type="button" variant="outline" size="sm" onClick={addTask}>
+                <Plus className="h-4 w-4 mr-2" /> Add Task
+              </Button>
             </CardHeader>
             <CardContent>
               {tasks.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
-                  No tasks added yet. Click "Add Task" to create tasks.
+                  No tasks yet. Click “Add Task” to create one.
                 </p>
               ) : (
-                <div className="space-y-4">
-                  {tasks.map((task, index) => (
-                    <Card key={index} className="border-2">
-                      <CardContent className="pt-6">
-                        <div className="flex justify-between items-start mb-4">
-                          <h4 className="font-semibold">Task {index + 1}</h4>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeTask(index)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <div className="grid gap-4">
-                          <div>
-                            <label className="text-sm font-medium">Task Name</label>
-                            <Input
-                              value={task.name}
-                              onChange={(e) => updateTask(index, 'name', e.target.value)}
-                              placeholder="Enter task name"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium">Description</label>
-                            <Textarea
-                              value={task.description}
-                              onChange={(e) => updateTask(index, 'description', e.target.value)}
-                              placeholder="Enter task description"
-                              rows={2}
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="text-sm font-medium">Start Date</label>
-                              <Input
-                                type="date"
-                                value={task.startDate}
-                                onChange={(e) => updateTask(index, 'startDate', e.target.value)}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium">End Date</label>
-                              <Input
-                                type="date"
-                                value={task.endDate}
-                                onChange={(e) => updateTask(index, 'endDate', e.target.value)}
-                              />
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="text-sm font-medium">Status</label>
-                              <Select 
-                                value={task.status}
-                                onValueChange={(value) => updateTask(index, 'status', value)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="NotStarted">Not Started</SelectItem>
-                                  <SelectItem value="InProgress">In Progress</SelectItem>
-                                  <SelectItem value="Completed">Completed</SelectItem>
-                                  <SelectItem value="Blocked">Blocked</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium">Priority</label>
-                              <Select 
-                                value={task.priority}
-                                onValueChange={(value) => updateTask(index, 'priority', value)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Low">Low</SelectItem>
-                                  <SelectItem value="Medium">Medium</SelectItem>
-                                  <SelectItem value="High">High</SelectItem>
-                                  <SelectItem value="Critical">Critical</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                tasks.map((task, index) => (
+                  <Card key={index} className="mb-4 border">
+                    <CardContent className="pt-6 space-y-4">
+                      <div className="flex justify-between">
+                        <h4 className="font-semibold">Task {index + 1}</h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeTask(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <Input
+                        placeholder="Task name"
+                        value={task.name}
+                        onChange={(e) => updateTask(index, 'name', e.target.value)}
+                      />
+
+                      <Textarea
+                        placeholder="Task description"
+                        rows={2}
+                        value={task.description}
+                        onChange={(e) => updateTask(index, 'description', e.target.value)}
+                      />
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Input
+                          type="date"
+                          value={task.startDate}
+                          onChange={(e) => updateTask(index, 'startDate', e.target.value)}
+                        />
+                        <Input
+                          type="date"
+                          value={task.endDate}
+                          onChange={(e) => updateTask(index, 'endDate', e.target.value)}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Select
+                          value={task.status}
+                          onValueChange={(val) => updateTask(index, 'status', val)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="NotStarted">Not Started</SelectItem>
+                            <SelectItem value="InProgress">In Progress</SelectItem>
+                            <SelectItem value="Completed">Completed</SelectItem>
+                            <SelectItem value="Blocked">Blocked</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <Select
+                          value={task.priority}
+                          onValueChange={(val) => updateTask(index, 'priority', val)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Priority" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Low">Low</SelectItem>
+                            <SelectItem value="Medium">Medium</SelectItem>
+                            <SelectItem value="High">High</SelectItem>
+                            <SelectItem value="Critical">Critical</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
               )}
             </CardContent>
           </Card>
 
+          {/* ---------- Milestones Section ---------- */}
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Milestones</CardTitle>
-                <Button type="button" variant="outline" size="sm" onClick={addMilestone}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Milestone
-                </Button>
-              </div>
+            <CardHeader className="flex justify-between items-center">
+              <CardTitle>Milestones</CardTitle>
+              <Button type="button" variant="outline" size="sm" onClick={addMilestone}>
+                <Plus className="h-4 w-4 mr-2" /> Add Milestone
+              </Button>
             </CardHeader>
             <CardContent>
               {milestones.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
-                  No milestones added yet. Click "Add Milestone" to create milestones.
+                  No milestones yet. Click “Add Milestone” to create one.
                 </p>
               ) : (
-                <div className="space-y-3">
-                  {milestones.map((milestone, index) => (
-                    <div key={index} className="flex items-center gap-4 p-4 border rounded-lg">
-                      <div className="flex-1 grid grid-cols-2 gap-4">
-                        <Input
-                          placeholder="Milestone name"
-                          value={milestone.name}
-                          onChange={(e) => updateMilestone(index, 'name', e.target.value)}
-                        />
-                        <Input
-                          type="date"
-                          value={milestone.date}
-                          onChange={(e) => updateMilestone(index, 'date', e.target.value)}
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeMilestone(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+                milestones.map((m, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-4 p-4 border rounded-lg mb-2"
+                  >
+                    <Input
+                      placeholder="Milestone name"
+                      value={m.name}
+                      onChange={(e) => updateMilestone(index, 'name', e.target.value)}
+                    />
+                    <Input
+                      type="date"
+                      value={m.date}
+                      onChange={(e) => updateMilestone(index, 'date', e.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeMilestone(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))
               )}
             </CardContent>
           </Card>
 
           <div className="flex justify-end gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate('/engineering/plans')}
-            >
+            <Button variant="outline" onClick={() => navigate('/engineering/plans')}>
               Cancel
             </Button>
             <Button type="submit" disabled={createPlan.isPending || updatePlan.isPending}>
-              <Save className="h-4 w-4 mr-2" />
+              {(createPlan.isPending || updatePlan.isPending) && (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              )}
               {isEdit ? 'Update Plan' : 'Create Plan'}
             </Button>
           </div>

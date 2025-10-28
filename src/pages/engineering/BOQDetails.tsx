@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 const BOQDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  
+
   const { data: boq, isLoading } = useBOQ(id!);
   const approveBOQ = useApproveBOQ();
   const generateMR = useGenerateMRFromBOQ();
@@ -28,39 +28,48 @@ const BOQDetails = () => {
 
   const handleGenerateMR = () => {
     if (confirm('Generate Material Requisition from this BOQ?')) {
-      // Select items with balance quantity > 0
-      const selectedItems = boq.items.filter((item: any) => (item.balanceQty || item.qty) > 0);
-      
-      generateMR.mutate({
-        boqId: id!,
-        data: {
-          projectId: boq.projectId,
-          items: selectedItems.map((item: any) => ({
-            itemId: item.itemId,
-            boqItemId: item.id,
-            qty: item.balanceQty || item.qty,
-            uom: item.uom,
-            description: item.description,
-            estimatedRate: item.estimatedRate,
-          })),
+      if (!boq?.items) return;
+      const selectedItems = boq.items.filter(
+        (item: any) => (item.balanceQty || item.qty) > 0
+      );
+
+      generateMR.mutate(
+        {
+          boqId: id!,
+          data: {
+            projectId: boq.projectId,
+            items: selectedItems.map((item: any) => ({
+              itemId: item.itemId,
+              boqItemId: item.id,
+              qty: item.balanceQty || item.qty,
+              uom: item.uom,
+              description: item.description,
+              estimatedRate: item.estimatedRate,
+            })),
+          },
         },
-      }, {
-        onSuccess: () => {
-          toast.success('MR generated successfully');
-          navigate('/purchase/mrs');
-        },
-      });
+        {
+          onSuccess: () => {
+            toast.success('MR generated successfully');
+            navigate('/purchase/mrs');
+          },
+        }
+      );
     }
   };
 
   if (isLoading) return <LoadingSpinner />;
   if (!boq) return <div>BOQ not found</div>;
 
+  // ✅ Safe value helpers
+  const safeNumber = (val: any) =>
+    typeof val === 'number' && !isNaN(val) ? val : 0;
+
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`BOQ - ${boq.projectName}`}
-        description={`Version ${boq.version}`}
+        title={`BOQ - ${boq.projectName || boq.projectId?.name || 'Unnamed Project'}`}
+        description={`Version ${boq.version || 1}`}
       />
 
       <Button variant="ghost" onClick={() => navigate('/engineering/boq')}>
@@ -68,13 +77,17 @@ const BOQDetails = () => {
         Back to BOQ List
       </Button>
 
+      {/* Summary cards */}
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="p-6">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Status</p>
-              <Badge className="mt-1" variant={boq.status === 'Approved' ? 'default' : 'secondary'}>
-                {boq.status}
+              <Badge
+                className="mt-1"
+                variant={boq.status === 'Approved' ? 'default' : 'secondary'}
+              >
+                {boq.status || 'Draft'}
               </Badge>
             </div>
             <FileText className="h-5 w-5 text-muted-foreground" />
@@ -85,7 +98,9 @@ const BOQDetails = () => {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total Cost</p>
-              <p className="text-2xl font-bold mt-1">₹{boq.totalCost.toLocaleString()}</p>
+              <p className="text-2xl font-bold mt-1">
+                ₹{safeNumber(boq.totalCost).toLocaleString('en-IN')}
+              </p>
             </div>
           </div>
         </Card>
@@ -100,6 +115,7 @@ const BOQDetails = () => {
         </Card>
       </div>
 
+      {/* Items Table */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">BOQ Items</h3>
@@ -119,7 +135,7 @@ const BOQDetails = () => {
           </div>
         </div>
 
-        <div className="rounded-md border">
+        <div className="rounded-md border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -136,46 +152,64 @@ const BOQDetails = () => {
             </TableHeader>
             <TableBody>
               {boq.items?.map((item: any) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-mono text-sm">{item.itemCode}</TableCell>
-                  <TableCell>{item.itemName}</TableCell>
-                  <TableCell>{item.category}</TableCell>
-                  <TableCell className="text-right">{item.qty}</TableCell>
-                  <TableCell>{item.uom}</TableCell>
-                  <TableCell className="text-right">₹{item.estimatedRate.toLocaleString()}</TableCell>
-                  <TableCell className="text-right">₹{item.estimatedAmount.toLocaleString()}</TableCell>
-                  <TableCell className="text-right">{item.consumedQty || 0}</TableCell>
-                  <TableCell className="text-right font-semibold">
-                    {(item.balanceQty !== undefined ? item.balanceQty : item.qty) || 0}
+                <TableRow key={item._id}>
+                  <TableCell className="font-mono text-sm">
+                    {item.itemId?.code || '-'}
                   </TableCell>
+                  <TableCell>{item.itemId?.name || item.description || '-'}</TableCell>
+                  <TableCell>{item.itemId?.category || '-'}</TableCell>
+                  <TableCell className="text-right">{safeNumber(item.qty)}</TableCell>
+                  <TableCell>{item.uom || item.itemId?.uom || '-'}</TableCell>
+                  <TableCell className="text-right">
+                    ₹{safeNumber(item.rate || item.itemId?.standardRate).toLocaleString('en-IN')}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    ₹{safeNumber(item.amount).toLocaleString('en-IN')}
+                  </TableCell>
+                  <TableCell className="text-right">0</TableCell>
+                  <TableCell className="text-right font-semibold">{safeNumber(item.qty)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
+
           </Table>
         </div>
 
+        {/* Total footer */}
         <div className="flex justify-end mt-4 space-y-2">
           <div className="text-right">
             <p className="text-lg font-semibold">
-              Total: ₹{boq.totalCost.toLocaleString()}
+              Total: ₹{safeNumber(boq.totalCost).toLocaleString('en-IN')}
             </p>
           </div>
         </div>
       </Card>
 
+      {/* Generated MRs */}
       {mrs && mrs.length > 0 && (
         <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Generated Material Requisitions</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            Generated Material Requisitions
+          </h3>
           <div className="space-y-2">
             {mrs.map((mr: any) => (
-              <div key={mr.id} className="flex items-center justify-between p-3 border rounded-lg">
+              <div
+                key={mr.id || mr._id}
+                className="flex items-center justify-between p-3 border rounded-lg"
+              >
                 <div>
                   <p className="font-medium">{mr.code}</p>
-                  <p className="text-sm text-muted-foreground">{mr.items?.length} items</p>
+                  <p className="text-sm text-muted-foreground">
+                    {mr.items?.length || 0} items
+                  </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Badge>{mr.status}</Badge>
-                  <Button size="sm" variant="outline" onClick={() => navigate(`/purchase/mrs/${mr.id}`)}>
+                  <Badge>{mr.status || 'Draft'}</Badge>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => navigate(`/purchase/mrs/${mr.id || mr._id}`)}
+                  >
                     View
                   </Button>
                 </div>

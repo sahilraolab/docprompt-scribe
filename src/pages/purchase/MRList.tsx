@@ -23,7 +23,16 @@ export default function MRList() {
   const { data: mrs, isLoading } = useMRs();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredMRs = mrs?.filter((mr) =>
+  const normalizedMRs = mrs?.map((mr) => ({
+  ...mr,
+  id: mr._id,
+  projectName: mr.projectId?.name || 'N/A',
+  requestedByName: mr.requestedBy?.name || 'N/A',
+  approvalStatus: mr.approvals?.[0]?.status || mr.status || 'Pending',
+}));
+
+
+  const filteredMRs = normalizedMRs?.filter((mr) =>
     mr.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
     mr.projectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     mr.requestedByName?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -103,7 +112,7 @@ export default function MRList() {
                     <TableRow
                       key={mr.id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/purchase/mrs/${mr.id}`)}
+                      onClick={() => navigate(`/purchase/mrs/${mr.id}/view`)}
                     >
                       <TableCell className="font-medium">{mr.code}</TableCell>
                       <TableCell>{mr.projectName}</TableCell>

@@ -2,14 +2,13 @@ import { apiClient } from './client';
 
 // Helper function for API calls matching backend { success, data, message } format
 async function apiCall(endpoint: string, options?: RequestInit) {
-  const response = await apiClient.request(endpoint, options);
-  const result = await response.json();
+  const result = await apiClient.request(endpoint, options);
 
-  if (!response.ok || !result.success) {
-    throw new Error(result.message || 'Request failed');
+  if (!result?.success) {
+    throw new Error(result?.message || 'Request failed');
   }
 
-  return result; // Return full { success, data, message } structure
+  return result; // { success, data, message }
 }
 
 // Projects API
@@ -40,16 +39,19 @@ export const documentsApi = {
   getById: (id: string) => apiCall(`/engineering/documents/${id}`),
   getByProject: (projectId: string) => apiCall(`/engineering/documents?projectId=${projectId}`),
   create: async (data: FormData) => {
-    const response = await apiClient.request('/engineering/documents', {
-      method: 'POST',
-      body: data as any,
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-      throw new Error(result.message || 'Upload failed');
-    }
-    return result; // Return full { success, data, message } structure
-  },
+  // Note: no JSON headers for FormData
+  const result = await apiClient.request('/engineering/documents', {
+    method: 'POST',
+    body: data,
+  });
+
+  // apiClient already returns parsed { success, data, message }
+  if (!result?.success) {
+    throw new Error(result?.message || 'Upload failed');
+  }
+
+  return result; // Return full { success, data, message }
+},
   update: (id: string, data: any) => apiCall(`/engineering/documents/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: string) => apiCall(`/engineering/documents/${id}`, { method: 'DELETE' }),
 };

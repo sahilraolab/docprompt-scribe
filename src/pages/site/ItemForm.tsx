@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,21 +16,25 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { SearchableSelect } from '@/components/SearchableSelect';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
+import { siteApi } from '@/lib/api/siteApi';
+// import { useItemById } from '@/lib/hooks/useSite'; // we'll use this to fetch item for edit
+import { useItem } from "@/lib/hooks/useSite";
 
+// ✅ Schema for validation
 const itemSchema = z.object({
-  code: z.string().min(1, 'Item code is required'),
+  code: z.string().optional(),
   name: z.string().min(1, 'Item name is required'),
   category: z.string().min(1, 'Category is required'),
-  unit: z.string().min(1, 'Unit is required'),
+  uom: z.string().min(1, 'Unit is required'),
   description: z.string().optional(),
-  reorderLevel: z.string().optional(),
-  minStock: z.string().optional(),
-  maxStock: z.string().optional(),
+  reorderLevel: z.coerce.number().optional(),
+  minStock: z.coerce.number().optional(),
+  maxStock: z.coerce.number().optional(),
   hsnCode: z.string().optional(),
-  taxRate: z.string().optional(),
+  taxRate: z.coerce.number().optional(),
   active: z.boolean().default(true),
 });
 
@@ -38,7 +43,9 @@ type ItemFormData = z.infer<typeof itemSchema>;
 export default function ItemForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const isEdit = !!id;
+  const isEdit = Boolean(id);
+
+  const { item, isLoading } = useItem(id);
 
   const form = useForm<ItemFormData>({
     resolver: zodResolver(itemSchema),
@@ -46,39 +53,68 @@ export default function ItemForm() {
       code: '',
       name: '',
       category: '',
-      unit: '',
+      uom: '',
       description: '',
-      reorderLevel: '',
-      minStock: '',
-      maxStock: '',
+      reorderLevel: 0,
+      minStock: 0,
+      maxStock: 0,
       hsnCode: '',
-      taxRate: '18',
+      taxRate: 18,
       active: true,
     },
   });
 
-  const onSubmit = (data: ItemFormData) => {
-    console.log('Item data:', data);
-    toast.success(isEdit ? 'Item updated successfully' : 'Item created successfully');
-    navigate('/site/items');
+  // ✅ Load data if editing
+  useEffect(() => {
+    if (item) {
+      form.reset({
+        code: item.code || '',
+        name: item.name || '',
+        category: item.category || '',
+        uom: item.uom || '',
+        description: item.description || '',
+        reorderLevel: item.reorderLevel || 0,
+        minStock: item.minStock || 0,
+        maxStock: item.maxStock || 0,
+        hsnCode: item.hsnCode || '',
+        taxRate: item.taxRate || 18,
+        active: item.active ?? true,
+      });
+    }
+  }, [item]);
+
+  const onSubmit = async (data: ItemFormData) => {
+    try {
+      if (isEdit && id) {
+        await siteApi.updateItem(id, data);
+        toast.success('Item updated successfully');
+      } else {
+        await siteApi.createItem(data);
+        toast.success('Item created successfully');
+      }
+      navigate('/site/items');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Something went wrong');
+    }
   };
 
   const categories = [
-    'Cement & Concrete',
-    'Steel & Metal',
-    'Bricks & Blocks',
-    'Sand & Aggregates',
-    'Tiles & Flooring',
-    'Paints & Chemicals',
-    'Electrical',
-    'Plumbing',
-    'Hardware',
-    'Wood & Timber',
-    'Glass & Glazing',
-    'Other',
+    'Material',
+    'Equipment',
+    'Consumable',
+    'Tool',
   ];
 
-  const units = ['BAG', 'TON', 'KG', 'LTR', 'CUM', 'SQM', 'RMT', 'NOS', 'BOX', 'BUNDLE'];
+  const uoms = ['BAG', 'TON', 'KG', 'LTR', 'CUM', 'SQM', 'RMT', 'NOS', 'BOX', 'BUNDLE'];
+
+  if (isEdit && isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -94,20 +130,22 @@ export default function ItemForm() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* ---------- ITEM INFORMATION ---------- */}
           <Card>
             <CardHeader>
               <CardTitle>Item Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
+                {/* ✅ Auto-generated Code (Disabled) */}
                 <FormField
                   control={form.control}
                   name="code"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Item Code *</FormLabel>
+                      <FormLabel>Item Code (Auto-generated)</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="ITEM-001" />
+                        <Input {...field} placeholder="Auto-generated" disabled />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -136,7 +174,7 @@ export default function ItemForm() {
                       <FormLabel>Category *</FormLabel>
                       <FormControl>
                         <SearchableSelect
-                          options={categories.map(cat => ({ value: cat, label: cat }))}
+                          options={categories.map(c => ({ value: c, label: c }))}
                           value={field.value}
                           onChange={field.onChange}
                           placeholder="Select category"
@@ -149,13 +187,13 @@ export default function ItemForm() {
 
                 <FormField
                   control={form.control}
-                  name="unit"
+                  name="uom"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Unit of Measure *</FormLabel>
                       <FormControl>
                         <SearchableSelect
-                          options={units.map(unit => ({ value: unit, label: unit }))}
+                          options={uoms.map(u => ({ value: u, label: u }))}
                           value={field.value}
                           onChange={field.onChange}
                           placeholder="Select unit"
@@ -186,11 +224,11 @@ export default function ItemForm() {
                 name="active"
                 render={({ field }) => (
                   <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
+                    <div>
                       <FormLabel>Active Status</FormLabel>
-                      <div className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         Enable this item for transactions
-                      </div>
+                      </p>
                     </div>
                     <FormControl>
                       <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -201,96 +239,71 @@ export default function ItemForm() {
             </CardContent>
           </Card>
 
+          {/* ---------- STOCK MANAGEMENT ---------- */}
           <Card>
             <CardHeader>
               <CardTitle>Stock Management</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
+            <CardContent className="grid grid-cols-3 gap-4">
+              {['reorderLevel', 'minStock', 'maxStock'].map((name) => (
                 <FormField
+                  key={name}
                   control={form.control}
-                  name="reorderLevel"
+                  name={name as keyof ItemFormData}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Reorder Level</FormLabel>
+                      <FormLabel>{name === 'reorderLevel' ? 'Reorder Level' : name === 'minStock' ? 'Min Stock' : 'Max Stock'}</FormLabel>
                       <FormControl>
-                        <Input {...field} type="number" placeholder="100" />
+                        <Input {...field} type="number" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="minStock"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Min Stock</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="number" placeholder="50" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="maxStock"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Max Stock</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="number" placeholder="500" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              ))}
             </CardContent>
           </Card>
 
+          {/* ---------- TAX INFORMATION ---------- */}
           <Card>
             <CardHeader>
               <CardTitle>Tax Information</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="hsnCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>HSN Code</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="25232930" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="taxRate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tax Rate (%)</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="number" placeholder="18" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="hsnCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>HSN Code</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="25232930" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="taxRate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tax Rate (%)</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="number" placeholder="18" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 
           <div className="flex gap-4">
-            <Button type="submit">
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
               {isEdit ? 'Update Item' : 'Create Item'}
             </Button>
             <Button

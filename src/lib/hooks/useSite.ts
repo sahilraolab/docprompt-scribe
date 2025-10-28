@@ -1,46 +1,33 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Item, Stock } from '@/types';
-import { itemApi } from '@/lib/api/purchaseApi';
-import { toast } from 'sonner';
-import { mockItems } from '@/lib/msw/data/items-mock';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { siteApi } from "@/lib/api/siteApi";
+import { toast } from "sonner";
 
+// -------- ITEMS --------
 export function useItems() {
   return useQuery({
-    queryKey: ['items'],
-    queryFn: async () => {
-      try {
-        const response = await itemApi.getAll() as any;
-        const data = response.data || response;
-        // Use mock data if API returns empty or fails
-        return data && data.length > 0 ? data : mockItems;
-      } catch (error) {
-        console.warn('Items API not available, using mock data');
-        return mockItems;
-      }
-    },
+    queryKey: ["items"],
+    queryFn: siteApi.getAllItems,
   });
 }
 
-export function useStock() {
+export function useItem(id: string) {
   return useQuery({
-    queryKey: ['stock'],
-    queryFn: async () => {
-      const response = await itemApi.getStock() as any;
-      return response.data || response;
-    },
+    queryKey: ["item", id],
+    queryFn: () => siteApi.getItemById(id),
+    enabled: !!id,
   });
 }
 
 export function useCreateItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => itemApi.create(data),
+    mutationFn: siteApi.createItem,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['items'] });
-      toast.success('Item created successfully');
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+      toast.success("Item created successfully");
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to create item');
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to create item");
     },
   });
 }
@@ -48,13 +35,14 @@ export function useCreateItem() {
 export function useUpdateItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => itemApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      siteApi.updateItem(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['items'] });
-      toast.success('Item updated successfully');
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+      toast.success("Item updated successfully");
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update item');
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to update item");
     },
   });
 }
@@ -62,13 +50,29 @@ export function useUpdateItem() {
 export function useDeleteItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => itemApi.delete(id),
+    mutationFn: siteApi.deleteItem,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['items'] });
-      toast.success('Item deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+      toast.success("Item deleted successfully");
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete item');
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to delete item");
     },
+  });
+}
+
+// -------- STOCK --------
+export function useStock() {
+  return useQuery({
+    queryKey: ["stock"],
+    queryFn: siteApi.getAllStock,
+  });
+}
+
+export function useStockById(id: string) {
+  return useQuery({
+    queryKey: ["stock", id],
+    queryFn: () => siteApi.getStockById(id),
+    enabled: !!id,
   });
 }

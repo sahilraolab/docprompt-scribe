@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,6 @@ import { formatDate } from '@/lib/utils/format';
 import { exportData } from '@/lib/utils/export-enhanced';
 import { Plus, Search, FileSpreadsheet, Loader2, Download } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ComparativeStatement } from '@/types';
 import { useComparativeStatements } from '@/lib/hooks/usePurchaseBackend';
 import {
   Table,
@@ -24,26 +23,30 @@ export default function ComparativeStatementList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<string>('date');
 
-  const { data: statements, isLoading } = useComparativeStatements();
+  const { data: statements = [], isLoading } = useComparativeStatements();
 
-  const filteredStatements = statements
-    ?.filter((stmt) =>
-      stmt.mrCode?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (sortBy === 'date') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      if (sortBy === 'mr') return (a.mrCode || '').localeCompare(b.mrCode || '');
-      return 0;
-    });
+  const filteredStatements = useMemo(() => {
+    return statements
+      ?.filter((stmt) =>
+        stmt?.mrId?.code?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      .sort((a, b) => {
+        if (sortBy === 'date')
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        if (sortBy === 'mr')
+          return (a?.mrId?.code || '').localeCompare(b?.mrId?.code || '');
+        return 0;
+      });
+  }, [statements, searchQuery, sortBy]);
 
   const handleExport = () => {
-    if (!filteredStatements) return;
+    if (!filteredStatements?.length) return;
     const data = filteredStatements.map((stmt) => ({
-      'MR Code': stmt.mrCode,
-      'Quotations': stmt.quotations.length,
-      'Selected Supplier': stmt.selectedSupplierId || 'Not selected',
-      'Analysis': stmt.analysis,
-      'Date': stmt.createdAt,
+      'MR Code': stmt?.mrId?.code || '-',
+      'Project': stmt?.projectId?.name || '-',
+      'Selected Supplier': stmt?.selectedSupplier?.name || 'Not selected',
+      'Status': stmt?.status || '-',
+      'Date': formatDate(stmt?.createdAt),
     }));
     exportData(data, { filename: 'comparative-statements', format: 'csv' });
   };
@@ -58,17 +61,28 @@ export default function ComparativeStatementList() {
 
   return (
     <div className="space-y-6">
+      {/* Header Section */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Comparative Statements</h1>
           <p className="text-muted-foreground">Compare supplier quotations</p>
         </div>
-        <Button onClick={handleExport} variant="outline">
-          <Download className="h-4 w-4 mr-2" />
-          Export
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => navigate('/purchase/comparative/new')}
+            className="flex items-center"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add New
+          </Button>
+          <Button onClick={handleExport} variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+        </div>
       </div>
 
+      {/* Search + Sort Controls */}
       <Card>
         <CardHeader>
           <div className="flex gap-4">
@@ -92,34 +106,49 @@ export default function ComparativeStatementList() {
             </Select>
           </div>
         </CardHeader>
+
+        {/* Table Section */}
         <CardContent>
-          {filteredStatements && filteredStatements.length > 0 ? (
+          {filteredStatements?.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>MR Code</TableHead>
-                    <TableHead>Quotations</TableHead>
+                    <TableHead>Project</TableHead>
                     <TableHead>Selected Supplier</TableHead>
-                    <TableHead>Created By</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredStatements.map((stmt) => (
-                    <TableRow key={stmt.id}>
-                      <TableCell className="font-medium">{stmt.mrCode}</TableCell>
-                      <TableCell>{stmt.quotations.length} quotes</TableCell>
+                    <TableRow
+                      key={stmt._id}
+                      // onClick={() => navigate(`/purchase/comparative-statements/${stmt._id}`)}
+                      className="hover:bg-muted/50"
+                    >
+                      <TableCell className="font-medium">{stmt?.mrId?.code || '-'}</TableCell>
+                      <TableCell>{stmt?.projectId?.name || '-'}</TableCell>
                       <TableCell>
-                        {stmt.selectedSupplierId || (
-                          <span className="text-muted-foreground">Not selected</span>
-                        )}
+                        {stmt?.selectedSupplier?.name ||
+                          stmt?.selectedSupplierId?.name ||
+                          <span className="text-muted-foreground">Not selected</span>}
                       </TableCell>
-                      <TableCell>-</TableCell>
-                      <TableCell>{formatDate(stmt.createdAt)}</TableCell>
+                      <TableCell>{stmt?.status || '-'}</TableCell>
+                      <TableCell>{formatDate(stmt?.createdAt)}</TableCell>
                       <TableCell>
-                        <span className="text-muted-foreground text-sm">View only</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/purchase/comparative/${stmt._id}/view`);
+                          }}
+                        >
+                          View
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}

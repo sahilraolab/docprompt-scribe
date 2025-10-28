@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,13 +15,16 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
+import { useCreateContractor, useUpdateContractor, useContractor } from '@/lib/hooks/useContractors';
 
+
+// ✅ Validation Schema
 const contractorSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  contactPerson: z.string().min(1, 'Contact person is required'),
+  contact: z.string().min(1, 'Contact person is required'),
   phone: z.string().min(10, 'Valid phone number required'),
   email: z.string().email('Valid email required'),
   gst: z.string().optional(),
@@ -43,11 +47,17 @@ export default function ContractorForm() {
   const navigate = useNavigate();
   const isEdit = !!id;
 
+  // ✅ React Query Hooks
+  const { data: existingContractor, isLoading } = useContractor(id);
+  const createMutation = useCreateContractor();
+  const updateMutation = useUpdateContractor();
+
+  // ✅ React Hook Form
   const form = useForm<ContractorFormData>({
     resolver: zodResolver(contractorSchema),
     defaultValues: {
       name: '',
-      contactPerson: '',
+      contact: '',
       phone: '',
       email: '',
       gst: '',
@@ -64,14 +74,55 @@ export default function ContractorForm() {
     },
   });
 
-  const onSubmit = (data: ContractorFormData) => {
-    console.log('Contractor data:', data);
-    toast.success(isEdit ? 'Contractor updated successfully' : 'Contractor added successfully');
-    navigate('/contracts/contractors');
+  // ✅ Prefill Form in Edit Mode
+  useEffect(() => {
+    if (existingContractor && isEdit) {
+      form.reset({
+        name: existingContractor.name || '',
+        contact: existingContractor.contact || '',
+        phone: existingContractor.phone || '',
+        email: existingContractor.email || '',
+        gst: existingContractor.gst || '',
+        pan: existingContractor.pan || '',
+        address: existingContractor.address || '',
+        city: existingContractor.city || '',
+        state: existingContractor.state || '',
+        pincode: existingContractor.pincode || '',
+        bankName: existingContractor.bankName || '',
+        accountNo: existingContractor.accountNo || '',
+        ifsc: existingContractor.ifsc || '',
+        rating: existingContractor.rating || '',
+        active: existingContractor.active ?? true,
+      });
+    }
+  }, [existingContractor, isEdit, form]);
+
+  // ✅ Submit Handler
+  const onSubmit = async (data: ContractorFormData) => {
+    try {
+      if (isEdit && id) {
+        await updateMutation.mutateAsync({ id, payload: data });
+        toast.success('Contractor updated successfully');
+      } else {
+        await createMutation.mutateAsync(data);
+        toast.success('Contractor added successfully');
+      }
+      navigate('/contracts/contractors');
+    } catch (err: any) {
+      toast.error(err?.message || 'Something went wrong');
+    }
   };
+
+  if (isLoading)
+    return (
+      <div className="flex justify-center items-center py-10">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate('/contracts/contractors')}>
           <ArrowLeft className="h-4 w-4" />
@@ -82,8 +133,10 @@ export default function ContractorForm() {
         </div>
       </div>
 
+      {/* Form */}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* Basic Info */}
           <Card>
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>
@@ -106,7 +159,7 @@ export default function ContractorForm() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="contactPerson"
+                  name="contact"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Contact Person *</FormLabel>
@@ -211,6 +264,7 @@ export default function ContractorForm() {
             </CardContent>
           </Card>
 
+          {/* Address Section */}
           <Card>
             <CardHeader>
               <CardTitle>Address</CardTitle>
@@ -276,6 +330,7 @@ export default function ContractorForm() {
             </CardContent>
           </Card>
 
+          {/* Bank Details */}
           <Card>
             <CardHeader>
               <CardTitle>Bank Details</CardTitle>
@@ -327,16 +382,20 @@ export default function ContractorForm() {
             </CardContent>
           </Card>
 
-          <div className="flex gap-4">
-            <Button type="submit">
-              {isEdit ? 'Update Contractor' : 'Add Contractor'}
-            </Button>
+          {/* Actions */}
+          <div className="flex gap-4 justify-end">
             <Button
               type="button"
               variant="outline"
               onClick={() => navigate('/contracts/contractors')}
             >
               Cancel
+            </Button>
+            <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+              {(createMutation.isPending || updateMutation.isPending) && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {isEdit ? 'Update Contractor' : 'Add Contractor'}
             </Button>
           </div>
         </form>

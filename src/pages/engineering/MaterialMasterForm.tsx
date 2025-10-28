@@ -15,8 +15,8 @@ import { PageHeader } from '@/components/PageHeader';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useMaterial, useCreateMaterial, useUpdateMaterial } from '@/lib/hooks/useMaterialMaster';
 
+// ✅ Fixed: Schema with safe transformations
 const materialSchema = z.object({
-  code: z.string().min(1, 'Code is required'),
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
   category: z.string().min(1, 'Category is required'),
@@ -26,11 +26,26 @@ const materialSchema = z.object({
   make: z.string().optional(),
   brand: z.string().optional(),
   hsnCode: z.string().optional(),
-  taxRate: z.number().min(0).max(100).optional(),
-  minStockLevel: z.number().min(0).optional(),
-  maxStockLevel: z.number().min(0).optional(),
-  reorderLevel: z.number().min(0).optional(),
-  standardRate: z.number().min(0).optional(),
+  taxRate: z
+    .union([z.string(), z.number()])
+    .optional()
+    .transform((val) => (val ? Number(val) : 18)),
+  minStockLevel: z
+    .union([z.string(), z.number()])
+    .optional()
+    .transform((val) => (val ? Number(val) : undefined)),
+  maxStockLevel: z
+    .union([z.string(), z.number()])
+    .optional()
+    .transform((val) => (val ? Number(val) : undefined)),
+  reorderLevel: z
+    .union([z.string(), z.number()])
+    .optional()
+    .transform((val) => (val ? Number(val) : undefined)),
+  standardRate: z
+    .union([z.string(), z.number()])
+    .optional()
+    .transform((val) => (val ? Number(val) : undefined)),
   active: z.boolean().default(true),
 });
 
@@ -48,7 +63,7 @@ const MaterialMasterForm = () => {
   const form = useForm<MaterialFormData>({
     resolver: zodResolver(materialSchema),
     defaultValues: {
-      code: '',
+      code: null,
       name: '',
       category: '',
       uom: 'Nos',
@@ -59,21 +74,36 @@ const MaterialMasterForm = () => {
 
   useEffect(() => {
     if (material) {
-      const mapped: any = {
-        ...material,
-        subCategory: (material as any).subCategory || (material as any).subcategory || '',
-      };
-      form.reset(mapped);
+      form.reset({
+        code: material.code || null,
+        name: material.name || '',
+        description: material.description || '',
+        category: material.category || '',
+        subCategory: material.subcategory || '',
+        uom: material.uom || 'Nos',
+        specification: material.specification || '',
+        make: (material as any).make || '',
+        brand: (material as any).brand || '',
+        hsnCode: material.hsnCode || '',
+        taxRate: material.taxRate || 18,
+        minStockLevel: (material as any).minStockLevel || 0,
+        maxStockLevel: (material as any).maxStockLevel || 0,
+        reorderLevel: (material as any).reorderLevel || 0,
+        standardRate: material.standardRate || 0,
+        active: material.active ?? true,
+      });
     }
   }, [material, form]);
 
   const onSubmit = (data: MaterialFormData) => {
-    const { subCategory, ...rest } = data as any;
-    const payload: any = { ...rest, subcategory: subCategory };
+    const { subCategory, ...rest } = data;
+    const payload = { ...rest, subcategory: subCategory }; // ✅ backend expects `subcategory`
+
     if (isEdit) {
-      updateMaterial.mutate({ id: id!, data: payload }, {
-        onSuccess: () => navigate('/engineering/materials'),
-      });
+      updateMaterial.mutate(
+        { id: id!, data: payload },
+        { onSuccess: () => navigate('/engineering/materials') }
+      );
     } else {
       createMaterial.mutate(payload, {
         onSuccess: () => navigate('/engineering/materials'),
@@ -81,8 +111,15 @@ const MaterialMasterForm = () => {
     }
   };
 
-  const categories = ['Cement', 'Steel', 'Sand', 'Aggregate', 'Bricks', 'Paint', 'Electrical', 'Plumbing', 'Hardware', 'Other'];
-  const uoms = ['Nos', 'Kgs', 'MT', 'Ltr', 'Sqm', 'Cum', 'Bag', 'Box', 'Bundle', 'Roll', 'Feet', 'Meter'];
+  const categories = [
+    'Cement', 'Steel', 'Sand', 'Aggregate', 'Bricks', 'Paint',
+    'Electrical', 'Plumbing', 'Hardware', 'Other',
+  ];
+
+  const uoms = [
+    'Nos', 'Kgs', 'MT', 'Ltr', 'Sqm', 'Cum',
+    'Bag', 'Box', 'Bundle', 'Roll', 'Feet', 'Meter',
+  ];
 
   if (isLoading) return <LoadingSpinner />;
 
@@ -99,18 +136,16 @@ const MaterialMasterForm = () => {
       </Button>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* 🔹 Basic Information */}
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="code">Code *</Label>
-              <Input {...form.register('code')} placeholder="MAT-001" />
-              {form.formState.errors.code && (
-                <p className="text-sm text-destructive">{form.formState.errors.code.message}</p>
-              )}
+              <Input {...form.register('code')} disabled placeholder="MAT-001" />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="name">Name *</Label>
               <Input {...form.register('name')} placeholder="Material Name" />
               {form.formState.errors.name && (
@@ -118,65 +153,63 @@ const MaterialMasterForm = () => {
               )}
             </div>
 
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="category">Category *</Label>
               <SearchableSelect
-                options={categories.map(cat => ({ value: cat, label: cat }))}
+                options={categories.map((cat) => ({ value: cat, label: cat }))}
                 value={form.watch('category')}
-                onChange={(value) => form.setValue('category', value)}
+                onChange={(v) => form.setValue('category', v)}
                 placeholder="Select category"
               />
-              {form.formState.errors.category && (
-                <p className="text-sm text-destructive">{form.formState.errors.category.message}</p>
-              )}
             </div>
 
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="subCategory">Sub Category</Label>
               <Input {...form.register('subCategory')} placeholder="Sub category" />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="uom">UOM *</Label>
               <SearchableSelect
-                options={uoms.map(uom => ({ value: uom, label: uom }))}
+                options={uoms.map((uom) => ({ value: uom, label: uom }))}
                 value={form.watch('uom')}
-                onChange={(value) => form.setValue('uom', value)}
+                onChange={(v) => form.setValue('uom', v)}
                 placeholder="Select UOM"
               />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="hsnCode">HSN Code</Label>
               <Input {...form.register('hsnCode')} placeholder="HSN Code" />
             </div>
 
-            <div className="space-y-2 md:col-span-2">
+            <div className="md:col-span-2">
               <Label htmlFor="description">Description</Label>
               <Textarea {...form.register('description')} placeholder="Material description" rows={3} />
             </div>
           </div>
         </Card>
 
+        {/* 🔹 Specifications */}
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4">Specifications</h3>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="specification">Specification</Label>
               <Textarea {...form.register('specification')} rows={2} />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="make">Make</Label>
               <Input {...form.register('make')} placeholder="Manufacturer" />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="brand">Brand</Label>
               <Input {...form.register('brand')} placeholder="Brand name" />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="taxRate">Tax Rate (%)</Label>
               <Input
                 type="number"
@@ -187,46 +220,31 @@ const MaterialMasterForm = () => {
           </div>
         </Card>
 
+        {/* 🔹 Stock & Pricing */}
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4">Stock & Pricing</h3>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="minStockLevel">Min Stock Level</Label>
-              <Input
-                type="number"
-                {...form.register('minStockLevel', { valueAsNumber: true })}
-                placeholder="Minimum quantity"
-              />
+              <Input type="number" {...form.register('minStockLevel', { valueAsNumber: true })} placeholder="Minimum quantity" />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="maxStockLevel">Max Stock Level</Label>
-              <Input
-                type="number"
-                {...form.register('maxStockLevel', { valueAsNumber: true })}
-                placeholder="Maximum quantity"
-              />
+              <Input type="number" {...form.register('maxStockLevel', { valueAsNumber: true })} placeholder="Maximum quantity" />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="reorderLevel">Reorder Level</Label>
-              <Input
-                type="number"
-                {...form.register('reorderLevel', { valueAsNumber: true })}
-                placeholder="Reorder point"
-              />
+              <Input type="number" {...form.register('reorderLevel', { valueAsNumber: true })} placeholder="Reorder point" />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="standardRate">Standard Rate</Label>
-              <Input
-                type="number"
-                {...form.register('standardRate', { valueAsNumber: true })}
-                placeholder="Standard price"
-              />
+              <Input type="number" {...form.register('standardRate', { valueAsNumber: true })} placeholder="Standard price" />
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 md:col-span-2">
               <Switch
                 checked={form.watch('active')}
                 onCheckedChange={(checked) => form.setValue('active', checked)}
@@ -236,8 +254,9 @@ const MaterialMasterForm = () => {
           </div>
         </Card>
 
-        <div className="flex gap-2 justify-end">
-          <Button type="button" variant="outline" onClick={() => navigate('/engineering/materials')}>
+        {/* 🔹 Actions */}
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" type="button" onClick={() => navigate('/engineering/materials')}>
             Cancel
           </Button>
           <Button type="submit" disabled={createMaterial.isPending || updateMaterial.isPending}>

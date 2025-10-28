@@ -23,20 +23,38 @@ export default function PurchaseOrdersList() {
   const { data: pos, isLoading } = usePOs();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredPOs = pos?.filter((po) =>
-    po.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    po.supplierName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    po.projectName?.toLowerCase().includes(searchQuery.toLowerCase())
+  // ✅ Normalize data safely
+  const normalizedPOs = pos?.map((po: any) => ({
+    id: po._id,
+    code: po.code,
+    supplierName: po.supplierId?.name || '—',
+    projectName: po.projectId?.name || '—',
+    projectCode: po.projectId?.code || '',
+    amount: po.totalAmount ?? 0,
+    poDate: po.poDate,
+    status: po.status,
+    approvalStatus: po.approvals?.length
+      ? po.approvals[po.approvals.length - 1].status
+      : null,
+  })) || [];
+
+  // ✅ Search logic
+  const filteredPOs = normalizedPOs.filter(
+    (po) =>
+      po.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      po.supplierName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      po.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      po.projectCode.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // ✅ Export logic
   const handleExport = () => {
-    if (!filteredPOs || filteredPOs.length === 0) return;
-    
+    if (!filteredPOs.length) return;
     const exportData = prepareDataForExport(filteredPOs);
     downloadCSV(
       exportData,
       `purchase-orders-${new Date().toISOString().split('T')[0]}`,
-      ['code', 'supplierName', 'projectName', 'poDate', 'amount', 'status']
+      ['code', 'supplierName', 'projectName', 'amount', 'poDate', 'status']
     );
   };
 
@@ -50,16 +68,19 @@ export default function PurchaseOrdersList() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Purchase Orders</h1>
-          <p className="text-muted-foreground">Manage purchase orders and approvals</p>
+          <p className="text-muted-foreground">
+            Manage purchase orders and approvals
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={handleExport}
-            disabled={!filteredPOs || filteredPOs.length === 0}
+            disabled={!filteredPOs.length}
           >
             <Download className="h-4 w-4 mr-2" />
             Export
@@ -71,6 +92,7 @@ export default function PurchaseOrdersList() {
         </div>
       </div>
 
+      {/* Table */}
       <Card>
         <CardHeader>
           <div className="relative">
@@ -83,8 +105,9 @@ export default function PurchaseOrdersList() {
             />
           </div>
         </CardHeader>
+
         <CardContent>
-          {filteredPOs && filteredPOs.length > 0 ? (
+          {filteredPOs.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -98,6 +121,7 @@ export default function PurchaseOrdersList() {
                     <TableHead>Approval</TableHead>
                   </TableRow>
                 </TableHeader>
+
                 <TableBody>
                   {filteredPOs.map((po) => (
                     <TableRow
@@ -108,8 +132,10 @@ export default function PurchaseOrdersList() {
                       <TableCell className="font-medium">{po.code}</TableCell>
                       <TableCell>{po.supplierName}</TableCell>
                       <TableCell>{po.projectName}</TableCell>
-                      <TableCell className="font-medium">{formatCurrency(po.grandTotal)}</TableCell>
-                      <TableCell>{formatDate(po.createdAt)}</TableCell>
+                      <TableCell className="font-medium">
+                        {formatCurrency(po.amount)}
+                      </TableCell>
+                      <TableCell>{formatDate(po.poDate)}</TableCell>
                       <TableCell>
                         <StatusBadge status={po.status} />
                       </TableCell>
@@ -129,13 +155,13 @@ export default function PurchaseOrdersList() {
               title="No purchase orders found"
               description={
                 searchQuery
-                  ? "No POs match your search criteria"
-                  : "Create purchase orders for material procurement"
+                  ? 'No POs match your search criteria'
+                  : 'Create purchase orders for material procurement'
               }
               action={
                 !searchQuery
                   ? {
-                      label: "Create PO",
+                      label: 'Create PO',
                       onClick: () => navigate('/purchase/pos/new'),
                     }
                   : undefined

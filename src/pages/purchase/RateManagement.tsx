@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,63 +18,103 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-interface MaterialRate {
-  id: string;
-  itemId: string;
-  itemName: string;
-  supplierId: string;
-  supplierName: string;
-  rate: number;
-  uom: string;
-  effectiveFrom: string;
-  effectiveTo?: string;
-  isActive: boolean;
-  createdAt: string;
-}
-
 export default function RateManagement() {
   const navigate = useNavigate();
+
+  // Filters & state
   const [searchQuery, setSearchQuery] = useState('');
-  const [supplierFilter, setSupplierFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('active');
-  const [sortBy, setSortBy] = useState<string>('date');
+  const [supplierFilter, setSupplierFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('active');
+  const [sortBy, setSortBy] = useState('date');
 
-  const { data: rates, isLoading } = useMaterialRates();
+  // Fetch API data
+  const { data, isLoading, isError } = useMaterialRates();
+  const rates = data || [];
 
-  const filteredRates = rates
-    ?.filter((rate) => {
-      const matchesSearch = 
-        rate.itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        rate.supplierName.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesSupplier = supplierFilter === 'all' || rate.supplierId === supplierFilter;
-      const matchesStatus = 
-        statusFilter === 'all' || 
-        (statusFilter === 'active' && rate.isActive) ||
-        (statusFilter === 'inactive' && !rate.isActive);
-      return matchesSearch && matchesSupplier && matchesStatus;
-    })
-    .sort((a, b) => {
-      if (sortBy === 'date') return new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime();
-      if (sortBy === 'item') return a.itemName.localeCompare(b.itemName);
-      if (sortBy === 'rate') return b.rate - a.rate;
-      if (sortBy === 'supplier') return a.supplierName.localeCompare(b.supplierName);
-      return 0;
-    });
-
-  const handleExport = () => {
-    if (!filteredRates) return;
-    const data = filteredRates.map((rate) => ({
-      'Item': rate.itemName,
-      'Supplier': rate.supplierName,
-      'Rate': rate.rate,
-      'UOM': rate.uom,
-      'Effective From': rate.effectiveFrom,
-      'Effective To': rate.effectiveTo || 'Current',
-      'Status': rate.isActive ? 'Active' : 'Inactive',
+  // Map backend response to UI-friendly format
+  const formattedRates = useMemo(() => {
+    return rates.map((rate) => ({
+      id: rate._id,
+      itemId: rate.itemId?._id,
+      itemName: rate.itemId?.name || '-',
+      supplierId: rate.supplierId?._id,
+      supplierName: rate.supplierId?.name || '-',
+      rate: rate.rate,
+      uom: rate.uom,
+      effectiveFrom: rate.effectiveFrom,
+      effectiveTo: rate.effectiveTo,
+      isActive: rate.active,
+      createdAt: rate.createdAt,
     }));
-    exportData(data, { filename: 'material-rates', format: 'csv' });
+  }, [rates]);
+
+  // Filter and sort logic
+  const filteredRates =
+   useMemo(() => {
+    if (!formattedRates.length) return [];
+
+    return formattedRates
+      .filter((rate) => {
+        const itemName = rate?.itemName?.toLowerCase() || '';
+        const supplierName = rate?.supplierName?.toLowerCase() || '';
+        const search = searchQuery?.toLowerCase() || '';
+
+        const matchesSearch =
+          itemName.includes(search) || supplierName.includes(search);
+
+        const matchesSupplier =
+          supplierFilter === 'all' || rate.supplierName === supplierFilter;
+
+        const matchesStatus =
+          statusFilter === 'all' ||
+          (statusFilter === 'active' && rate.isActive) ||
+          (statusFilter === 'inactive' && !rate.isActive);
+
+        return matchesSearch && matchesSupplier && matchesStatus;
+      })
+      .sort((a, b) => {
+        switch (sortBy) {
+          case 'date':
+            return (
+              new Date(b.effectiveFrom).getTime() -
+              new Date(a.effectiveFrom).getTime()
+            );
+          case 'item':
+            return (a.itemName || '').localeCompare(b.itemName || '');
+          case 'rate':
+            return (b.rate || 0) - (a.rate || 0);
+          case 'supplier':
+            return (a.supplierName || '').localeCompare(b.supplierName || '');
+          default:
+            return 0;
+        }
+      });
+  }, [formattedRates, searchQuery, supplierFilter, statusFilter, sortBy]);
+
+
+  // Export CSV
+  const handleExport = () => {
+    if (!filteredRates.length) return;
+
+    const exportableData = filteredRates.map((rate) => ({
+      Item: rate.itemName,
+      Supplier: rate.supplierName,
+      Rate: rate.rate,
+      UOM: rate.uom,
+      'Effective From': formatDate(rate.effectiveFrom),
+      'Effective To': rate.effectiveTo ? formatDate(rate.effectiveTo) : 'Current',
+      Status: rate.isActive ? 'Active' : 'Inactive',
+    }));
+
+    exportData(exportableData, { filename: 'material-rates', format: 'csv' });
   };
 
+  // Unique supplier list
+  const uniqueSuppliers = Array.from(
+    new Set(formattedRates.map((r) => r.supplierName).filter(Boolean))
+  );
+
+  // UI States
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -83,14 +123,19 @@ export default function RateManagement() {
     );
   }
 
-  const uniqueSuppliers = Array.from(new Set(rates?.map(r => r.supplierName) || [])) as string[];
+  if (isError) {
+    return <p className="text-center text-red-500">Failed to load material rates.</p>;
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Rate Management</h1>
-          <p className="text-muted-foreground">Track and manage material rates from suppliers</p>
+          <p className="text-muted-foreground">
+            Track and manage material rates from suppliers
+          </p>
         </div>
         <div className="flex gap-2">
           <Button onClick={handleExport} variant="outline">
@@ -104,10 +149,12 @@ export default function RateManagement() {
         </div>
       </div>
 
+      {/* Filters */}
       <Card>
         <CardHeader>
-          <div className="flex gap-4">
-            <div className="relative flex-1">
+          <div className="flex gap-4 flex-wrap">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[250px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by item or supplier..."
@@ -116,6 +163,8 @@ export default function RateManagement() {
                 className="pl-10"
               />
             </div>
+
+            {/* Supplier Filter */}
             <Select value={supplierFilter} onValueChange={setSupplierFilter}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Supplier" />
@@ -129,6 +178,8 @@ export default function RateManagement() {
                 ))}
               </SelectContent>
             </Select>
+
+            {/* Status Filter */}
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Status" />
@@ -139,6 +190,8 @@ export default function RateManagement() {
                 <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* Sort Filter */}
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Sort by" />
@@ -152,8 +205,10 @@ export default function RateManagement() {
             </Select>
           </div>
         </CardHeader>
+
+        {/* Table */}
         <CardContent>
-          {filteredRates && filteredRates.length > 0 ? (
+          {filteredRates.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -179,16 +234,19 @@ export default function RateManagement() {
                       <TableCell>{rate.uom}</TableCell>
                       <TableCell>{formatDate(rate.effectiveFrom)}</TableCell>
                       <TableCell>
-                        {rate.effectiveTo ? formatDate(rate.effectiveTo) : (
+                        {rate.effectiveTo ? (
+                          formatDate(rate.effectiveTo)
+                        ) : (
                           <span className="text-muted-foreground">Current</span>
                         )}
                       </TableCell>
                       <TableCell>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          rate.isActive 
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                            : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
-                        }`}>
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${rate.isActive
+                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                              : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
+                            }`}
+                        >
                           {rate.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </TableCell>
@@ -212,15 +270,15 @@ export default function RateManagement() {
               title="No rates found"
               description={
                 searchQuery
-                  ? "No rates match your search criteria"
-                  : "Start tracking material rates from suppliers"
+                  ? 'No rates match your search criteria'
+                  : 'Start tracking material rates from suppliers'
               }
               action={
                 !searchQuery
                   ? {
-                      label: "Add Rate",
-                      onClick: () => navigate('/purchase/rates/new'),
-                    }
+                    label: 'Add Rate',
+                    onClick: () => navigate('/purchase/rates/new'),
+                  }
                   : undefined
               }
             />

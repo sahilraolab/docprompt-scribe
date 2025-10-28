@@ -54,7 +54,7 @@ export default function Login() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="animate-shake">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}

@@ -77,15 +77,19 @@ export default function ContractorsList() {
                 <TableBody>
                   {filteredContractors.map((contractor) => (
                     <TableRow
-                      key={contractor.id}
+                      key={contractor._id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/contracts/contractors/${contractor.id}`)}
+                      onClick={() => navigate(`/contracts/contractors/${contractor._id}/view`)}
                     >
                       <TableCell className="font-medium">{contractor.name}</TableCell>
                       <TableCell>{contractor.contact}</TableCell>
                       <TableCell>{contractor.phone || 'N/A'}</TableCell>
                       <TableCell className="font-mono text-sm">{contractor.gst || 'N/A'}</TableCell>
-                      <TableCell>{contractor.city}, {contractor.state}</TableCell>
+                      <TableCell>
+                        {contractor.city && contractor.state
+                          ? `${contractor.city}, ${contractor.state}`
+                          : contractor.city || contractor.state || 'N/A'}
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Star className="h-4 w-4 fill-amber-400 text-amber-400" />

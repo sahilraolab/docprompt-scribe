@@ -22,12 +22,16 @@ export default function WorkOrdersList() {
   const { data: workOrders, isLoading } = useWorkOrders();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredWOs = workOrders?.filter((wo) =>
-    wo.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    wo.contractorName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    wo.projectName?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // ✅ Filtering logic (use correct field names)
+  const filteredWOs = workOrders?.filter((wo) => {
+    const code = wo.code?.toLowerCase() || '';
+    const contractor = wo.contractorId?.name?.toLowerCase() || '';
+    const project = wo.projectId?.name?.toLowerCase() || '';
+    const query = searchQuery.toLowerCase();
+    return code.includes(query) || contractor.includes(query) || project.includes(query);
+  });
 
+  // ✅ Loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -36,6 +40,7 @@ export default function WorkOrdersList() {
     );
   }
 
+  // ✅ Main view
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -61,6 +66,7 @@ export default function WorkOrdersList() {
             />
           </div>
         </CardHeader>
+
         <CardContent>
           {filteredWOs && filteredWOs.length > 0 ? (
             <div className="rounded-md border">
@@ -79,14 +85,16 @@ export default function WorkOrdersList() {
                 <TableBody>
                   {filteredWOs.map((wo) => (
                     <TableRow
-                      key={wo.id}
+                      key={wo._id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/contracts/work-orders/${wo.id}`)}
+                      onClick={() => navigate(`/contracts/work-orders/${wo._id}`)}
                     >
                       <TableCell className="font-medium">{wo.code}</TableCell>
-                      <TableCell>{wo.contractorName}</TableCell>
-                      <TableCell>{wo.projectName}</TableCell>
-                      <TableCell className="font-medium">{formatCurrency(wo.amount)}</TableCell>
+                      <TableCell>{wo.contractorId?.name || '—'}</TableCell>
+                      <TableCell>{wo.projectId?.name || '—'}</TableCell>
+                      <TableCell className="font-medium">
+                        {formatCurrency(wo.amount)}
+                      </TableCell>
                       <TableCell>{formatPercent(wo.progress)}</TableCell>
                       <TableCell>{formatDate(wo.startDate)}</TableCell>
                       <TableCell>
@@ -103,13 +111,13 @@ export default function WorkOrdersList() {
               title="No work orders found"
               description={
                 searchQuery
-                  ? "No work orders match your search criteria"
-                  : "Create work orders for subcontractor assignments"
+                  ? 'No work orders match your search criteria'
+                  : 'Create work orders for subcontractor assignments'
               }
               action={
                 !searchQuery
                   ? {
-                      label: "Create Work Order",
+                      label: 'Create Work Order',
                       onClick: () => navigate('/contracts/work-orders/new'),
                     }
                   : undefined
