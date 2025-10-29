@@ -7,78 +7,46 @@ import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/PageHeader';
 import { EmptyState } from '@/components/EmptyState';
 import { DataTable } from '@/components/DataTable';
-import { Plus, Search, TrendingUp, Eye, DollarSign } from 'lucide-react';
+import { Plus, Search, TrendingUp, Eye, Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/format';
-
-// Mock data
-const mockInvestments = [
-  {
-    id: '1',
-    projectName: 'Green Valley Residency',
-    partnerName: 'Rajesh Kumar',
-    sharePercent: 25,
-    preferredReturnPercent: 12,
-    totalContributions: 25000000,
-    totalDistributions: 3000000,
-    active: true,
-  },
-  {
-    id: '2',
-    projectName: 'City Mall Expansion',
-    partnerName: 'ABC Builders Pvt Ltd',
-    sharePercent: 40,
-    preferredReturnPercent: 0,
-    totalContributions: 50000000,
-    totalDistributions: 0,
-    active: true,
-  },
-  {
-    id: '3',
-    projectName: 'Smart Office Complex',
-    partnerName: 'Priya Sharma',
-    sharePercent: 15,
-    preferredReturnPercent: 10,
-    totalContributions: 15000000,
-    totalDistributions: 1500000,
-    active: true,
-  },
-];
+import { useInvestments } from '@/lib/hooks/usePartners';
 
 export default function ProjectInvestmentsList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { data: investments = [], isLoading } = useInvestments();
 
-  const filteredInvestments = mockInvestments.filter(inv =>
-    inv.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    inv.partnerName.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredInvestments = investments.filter(inv =>
+    inv.projectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    inv.partnerName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const columns = [
     {
       key: 'project',
       header: 'Project',
-      render: (inv: typeof mockInvestments[0]) => (
-        <p className="font-medium">{inv.projectName}</p>
+      render: (inv: typeof investments[0]) => (
+        <p className="font-medium">{inv.projectName || '-'}</p>
       ),
     },
     {
       key: 'partner',
       header: 'Partner',
-      render: (inv: typeof mockInvestments[0]) => (
-        <p className="text-sm">{inv.partnerName}</p>
+      render: (inv: typeof investments[0]) => (
+        <p className="text-sm">{inv.partnerName || '-'}</p>
       ),
     },
     {
       key: 'share',
       header: 'Share %',
-      render: (inv: typeof mockInvestments[0]) => (
+      render: (inv: typeof investments[0]) => (
         <Badge variant="outline">{inv.sharePercent}%</Badge>
       ),
     },
     {
       key: 'preferred',
       header: 'Preferred Return',
-      render: (inv: typeof mockInvestments[0]) => (
+      render: (inv: typeof investments[0]) => (
         <span className="text-sm">
           {inv.preferredReturnPercent > 0 ? `${inv.preferredReturnPercent}% p.a.` : 'None'}
         </span>
@@ -87,7 +55,7 @@ export default function ProjectInvestmentsList() {
     {
       key: 'contributions',
       header: 'Total Contributions',
-      render: (inv: typeof mockInvestments[0]) => (
+      render: (inv: typeof investments[0]) => (
         <span className="font-mono text-sm">
           {formatCurrency(inv.totalContributions)}
         </span>
@@ -96,7 +64,7 @@ export default function ProjectInvestmentsList() {
     {
       key: 'distributions',
       header: 'Total Distributions',
-      render: (inv: typeof mockInvestments[0]) => (
+      render: (inv: typeof investments[0]) => (
         <span className="font-mono text-sm text-green-600">
           {formatCurrency(inv.totalDistributions)}
         </span>
@@ -105,7 +73,7 @@ export default function ProjectInvestmentsList() {
     {
       key: 'status',
       header: 'Status',
-      render: (inv: typeof mockInvestments[0]) => (
+      render: (inv: typeof investments[0]) => (
         <Badge variant={inv.active ? 'default' : 'secondary'}>
           {inv.active ? 'Active' : 'Inactive'}
         </Badge>
@@ -114,7 +82,7 @@ export default function ProjectInvestmentsList() {
     {
       key: 'actions',
       header: 'Actions',
-      render: (inv: typeof mockInvestments[0]) => (
+      render: (inv: typeof investments[0]) => (
         <Button
           variant="ghost"
           size="sm"
@@ -125,6 +93,14 @@ export default function ProjectInvestmentsList() {
       ),
     },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

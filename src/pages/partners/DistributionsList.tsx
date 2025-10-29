@@ -6,54 +6,35 @@ import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/PageHeader';
 import { EmptyState } from '@/components/EmptyState';
 import { DataTable } from '@/components/DataTable';
-import { Search, Receipt, Eye } from 'lucide-react';
+import { Search, Receipt, Eye, Loader2 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
-
-const mockDistributions = [
-  {
-    id: '1',
-    projectName: 'Green Valley Residency',
-    partnerName: 'Rajesh Kumar',
-    periodFrom: '2024-01-01',
-    periodTo: '2024-03-31',
-    amount: 1200000,
-    reference: 'Q1 profit distribution',
-  },
-  {
-    id: '2',
-    projectName: 'City Mall Expansion',
-    partnerName: 'ABC Builders Pvt Ltd',
-    periodFrom: '2023-10-01',
-    periodTo: '2023-12-31',
-    amount: 800000,
-    reference: 'FY23 Q4 distribution',
-  },
-];
+import { useDistributions } from '@/lib/hooks/usePartners';
 
 export default function DistributionsList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { data: distributions = [], isLoading } = useDistributions();
 
-  const filtered = mockDistributions.filter((d) =>
-    d.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    d.partnerName.toLowerCase().includes(searchQuery.toLowerCase())
+  const filtered = distributions.filter((d) =>
+    d.projectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    d.partnerName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const columns = [
     {
       key: 'project',
       header: 'Project',
-      render: (d: typeof mockDistributions[0]) => <p className="font-medium">{d.projectName}</p>,
+      render: (d: typeof distributions[0]) => <p className="font-medium">{d.projectName || '-'}</p>,
     },
     {
       key: 'partner',
       header: 'Partner',
-      render: (d: typeof mockDistributions[0]) => <p className="text-sm">{d.partnerName}</p>,
+      render: (d: typeof distributions[0]) => <p className="text-sm">{d.partnerName || '-'}</p>,
     },
     {
       key: 'period',
       header: 'Period',
-      render: (d: typeof mockDistributions[0]) => (
+      render: (d: typeof distributions[0]) => (
         <div className="text-sm">
           <p>{formatDate(d.periodFrom)}</p>
           <p className="text-muted-foreground">to {formatDate(d.periodTo)}</p>
@@ -63,25 +44,33 @@ export default function DistributionsList() {
     {
       key: 'amount',
       header: 'Amount',
-      render: (d: typeof mockDistributions[0]) => (
+      render: (d: typeof distributions[0]) => (
         <span className="font-mono text-sm">{formatCurrency(d.amount)}</span>
       ),
     },
     {
       key: 'reference',
       header: 'Reference',
-      render: (d: typeof mockDistributions[0]) => <span className="text-sm text-muted-foreground">{d.reference}</span>,
+      render: (d: typeof distributions[0]) => <span className="text-sm text-muted-foreground">{d.reference || '-'}</span>,
     },
     {
       key: 'actions',
       header: 'Actions',
-      render: (d: typeof mockDistributions[0]) => (
+      render: (d: typeof distributions[0]) => (
         <Button variant="ghost" size="sm" onClick={() => navigate(`/partners/distributions/${d.id}`)}>
           <Eye className="h-4 w-4" />
         </Button>
       ),
     },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -7,52 +7,17 @@ import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/PageHeader';
 import { EmptyState } from '@/components/EmptyState';
 import { DataTable } from '@/components/DataTable';
-import { Plus, Search, TrendingUp, Eye } from 'lucide-react';
+import { Plus, Search, TrendingUp, Eye, Loader2 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
-
-// Mock data
-const mockProfitEvents = [
-  {
-    id: '1',
-    projectName: 'Green Valley Residency',
-    periodFrom: '2024-01-01',
-    periodTo: '2024-03-31',
-    profitAmount: 5500000,
-    note: 'Q1 profit distribution',
-    status: 'Approved',
-    approvedBy: 'John Doe',
-    approvedAt: '2024-04-05',
-  },
-  {
-    id: '2',
-    projectName: 'City Mall Expansion',
-    periodFrom: '2024-01-01',
-    periodTo: '2024-03-31',
-    profitAmount: 0,
-    note: 'No profit for Q1',
-    status: 'Draft',
-    approvedBy: null,
-    approvedAt: null,
-  },
-  {
-    id: '3',
-    projectName: 'Smart Office Complex',
-    periodFrom: '2023-10-01',
-    periodTo: '2023-12-31',
-    profitAmount: 3200000,
-    note: 'Q4 2023 distribution',
-    status: 'Distributed',
-    approvedBy: 'Jane Smith',
-    approvedAt: '2024-01-10',
-  },
-];
+import { useProfitEvents } from '@/lib/hooks/usePartners';
 
 export default function ProfitEventsList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { data: profitEvents = [], isLoading } = useProfitEvents();
 
-  const filteredEvents = mockProfitEvents.filter(event =>
-    event.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredEvents = profitEvents.filter(event =>
+    event.projectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     event.status.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -60,14 +25,14 @@ export default function ProfitEventsList() {
     {
       key: 'project',
       header: 'Project',
-      render: (event: typeof mockProfitEvents[0]) => (
-        <p className="font-medium">{event.projectName}</p>
+      render: (event: typeof profitEvents[0]) => (
+        <p className="font-medium">{event.projectName || '-'}</p>
       ),
     },
     {
       key: 'period',
       header: 'Period',
-      render: (event: typeof mockProfitEvents[0]) => (
+      render: (event: typeof profitEvents[0]) => (
         <div className="text-sm">
           <p>{formatDate(event.periodFrom)}</p>
           <p className="text-muted-foreground">to {formatDate(event.periodTo)}</p>
@@ -77,7 +42,7 @@ export default function ProfitEventsList() {
     {
       key: 'profit',
       header: 'Profit/Loss',
-      render: (event: typeof mockProfitEvents[0]) => (
+      render: (event: typeof profitEvents[0]) => (
         <span className={`font-mono text-sm font-semibold ${event.profitAmount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
           {formatCurrency(event.profitAmount)}
         </span>
@@ -86,14 +51,14 @@ export default function ProfitEventsList() {
     {
       key: 'note',
       header: 'Note',
-      render: (event: typeof mockProfitEvents[0]) => (
-        <p className="text-sm text-muted-foreground">{event.note}</p>
+      render: (event: typeof profitEvents[0]) => (
+        <p className="text-sm text-muted-foreground">{event.note || '-'}</p>
       ),
     },
     {
       key: 'status',
       header: 'Status',
-      render: (event: typeof mockProfitEvents[0]) => {
+      render: (event: typeof profitEvents[0]) => {
         const variant = 
           event.status === 'Distributed' ? 'default' :
           event.status === 'Approved' ? 'secondary' :
@@ -104,7 +69,7 @@ export default function ProfitEventsList() {
     {
       key: 'approved',
       header: 'Approved By',
-      render: (event: typeof mockProfitEvents[0]) => (
+      render: (event: typeof profitEvents[0]) => (
         <div className="text-sm">
           {event.approvedBy ? (
             <>
@@ -120,7 +85,7 @@ export default function ProfitEventsList() {
     {
       key: 'actions',
       header: 'Actions',
-      render: (event: typeof mockProfitEvents[0]) => (
+      render: (event: typeof profitEvents[0]) => (
         <Button
           variant="ghost"
           size="sm"
@@ -131,6 +96,14 @@ export default function ProfitEventsList() {
       ),
     },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

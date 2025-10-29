@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { PageHeader } from '@/components/PageHeader';
-import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { SearchableSelect } from '@/components/SearchableSelect';
-import { useState } from 'react';
+import { useInvestment, useCreateInvestment, useUpdateInvestment } from '@/lib/hooks/usePartners';
+import { useProjects } from '@/lib/hooks/useProjects';
+import { usePartners } from '@/lib/hooks/usePartners';
 
 const investmentSchema = z.object({
   projectId: z.string().min(1, 'Project is required'),

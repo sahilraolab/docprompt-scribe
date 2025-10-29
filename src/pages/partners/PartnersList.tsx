@@ -7,56 +7,15 @@ import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/PageHeader';
 import { EmptyState } from '@/components/EmptyState';
 import { DataTable } from '@/components/DataTable';
-import { Plus, Search, Users, Mail, Phone, FileText, Eye } from 'lucide-react';
-
-// Mock data
-const mockPartners = [
-  {
-    id: '1',
-    code: 'PAR-00001',
-    name: 'Rajesh Kumar',
-    email: 'rajesh.kumar@email.com',
-    phone: '+91 98765 43210',
-    type: 'Individual',
-    pan: 'ABCDE1234F',
-    gst: '',
-    address: 'Mumbai, Maharashtra',
-    active: true,
-    createdAt: '2024-01-15',
-  },
-  {
-    id: '2',
-    code: 'PAR-00002',
-    name: 'ABC Builders Pvt Ltd',
-    email: 'info@abcbuilders.com',
-    phone: '+91 98765 43211',
-    type: 'Company',
-    pan: 'FGHIJ5678K',
-    gst: '27FGHIJ5678K1Z5',
-    address: 'Delhi',
-    active: true,
-    createdAt: '2024-01-20',
-  },
-  {
-    id: '3',
-    code: 'PAR-00003',
-    name: 'Priya Sharma',
-    email: 'priya.sharma@email.com',
-    phone: '+91 98765 43212',
-    type: 'Individual',
-    pan: 'KLMNO9012P',
-    gst: '',
-    address: 'Bangalore, Karnataka',
-    active: true,
-    createdAt: '2024-02-05',
-  },
-];
+import { Plus, Search, Users, Mail, Phone, Eye, Loader2 } from 'lucide-react';
+import { usePartners } from '@/lib/hooks/usePartners';
 
 export default function PartnersList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { data: partners = [], isLoading } = usePartners();
 
-  const filteredPartners = mockPartners.filter(partner =>
+  const filteredPartners = partners.filter(partner =>
     partner.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     partner.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
     partner.email.toLowerCase().includes(searchQuery.toLowerCase())
@@ -66,14 +25,14 @@ export default function PartnersList() {
     {
       key: 'code',
       header: 'Code',
-      render: (partner: typeof mockPartners[0]) => (
+      render: (partner: typeof partners[0]) => (
         <span className="font-mono text-sm">{partner.code}</span>
       ),
     },
     {
       key: 'name',
       header: 'Name',
-      render: (partner: typeof mockPartners[0]) => (
+      render: (partner: typeof partners[0]) => (
         <div>
           <p className="font-medium">{partner.name}</p>
           <Badge variant="outline" className="mt-1">
@@ -85,7 +44,7 @@ export default function PartnersList() {
     {
       key: 'contact',
       header: 'Contact',
-      render: (partner: typeof mockPartners[0]) => (
+      render: (partner: typeof partners[0]) => (
         <div className="text-sm">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Mail className="h-3 w-3" />
@@ -101,7 +60,7 @@ export default function PartnersList() {
     {
       key: 'tax',
       header: 'Tax Details',
-      render: (partner: typeof mockPartners[0]) => (
+      render: (partner: typeof partners[0]) => (
         <div className="text-sm">
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">PAN:</span>
@@ -119,7 +78,7 @@ export default function PartnersList() {
     {
       key: 'status',
       header: 'Status',
-      render: (partner: typeof mockPartners[0]) => (
+      render: (partner: typeof partners[0]) => (
         <Badge variant={partner.active ? 'default' : 'secondary'}>
           {partner.active ? 'Active' : 'Inactive'}
         </Badge>
@@ -128,7 +87,7 @@ export default function PartnersList() {
     {
       key: 'actions',
       header: 'Actions',
-      render: (partner: typeof mockPartners[0]) => (
+      render: (partner: typeof partners[0]) => (
         <Button
           variant="ghost"
           size="sm"
@@ -139,6 +98,14 @@ export default function PartnersList() {
       ),
     },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

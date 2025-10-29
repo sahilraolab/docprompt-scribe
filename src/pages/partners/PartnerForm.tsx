@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,8 +11,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { PageHeader } from '@/components/PageHeader';
 import { SearchableSelect } from '@/components/SearchableSelect';
-import { ArrowLeft, Save } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { usePartner, useCreatePartner, useUpdatePartner } from '@/lib/hooks/usePartners';
 
 const partnerSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(200, 'Name too long'),
@@ -31,11 +32,16 @@ export default function PartnerForm() {
   const { id } = useParams();
   const isEditing = !!id && id !== 'new';
 
+  const { data: partner, isLoading: loadingPartner } = usePartner(id);
+  const createPartner = useCreatePartner();
+  const updatePartner = useUpdatePartner();
+
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<PartnerFormData>({
     resolver: zodResolver(partnerSchema),
@@ -51,25 +57,43 @@ export default function PartnerForm() {
     },
   });
 
+  useEffect(() => {
+    if (partner) {
+      reset({
+        name: partner.name || '',
+        email: partner.email || '',
+        phone: partner.phone || '',
+        type: partner.type || 'Individual',
+        pan: partner.pan || '',
+        gst: partner.gst || '',
+        address: partner.address || '',
+        active: partner.active ?? true,
+      });
+    }
+  }, [partner, reset]);
+
   const partnerType = watch('type');
 
   const onSubmit = async (data: PartnerFormData) => {
     try {
-      // API call would go here
-      console.log('Partner data:', data);
-      toast({
-        title: 'Success',
-        description: `Partner ${isEditing ? 'updated' : 'created'} successfully`,
-      });
+      if (isEditing && id) {
+        await updatePartner.mutateAsync({ id, data });
+      } else {
+        await createPartner.mutateAsync(data);
+      }
       navigate('/partners/list');
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to save partner',
-        variant: 'destructive',
-      });
+      // Error toast is handled by the hooks
     }
   };
+
+  if (loadingPartner) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -211,9 +235,12 @@ export default function PartnerForm() {
 
             {/* Actions */}
             <div className="flex gap-4 pt-4">
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || createPartner.isPending || updatePartner.isPending}>
+                {(isSubmitting || createPartner.isPending || updatePartner.isPending) && (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                )}
                 <Save className="h-4 w-4 mr-2" />
-                {isSubmitting ? 'Saving...' : isEditing ? 'Update Partner' : 'Create Partner'}
+                {isEditing ? 'Update Partner' : 'Create Partner'}
               </Button>
               <Button
                 type="button"
