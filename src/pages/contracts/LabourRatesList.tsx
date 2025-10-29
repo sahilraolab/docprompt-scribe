@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/EmptyState';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
-import { Plus, Search, Users } from 'lucide-react';
+import { Plus, Search, Users, Loader2 } from 'lucide-react';
+import { useLabourRates } from '@/lib/hooks/useContracts';
 import {
   Table,
   TableBody,
@@ -19,89 +20,20 @@ import { Badge } from '@/components/ui/badge';
 export default function LabourRatesList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { data: labourRates, isLoading } = useLabourRates();
 
-  // Mock data
-  const labourRates = [
-    {
-      id: '1',
-      category: 'Mason',
-      skillLevel: 'Skilled',
-      rate: 800,
-      unit: 'per day',
-      effectiveFrom: '2024-01-01',
-      effectiveTo: null,
-      isActive: true,
-    },
-    {
-      id: '2',
-      category: 'Carpenter',
-      skillLevel: 'Skilled',
-      rate: 850,
-      unit: 'per day',
-      effectiveFrom: '2024-01-01',
-      effectiveTo: null,
-      isActive: true,
-    },
-    {
-      id: '3',
-      category: 'Helper',
-      skillLevel: 'Unskilled',
-      rate: 500,
-      unit: 'per day',
-      effectiveFrom: '2024-01-01',
-      effectiveTo: null,
-      isActive: true,
-    },
-    {
-      id: '4',
-      category: 'Electrician',
-      skillLevel: 'Skilled',
-      rate: 900,
-      unit: 'per day',
-      effectiveFrom: '2024-01-01',
-      effectiveTo: null,
-      isActive: true,
-    },
-    {
-      id: '5',
-      category: 'Plumber',
-      skillLevel: 'Skilled',
-      rate: 850,
-      unit: 'per day',
-      effectiveFrom: '2024-01-01',
-      effectiveTo: null,
-      isActive: true,
-    },
-    {
-      id: '6',
-      category: 'Welder',
-      skillLevel: 'Skilled',
-      rate: 950,
-      unit: 'per day',
-      effectiveFrom: '2024-01-01',
-      effectiveTo: null,
-      isActive: true,
-    },
-    {
-      id: '7',
-      category: 'Mason',
-      skillLevel: 'Skilled',
-      rate: 750,
-      unit: 'per day',
-      effectiveFrom: '2023-01-01',
-      effectiveTo: '2023-12-31',
-      isActive: false,
-    },
-  ];
+  const filteredRates = labourRates?.filter((rate) =>
+    rate.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    rate.location?.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
-  const filteredRates = labourRates.filter((rate) =>
-    rate.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    rate.skillLevel.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const getSkillBadgeColor = (skill: string) => {
-    return skill === 'Skilled' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800';
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -135,7 +67,7 @@ export default function LabourRatesList() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Category</TableHead>
-                    <TableHead>Skill Level</TableHead>
+                    <TableHead>Location</TableHead>
                     <TableHead>Rate</TableHead>
                     <TableHead>Unit</TableHead>
                     <TableHead>Effective From</TableHead>
@@ -146,20 +78,18 @@ export default function LabourRatesList() {
                 <TableBody>
                   {filteredRates.map((rate) => (
                     <TableRow
-                      key={rate.id}
+                      key={rate._id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/contracts/labour-rates/${rate.id}`)}
+                      onClick={() => navigate(`/contracts/labour-rates/${rate._id}`)}
                     >
                       <TableCell className="font-medium">{rate.category}</TableCell>
                       <TableCell>
-                        <Badge className={getSkillBadgeColor(rate.skillLevel)} variant="secondary">
-                          {rate.skillLevel}
-                        </Badge>
+                        <Badge variant="secondary">{rate.location}</Badge>
                       </TableCell>
                       <TableCell className="font-semibold">
-                        {formatCurrency(rate.rate, 'full')}
+                        {formatCurrency(rate.dailyRate, 'full')}
                       </TableCell>
-                      <TableCell>{rate.unit}</TableCell>
+                      <TableCell>per day</TableCell>
                       <TableCell>{formatDate(rate.effectiveFrom)}</TableCell>
                       <TableCell>
                         {rate.effectiveTo ? formatDate(rate.effectiveTo) : (
@@ -167,15 +97,9 @@ export default function LabourRatesList() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {rate.isActive ? (
-                          <Badge className="bg-green-100 text-green-800" variant="secondary">
-                            Active
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">
-                            Inactive
-                          </Badge>
-                        )}
+                        <Badge className="bg-green-100 text-green-800" variant="secondary">
+                          Active
+                        </Badge>
                       </TableCell>
                     </TableRow>
                   ))}

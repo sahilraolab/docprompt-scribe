@@ -4,46 +4,30 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, ArrowLeft } from 'lucide-react';
+import { Edit, ArrowLeft, Loader2 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
+import { useContractor, useWorkOrders, useRABills } from '@/lib/hooks/useContracts';
+import { StatusBadge } from '@/components/StatusBadge';
 
 export default function ContractorDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  
+  const { data: contractor, isLoading: contractorLoading } = useContractor(id);
+  const { data: workOrders = [] } = useWorkOrders({ contractorId: id });
+  const { data: raBills = [] } = useRABills({ contractorId: id });
 
-  // Mock data
-  const contractor = {
-    id: id,
-    code: 'CON-001',
-    name: 'XYZ Contractors',
-    specialization: 'Civil Works',
-    contactPerson: 'Amit Patel',
-    email: 'amit@xyzcontractors.com',
-    phone: '+91 98765 12345',
-    address: 'Shop 45, Contractor Market, Mumbai',
-    gstNumber: '27XYZAB1234C1Z5',
-    panNumber: 'XYZAB1234C',
-    rating: 4.2,
-    status: 'Active',
-  };
+  if (contractorLoading || !contractor) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
-  const workOrders = [
-    { id: 'WO-001', date: '2024-01-10', title: 'Foundation Work', amount: 1500000, status: 'In Progress' },
-    { id: 'WO-002', date: '2024-01-15', title: 'Structural Steel Work', amount: 2200000, status: 'Completed' },
-    { id: 'WO-003', date: '2024-01-20', title: 'Plastering Work', amount: 850000, status: 'Pending' },
-  ];
-
-  const raBills = [
-    { id: 'RA-001', date: '2024-01-12', woNumber: 'WO-001', amount: 750000, status: 'Approved' },
-    { id: 'RA-002', date: '2024-01-18', woNumber: 'WO-002', amount: 1100000, status: 'Pending' },
-  ];
-
-  const performance = {
-    totalWorkOrders: 28,
-    completionRate: 89,
-    qualityRating: 4.2,
-    totalContractValue: 45000000,
-  };
+  const totalContractValue = workOrders.reduce((sum, wo) => sum + (wo.amount || 0), 0);
+  const completedWOs = workOrders.filter(wo => wo.status === 'Completed').length;
+  const completionRate = workOrders.length > 0 ? Math.round((completedWOs / workOrders.length) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -54,10 +38,10 @@ export default function ContractorDetails() {
           </Button>
           <div>
             <h1 className="text-3xl font-bold">{contractor.name}</h1>
-            <p className="text-muted-foreground">{contractor.code} • {contractor.specialization}</p>
+            <p className="text-muted-foreground">{contractor.code} • {contractor.specialization || 'General Contractor'}</p>
           </div>
         </div>
-        <Button onClick={() => navigate(`/contracts/contractors/${id}`)}>
+        <Button onClick={() => navigate(`/contracts/contractors/${id}/edit`)}>
           <Edit className="h-4 w-4 mr-2" />
           Edit Contractor
         </Button>
@@ -80,11 +64,11 @@ export default function ContractorDetails() {
               <CardContent className="space-y-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Contact Person</p>
-                  <p className="font-medium">{contractor.contactPerson}</p>
+                  <p className="font-medium">{contractor.contact}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{contractor.email}</p>
+                  <p className="font-medium">{contractor.email || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Phone</p>
@@ -92,7 +76,7 @@ export default function ContractorDetails() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Address</p>
-                  <p className="font-medium">{contractor.address}</p>
+                  <p className="font-medium">{contractor.address || 'N/A'}</p>
                 </div>
               </CardContent>
             </Card>
@@ -104,19 +88,19 @@ export default function ContractorDetails() {
               <CardContent className="space-y-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Specialization</p>
-                  <p className="font-medium">{contractor.specialization}</p>
+                  <p className="font-medium">{contractor.specialization || 'General'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">GST Number</p>
-                  <p className="font-medium">{contractor.gstNumber}</p>
+                  <p className="font-medium">{contractor.gst || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">PAN Number</p>
-                  <p className="font-medium">{contractor.panNumber}</p>
+                  <p className="font-medium">{contractor.pan || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Rating</p>
-                  <p className="font-medium">{contractor.rating}/5</p>
+                  <p className="font-medium">{contractor.rating ? `${contractor.rating}/5` : 'N/A'}</p>
                 </div>
               </CardContent>
             </Card>
@@ -141,15 +125,13 @@ export default function ContractorDetails() {
                 </TableHeader>
                 <TableBody>
                   {workOrders.map((wo) => (
-                    <TableRow key={wo.id}>
-                      <TableCell className="font-medium">{wo.id}</TableCell>
-                      <TableCell>{formatDate(wo.date)}</TableCell>
-                      <TableCell>{wo.title}</TableCell>
+                    <TableRow key={wo._id} className="cursor-pointer" onClick={() => navigate(`/contracts/work-orders/${wo._id}`)}>
+                      <TableCell className="font-medium">{wo.code}</TableCell>
+                      <TableCell>{formatDate(wo.woDate)}</TableCell>
+                      <TableCell>{wo.workDescription?.substring(0, 50)}...</TableCell>
                       <TableCell>{formatCurrency(wo.amount)}</TableCell>
                       <TableCell>
-                        <Badge variant={wo.status === 'Completed' ? 'default' : 'secondary'}>
-                          {wo.status}
-                        </Badge>
+                        <StatusBadge status={wo.status} />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -177,15 +159,13 @@ export default function ContractorDetails() {
                 </TableHeader>
                 <TableBody>
                   {raBills.map((bill) => (
-                    <TableRow key={bill.id}>
-                      <TableCell className="font-medium">{bill.id}</TableCell>
-                      <TableCell>{formatDate(bill.date)}</TableCell>
-                      <TableCell>{bill.woNumber}</TableCell>
-                      <TableCell>{formatCurrency(bill.amount)}</TableCell>
+                    <TableRow key={bill._id} className="cursor-pointer" onClick={() => navigate(`/contracts/ra-bills/${bill._id}`)}>
+                      <TableCell className="font-medium">{bill.billNo}</TableCell>
+                      <TableCell>{formatDate(bill.billDate)}</TableCell>
+                      <TableCell>{bill.workOrderId?.code || 'N/A'}</TableCell>
+                      <TableCell>{formatCurrency(bill.net)}</TableCell>
                       <TableCell>
-                        <Badge variant={bill.status === 'Approved' ? 'default' : 'secondary'}>
-                          {bill.status}
-                        </Badge>
+                        <StatusBadge status={bill.status || 'Pending'} />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -202,7 +182,7 @@ export default function ContractorDetails() {
                 <CardTitle className="text-sm">Total Work Orders</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold">{performance.totalWorkOrders}</p>
+                <p className="text-3xl font-bold">{workOrders.length}</p>
               </CardContent>
             </Card>
             <Card>
@@ -210,7 +190,7 @@ export default function ContractorDetails() {
                 <CardTitle className="text-sm">Completion Rate</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold">{performance.completionRate}%</p>
+                <p className="text-3xl font-bold">{completionRate}%</p>
               </CardContent>
             </Card>
             <Card>
@@ -218,7 +198,7 @@ export default function ContractorDetails() {
                 <CardTitle className="text-sm">Quality Rating</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold">{performance.qualityRating}/5</p>
+                <p className="text-3xl font-bold">{contractor.rating ? `${contractor.rating}/5` : 'N/A'}</p>
               </CardContent>
             </Card>
             <Card>
@@ -226,7 +206,7 @@ export default function ContractorDetails() {
                 <CardTitle className="text-sm">Total Contract Value</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold">{formatCurrency(performance.totalContractValue)}</p>
+                <p className="text-3xl font-bold">{formatCurrency(totalContractValue)}</p>
               </CardContent>
             </Card>
           </div>

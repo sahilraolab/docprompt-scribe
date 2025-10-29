@@ -11,9 +11,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils/format';
-import { apiClient } from '@/lib/api/client';
 import { useProjects } from '@/lib/hooks/useProjects';
-import { useContractors } from '@/lib/hooks/useContracts';
+import { useContractors, useCreateWorkOrder, useUpdateWorkOrder, useWorkOrder } from '@/lib/hooks/useContracts';
 import { useItems } from '@/lib/hooks/useSite';
 import { SearchableSelect } from '@/components/SearchableSelect';
 
@@ -75,6 +74,7 @@ export default function WorkOrderForm() {
   const { data: projects = [] } = useProjects();
   const { data: contractors = [] } = useContractors();
   const { data: itemsList = [] } = useItems();
+  const { data: existingWO } = useWorkOrder(id);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [workItems, setWorkItems] = useState<any[]>([
@@ -141,26 +141,27 @@ export default function WorkOrderForm() {
   // ----------------------
   // Form Submit
   // ----------------------
+  const { mutateAsync: createWorkOrder } = useCreateWorkOrder();
+  const { mutateAsync: updateWorkOrder } = useUpdateWorkOrder();
+
   const onSubmit = async (data: WorkOrderFormData) => {
     try {
       setIsSubmitting(true);
-      const payload = { ...data, amount: total, woDate: new Date() };
+      const payload = { ...data, amount: total, woDate: new Date().toISOString() };
 
-      const result = await apiClient.request('/contracts/work-orders', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-
-      toast({
-        title: 'Work Order Created',
-        description: `Work order created successfully (Code: ${result.data?.code || 'N/A'})`,
-      });
+      if (id) {
+        await updateWorkOrder({ id, payload });
+        toast({ title: 'Work Order Updated', description: 'Work order updated successfully' });
+      } else {
+        await createWorkOrder(payload);
+        toast({ title: 'Work Order Created', description: 'Work order created successfully' });
+      }
 
       navigate('/contracts/work-orders');
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: error?.message || 'Something went wrong while creating the work order.',
+        description: error?.message || 'Failed to save work order',
         variant: 'destructive',
       });
     } finally {
