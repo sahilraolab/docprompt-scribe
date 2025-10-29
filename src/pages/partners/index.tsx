@@ -64,6 +64,9 @@ export default function PartnersIndex() {
     },
   ];
 
+  const recentInvestments = investments.slice(0, 5);
+  const recentProfitEvents = profitEvents.slice(0, 5);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -103,6 +106,62 @@ export default function PartnersIndex() {
           description="Awaiting approval"
           icon={Clock}
         />
+      </div>
+
+      {/* Recent Activities */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Investments</CardTitle>
+            <CardDescription>Latest capital contributions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {recentInvestments.length > 0 ? (
+              <div className="space-y-3">
+                {recentInvestments.map((inv: any) => (
+                  <div key={inv.id} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => navigate(`/partners/investments/${inv.id}`)}>
+                    <div>
+                      <p className="font-medium">{inv.projectName}</p>
+                      <p className="text-sm text-muted-foreground">{inv.partnerName}</p>
+                    </div>
+                    <span className="font-medium">{formatCurrency(inv.amount || 0, 'short')}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">No investments found</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Profit Events</CardTitle>
+            <CardDescription>Latest profit distributions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {recentProfitEvents.length > 0 ? (
+              <div className="space-y-3">
+                {recentProfitEvents.map((pe: any) => (
+                  <div key={pe.id} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => navigate(`/partners/profit-events/${pe.id}`)}>
+                    <div>
+                      <p className="font-medium">{pe.projectName}</p>
+                      <p className="text-sm text-muted-foreground">{pe.eventType}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-green-600">{formatCurrency(pe.amount || 0, 'short')}</p>
+                      <span className={`text-xs px-2 py-1 rounded ${pe.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {pe.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">No profit events found</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Module Cards */}

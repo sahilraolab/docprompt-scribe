@@ -87,6 +87,9 @@ export default function PurchaseIndex() {
     },
   ];
 
+  const recentMRs = mrs.slice(0, 5);
+  const recentPOs = pos.slice(0, 5);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -126,6 +129,61 @@ export default function PurchaseIndex() {
           description="All time"
           icon={DollarSign}
         />
+      </div>
+
+      {/* Recent Activities */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Material Requisitions</CardTitle>
+            <CardDescription>Latest MR requests</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {recentMRs.length > 0 ? (
+              <div className="space-y-3">
+                {recentMRs.map((mr: any) => (
+                  <div key={mr.id} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => navigate(`/purchase/mrs/${mr.id}`)}>
+                    <div>
+                      <p className="font-medium">{mr.code || mr.id}</p>
+                      <p className="text-sm text-muted-foreground">{mr.projectName}</p>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded ${mr.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {mr.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">No MRs found</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Purchase Orders</CardTitle>
+            <CardDescription>Latest POs</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {recentPOs.length > 0 ? (
+              <div className="space-y-3">
+                {recentPOs.map((po: any) => (
+                  <div key={po.id} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => navigate(`/purchase/pos/${po.id}`)}>
+                    <div>
+                      <p className="font-medium">{po.code || po.id}</p>
+                      <p className="text-sm text-muted-foreground">{formatCurrency(po.totalAmount || 0)}</p>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded ${po.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                      {po.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">No POs found</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Module Cards */}

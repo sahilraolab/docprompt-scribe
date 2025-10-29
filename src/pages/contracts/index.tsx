@@ -60,6 +60,8 @@ export default function ContractsIndex() {
     },
   ];
 
+  const recentWOs = workOrders.slice(0, 5);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -100,6 +102,37 @@ export default function ContractsIndex() {
           icon={DollarSign}
         />
       </div>
+
+      {/* Recent Work Orders */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Work Orders</CardTitle>
+          <CardDescription>Latest contractor assignments</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {recentWOs.length > 0 ? (
+            <div className="space-y-3">
+              {recentWOs.map((wo: any) => (
+                <div key={wo.id} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => navigate(`/contracts/work-orders/${wo.id}`)}>
+                  <div className="flex-1">
+                    <p className="font-medium">{wo.code || wo.id}</p>
+                    <p className="text-sm text-muted-foreground">{wo.contractorName} • {wo.projectName}</p>
+                  </div>
+                  <div className="text-right mr-4">
+                    <p className="font-medium">{formatCurrency(wo.amount || 0, 'short')}</p>
+                    <p className="text-xs text-muted-foreground">{wo.progress || 0}% complete</p>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded ${wo.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                    {wo.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">No work orders found</p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Module Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

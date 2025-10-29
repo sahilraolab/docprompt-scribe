@@ -57,6 +57,8 @@ export default function Workflow() {
     },
   ];
 
+  const recentApprovals = approvals.slice(0, 5);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -97,6 +99,41 @@ export default function Workflow() {
           icon={Settings}
         />
       </div>
+
+      {/* Recent Approvals */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Approval Requests</CardTitle>
+          <CardDescription>Latest approval activities</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {recentApprovals.length > 0 ? (
+            <div className="space-y-3">
+              {recentApprovals.map((approval: any) => (
+                <div key={approval.id} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => navigate(`/workflow/approvals/${approval.id}`)}>
+                  <div className="flex-1">
+                    <p className="font-medium">{approval.entity} • {approval.entityCode}</p>
+                    <p className="text-sm text-muted-foreground">Requested by {approval.requestedByName}</p>
+                  </div>
+                  <div className="text-right mr-4">
+                    <p className="text-sm font-medium">Level {approval.currentLevel}</p>
+                    <p className="text-xs text-muted-foreground">{approval.currentApproverName}</p>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded whitespace-nowrap ${
+                    approval.status === 'Approved' ? 'bg-green-100 text-green-700' :
+                    approval.status === 'Rejected' ? 'bg-red-100 text-red-700' :
+                    'bg-amber-100 text-amber-700'
+                  }`}>
+                    {approval.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">No approval requests found</p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Module Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

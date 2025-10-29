@@ -79,6 +79,9 @@ export default function SiteIndex() {
     },
   ];
 
+  const lowStockList = stock.filter((s: any) => s.quantity < (s.reorderLevel || 10)).slice(0, 5);
+  const recentItems = items.slice(0, 5);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -118,6 +121,63 @@ export default function SiteIndex() {
           description="Awaiting receipt"
           icon={TrendingDown}
         />
+      </div>
+
+      {/* Alerts and Recent Items */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Low Stock Alerts
+            </CardTitle>
+            <CardDescription>Items below reorder level</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {lowStockList.length > 0 ? (
+              <div className="space-y-3">
+                {lowStockList.map((item: any) => (
+                  <div key={item.id} className="flex items-center justify-between p-3 border border-amber-200 bg-amber-50 rounded-lg">
+                    <div>
+                      <p className="font-medium">{item.name}</p>
+                      <p className="text-sm text-muted-foreground">{item.code}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-amber-700">{item.quantity} {item.uom}</p>
+                      <p className="text-xs text-muted-foreground">Min: {item.reorderLevel}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">All stock levels are healthy</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Items</CardTitle>
+            <CardDescription>Recently added materials</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {recentItems.length > 0 ? (
+              <div className="space-y-3">
+                {recentItems.map((item: any) => (
+                  <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => navigate(`/site/items/${item.id}`)}>
+                    <div>
+                      <p className="font-medium">{item.name}</p>
+                      <p className="text-sm text-muted-foreground">{item.code} • {item.category}</p>
+                    </div>
+                    <span className="text-sm font-medium">{formatCurrency(item.rate || 0)}/{item.uom}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">No items found</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Module Cards */}
