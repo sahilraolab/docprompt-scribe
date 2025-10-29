@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/EmptyState';
 import { formatCurrency } from '@/lib/utils/format';
-import { Plus, Search, Book } from 'lucide-react';
+import { Plus, Search, Book, Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -15,99 +15,17 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { useAccounts } from '@/lib/hooks/useAccounts';
 
 export default function LedgersList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { data: accounts, isLoading } = useAccounts();
 
-  // Mock data
-  const ledgers = [
-    {
-      id: '1',
-      accountCode: '1000',
-      accountName: 'Cash in Hand',
-      accountType: 'Asset',
-      balance: 500000,
-      balanceType: 'Debit',
-    },
-    {
-      id: '2',
-      accountCode: '1100',
-      accountName: 'Bank - HDFC Current',
-      accountType: 'Asset',
-      balance: 2500000,
-      balanceType: 'Debit',
-    },
-    {
-      id: '3',
-      accountCode: '1200',
-      accountName: 'Accounts Receivable',
-      accountType: 'Asset',
-      balance: 1800000,
-      balanceType: 'Debit',
-    },
-    {
-      id: '4',
-      accountCode: '2000',
-      accountName: 'Accounts Payable',
-      accountType: 'Liability',
-      balance: 950000,
-      balanceType: 'Credit',
-    },
-    {
-      id: '5',
-      accountCode: '2100',
-      accountName: 'Contractor Payables',
-      accountType: 'Liability',
-      balance: 1200000,
-      balanceType: 'Credit',
-    },
-    {
-      id: '6',
-      accountCode: '3000',
-      accountName: 'Capital',
-      accountType: 'Equity',
-      balance: 5000000,
-      balanceType: 'Credit',
-    },
-    {
-      id: '7',
-      accountCode: '4000',
-      accountName: 'Project Revenue',
-      accountType: 'Income',
-      balance: 8500000,
-      balanceType: 'Credit',
-    },
-    {
-      id: '8',
-      accountCode: '5000',
-      accountName: 'Material Expenses',
-      accountType: 'Expense',
-      balance: 3200000,
-      balanceType: 'Debit',
-    },
-    {
-      id: '9',
-      accountCode: '5100',
-      accountName: 'Labour Expenses',
-      accountType: 'Expense',
-      balance: 2800000,
-      balanceType: 'Debit',
-    },
-    {
-      id: '10',
-      accountCode: '5200',
-      accountName: 'Equipment Rental',
-      accountType: 'Expense',
-      balance: 450000,
-      balanceType: 'Debit',
-    },
-  ];
-
-  const filteredLedgers = ledgers.filter((ledger) =>
-    ledger.accountCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    ledger.accountName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    ledger.accountType.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredLedgers = accounts?.filter((account) =>
+    account.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    account.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    account.type.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const getTypeBadgeColor = (type: string) => {
@@ -126,6 +44,14 @@ export default function LedgersList() {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -161,8 +87,9 @@ export default function LedgersList() {
                     <TableHead>Account Code</TableHead>
                     <TableHead>Account Name</TableHead>
                     <TableHead>Type</TableHead>
-                    <TableHead>Balance Type</TableHead>
+                    <TableHead>Parent Account</TableHead>
                     <TableHead className="text-right">Balance</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -172,18 +99,21 @@ export default function LedgersList() {
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => navigate(`/accounts/ledgers/${ledger.id}`)}
                     >
-                      <TableCell className="font-medium">{ledger.accountCode}</TableCell>
-                      <TableCell>{ledger.accountName}</TableCell>
+                      <TableCell className="font-medium">{ledger.code}</TableCell>
+                      <TableCell>{ledger.name}</TableCell>
                       <TableCell>
-                        <Badge className={getTypeBadgeColor(ledger.accountType)} variant="secondary">
-                          {ledger.accountType}
+                        <Badge className={getTypeBadgeColor(ledger.type)} variant="secondary">
+                          {ledger.type}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{ledger.balanceType}</Badge>
-                      </TableCell>
+                      <TableCell>{ledger.parentName || '-'}</TableCell>
                       <TableCell className="text-right font-semibold">
                         {formatCurrency(ledger.balance)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={ledger.active ? 'default' : 'secondary'}>
+                          {ledger.active ? 'Active' : 'Inactive'}
+                        </Badge>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -198,14 +128,6 @@ export default function LedgersList() {
                 searchQuery
                   ? "No accounts match your search criteria"
                   : "Create chart of accounts for financial management"
-              }
-              action={
-                !searchQuery
-                  ? {
-                      label: "Create Account",
-                      onClick: () => navigate('/accounts/ledgers/new'),
-                    }
-                  : undefined
               }
             />
           )}

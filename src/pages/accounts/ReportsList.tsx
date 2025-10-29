@@ -1,9 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, TrendingUp, PieChart, BarChart3 } from 'lucide-react';
+import { FileText, TrendingUp, PieChart, BarChart3, Loader2 } from 'lucide-react';
+import { useFinancialSummary } from '@/lib/hooks/useAccounts';
+import { formatCurrency } from '@/lib/utils/format';
 
 export default function ReportsList() {
   const navigate = useNavigate();
+  const { data: summary, isLoading } = useFinancialSummary();
 
   const reports = [
     {
@@ -68,20 +71,32 @@ export default function ReportsList() {
           <CardTitle>Quick Stats</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Total Assets</p>
-              <p className="text-2xl font-bold">₹48.5 L</p>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Total Liabilities</p>
-              <p className="text-2xl font-bold">₹21.5 L</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Total Assets</p>
+                <p className="text-2xl font-bold">
+                  {formatCurrency(summary?.totalAssets || 0)}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Total Liabilities</p>
+                <p className="text-2xl font-bold">
+                  {formatCurrency(summary?.totalLiabilities || 0)}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Net Worth</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {formatCurrency((summary?.totalAssets || 0) - (summary?.totalLiabilities || 0))}
+                </p>
+              </div>
             </div>
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Net Worth</p>
-              <p className="text-2xl font-bold text-green-600">₹27.0 L</p>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>

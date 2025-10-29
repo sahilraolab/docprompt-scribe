@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,28 +8,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { SearchableSelect } from '@/components/SearchableSelect';
+import { ArrowLeft, Plus, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils/format';
+import { useAccounts, useJournal, useCreateJournal, useUpdateJournal } from '@/lib/hooks/useAccounts';
+import { useProjects } from '@/lib/hooks/useProjects';
 
 const journalEntrySchema = z.object({
   accountId: z.string().min(1, 'Account is required'),
   debit: z.number().min(0),
   credit: z.number().min(0),
-  description: z.string().optional(),
+  narration: z.string().optional(),
 });
 
 const journalSchema = z.object({
-  journalDate: z.string().min(1, 'Journal date is required'),
-  reference: z.string().optional(),
-  description: z.string().min(1, 'Description is required'),
+  date: z.string().min(1, 'Journal date is required'),
+  code: z.string().optional(),
+  type: z.enum(['General', 'Payment', 'Receipt', 'Contra', 'Journal']),
+  narration: z.string().min(1, 'Description is required'),
+  projectId: z.string().optional(),
   entries: z.array(journalEntrySchema).min(2, 'At least two entries are required'),
 });
 
@@ -39,10 +37,17 @@ export default function JournalForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isEdit = !!id;
   
+  const { data: accounts } = useAccounts();
+  const { data: projects } = useProjects();
+  const { data: journal, isLoading: isLoadingJournal } = useJournal(id);
+  const createJournal = useCreateJournal();
+  const updateJournal = useUpdateJournal();
+
   const [journalEntries, setJournalEntries] = useState<any[]>([
-    { accountId: '', debit: 0, credit: 0, description: '' },
-    { accountId: '', debit: 0, credit: 0, description: '' },
+    { accountId: '', debit: 0, credit: 0, narration: '' },
+    { accountId: '', debit: 0, credit: 0, narration: '' },
   ]);
 
   const {
@@ -50,15 +55,37 @@ export default function JournalForm() {
     handleSubmit,
     formState: { errors },
     setValue,
+    watch,
   } = useForm<JournalFormData>({
     resolver: zodResolver(journalSchema),
     defaultValues: {
-      journalDate: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().split('T')[0],
+      type: 'General',
+      narration: '',
+      projectId: '',
     },
   });
 
+  useEffect(() => {
+    if (journal && isEdit) {
+      setValue('date', journal.date);
+      setValue('code', journal.code);
+      setValue('type', journal.type);
+      setValue('narration', journal.narration || '');
+      setValue('projectId', journal.projectId || '');
+      if (journal.entries) {
+        setJournalEntries(journal.entries.map(e => ({
+          accountId: e.accountId,
+          debit: e.debit,
+          credit: e.credit,
+          narration: e.narration || '',
+        })));
+      }
+    }
+  }, [journal, isEdit, setValue]);
+
   const addEntry = () => {
-    setJournalEntries([...journalEntries, { accountId: '', debit: 0, credit: 0, description: '' }]);
+    setJournalEntries([...journalEntries, { accountId: '', debit: 0, credit: 0, narration: '' }]);
   };
 
   const removeEntry = (index: number) => {
@@ -71,7 +98,6 @@ export default function JournalForm() {
     const updated = [...journalEntries];
     updated[index] = { ...updated[index], [field]: value };
     
-    // Auto-clear opposite side when one is entered
     if (field === 'debit' && parseFloat(value) > 0) {
       updated[index].credit = 0;
     } else if (field === 'credit' && parseFloat(value) > 0) {
@@ -92,7 +118,7 @@ export default function JournalForm() {
 
   const { totalDebit, totalCredit, difference, isBalanced } = calculateTotals();
 
-  const onSubmit = (data: JournalFormData) => {
+  const onSubmit = async (data: JournalFormData) => {
     if (!isBalanced) {
       toast({
         title: 'Error',
@@ -102,23 +128,60 @@ export default function JournalForm() {
       return;
     }
 
-    console.log('Journal Data:', { ...data, totalDebit, totalCredit });
-    toast({
-      title: id ? 'Journal Updated' : 'Journal Created',
-      description: `Journal entry has been ${id ? 'updated' : 'created'} successfully.`,
-    });
-    navigate('/accounts/journals');
+    try {
+      const journalData = {
+        date: data.date,
+        code: data.code,
+        type: data.type,
+        narration: data.narration,
+        projectId: data.projectId || undefined,
+        entries: journalEntries.map((e, idx) => ({
+          id: `temp-${idx}`, // Temporary ID for new entries
+          accountId: e.accountId,
+          debit: parseFloat(e.debit) || 0,
+          credit: parseFloat(e.credit) || 0,
+          narration: e.narration,
+        })),
+        totalDebit,
+        totalCredit,
+        status: 'Draft' as const,
+      };
+
+      if (isEdit && id) {
+        await updateJournal.mutateAsync({ id, data: journalData });
+      } else {
+        await createJournal.mutateAsync(journalData);
+      }
+      navigate('/accounts/journals');
+    } catch (error) {
+      console.error('Failed to save journal:', error);
+    }
   };
 
-  // Mock accounts
-  const accounts = [
-    { id: '1', code: '1000', name: 'Cash', type: 'Asset' },
-    { id: '2', code: '1100', name: 'Bank Account', type: 'Asset' },
-    { id: '3', code: '2000', name: 'Accounts Payable', type: 'Liability' },
-    { id: '4', code: '3000', name: 'Capital', type: 'Equity' },
-    { id: '5', code: '4000', name: 'Revenue', type: 'Income' },
-    { id: '6', code: '5000', name: 'Material Cost', type: 'Expense' },
-    { id: '7', code: '5100', name: 'Labour Cost', type: 'Expense' },
+  if (isEdit && isLoadingJournal) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const accountOptions = accounts?.map(acc => ({
+    value: acc.id,
+    label: `${acc.code} - ${acc.name}`,
+  })) || [];
+
+  const projectOptions = projects?.map(proj => ({
+    value: proj.id,
+    label: proj.name,
+  })) || [];
+
+  const typeOptions = [
+    { value: 'General', label: 'General' },
+    { value: 'Payment', label: 'Payment' },
+    { value: 'Receipt', label: 'Receipt' },
+    { value: 'Contra', label: 'Contra' },
+    { value: 'Journal', label: 'Journal' },
   ];
 
   return (
@@ -128,7 +191,7 @@ export default function JournalForm() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">{id ? 'Edit' : 'New'} Journal Entry</h1>
+          <h1 className="text-3xl font-bold">{isEdit ? 'Edit' : 'New'} Journal Entry</h1>
           <p className="text-muted-foreground">Record accounting transactions</p>
         </div>
       </div>
@@ -139,30 +202,50 @@ export default function JournalForm() {
             <CardTitle>Journal Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="journalDate">Journal Date *</Label>
-                <Input type="date" {...register('journalDate')} />
-                {errors.journalDate && (
-                  <p className="text-sm text-destructive">{errors.journalDate.message}</p>
+                <Label htmlFor="date">Journal Date *</Label>
+                <Input type="date" {...register('date')} />
+                {errors.date && (
+                  <p className="text-sm text-destructive">{errors.date.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="reference">Reference Number</Label>
-                <Input {...register('reference')} placeholder="REF-001" />
+                <Label htmlFor="code">Reference Number</Label>
+                <Input {...register('code')} placeholder="JV-001" />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="type">Type *</Label>
+                <SearchableSelect
+                  options={typeOptions}
+                  value={watch('type')}
+                  onChange={(value) => setValue('type', value as any)}
+                  placeholder="Select type"
+                />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
+              <Label htmlFor="projectId">Project (Optional)</Label>
+              <SearchableSelect
+                options={[{ value: '', label: 'None' }, ...projectOptions]}
+                value={watch('projectId') || ''}
+                onChange={(value) => setValue('projectId', value)}
+                placeholder="Select project (optional)"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="narration">Description *</Label>
               <Textarea
-                {...register('description')}
+                {...register('narration')}
                 placeholder="Brief description of the transaction"
                 rows={2}
               />
-              {errors.description && (
-                <p className="text-sm text-destructive">{errors.description.message}</p>
+              {errors.narration && (
+                <p className="text-sm text-destructive">{errors.narration.message}</p>
               )}
             </div>
           </CardContent>
@@ -186,7 +269,7 @@ export default function JournalForm() {
                     <th className="text-left p-2 text-sm font-medium w-1/3">Account</th>
                     <th className="text-right p-2 text-sm font-medium w-1/6">Debit</th>
                     <th className="text-right p-2 text-sm font-medium w-1/6">Credit</th>
-                    <th className="text-left p-2 text-sm font-medium w-1/4">Description</th>
+                    <th className="text-left p-2 text-sm font-medium w-1/4">Narration</th>
                     <th className="w-16"></th>
                   </tr>
                 </thead>
@@ -194,21 +277,12 @@ export default function JournalForm() {
                   {journalEntries.map((entry, index) => (
                     <tr key={index} className="border-b">
                       <td className="p-2">
-                        <Select
+                        <SearchableSelect
+                          options={accountOptions}
                           value={entry.accountId}
-                          onValueChange={(value) => updateEntry(index, 'accountId', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select account" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {accounts.map((account) => (
-                              <SelectItem key={account.id} value={account.id}>
-                                {account.code} - {account.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          onChange={(value) => updateEntry(index, 'accountId', value)}
+                          placeholder="Select account"
+                        />
                       </td>
                       <td className="p-2">
                         <Input
@@ -232,8 +306,8 @@ export default function JournalForm() {
                       </td>
                       <td className="p-2">
                         <Input
-                          value={entry.description}
-                          onChange={(e) => updateEntry(index, 'description', e.target.value)}
+                          value={entry.narration}
+                          onChange={(e) => updateEntry(index, 'narration', e.target.value)}
                           placeholder="Optional note"
                         />
                       </td>
@@ -279,8 +353,14 @@ export default function JournalForm() {
           <Button type="button" variant="outline" onClick={() => navigate('/accounts/journals')}>
             Cancel
           </Button>
-          <Button type="submit" disabled={!isBalanced}>
-            {id ? 'Update' : 'Create'} Journal
+          <Button 
+            type="submit" 
+            disabled={!isBalanced || createJournal.isPending || updateJournal.isPending}
+          >
+            {(createJournal.isPending || updateJournal.isPending) && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            {isEdit ? 'Update' : 'Create'} Journal
           </Button>
         </div>
       </form>

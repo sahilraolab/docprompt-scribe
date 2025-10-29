@@ -17,8 +17,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { SearchableSelect } from '@/components/SearchableSelect';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAccounts, useAccount, useCreateAccount, useUpdateAccount } from '@/lib/hooks/useAccounts';
+import { useEffect } from 'react';
 
 const accountSchema = z.object({
   code: z.string().min(1, 'Account code is required').max(20),
@@ -37,6 +39,11 @@ export default function AccountForm() {
   const { toast } = useToast();
   const isEdit = !!id;
 
+  const { data: accounts } = useAccounts();
+  const { data: account, isLoading: isLoadingAccount } = useAccount(id);
+  const createAccount = useCreateAccount();
+  const updateAccount = useUpdateAccount();
+
   const form = useForm<AccountFormData>({
     resolver: zodResolver(accountSchema),
     defaultValues: {
@@ -49,23 +56,60 @@ export default function AccountForm() {
     },
   });
 
-  const onSubmit = (data: AccountFormData) => {
-    console.log('Account data:', data);
-    toast({
-      title: isEdit ? 'Account Updated' : 'Account Created',
-      description: `Account ${data.code} has been ${isEdit ? 'updated' : 'created'} successfully.`,
-    });
-    navigate('/accounts/list');
+  useEffect(() => {
+    if (account && isEdit) {
+      form.reset({
+        code: account.code,
+        name: account.name,
+        type: account.type,
+        parentAccountId: account.parentId || '',
+        description: '',
+        active: account.active,
+      });
+    }
+  }, [account, isEdit, form]);
+
+  const onSubmit = async (data: AccountFormData) => {
+    try {
+      if (isEdit && id) {
+        await updateAccount.mutateAsync({
+          id,
+          data: {
+            code: data.code,
+            name: data.name,
+            type: data.type,
+            parentId: data.parentAccountId || undefined,
+            active: data.active,
+          },
+        });
+      } else {
+        await createAccount.mutateAsync({
+          code: data.code,
+          name: data.name,
+          type: data.type,
+          parentId: data.parentAccountId || undefined,
+          level: data.parentAccountId ? 2 : 1,
+          balance: 0,
+          active: data.active,
+        });
+      }
+      navigate('/accounts/list');
+    } catch (error) {
+      console.error('Failed to save account:', error);
+    }
   };
 
-  // Mock parent accounts
-  const parentAccounts = [
-    { id: '1', code: '1000', name: 'Current Assets', type: 'Asset' },
-    { id: '2', code: '2000', name: 'Current Liabilities', type: 'Liability' },
-    { id: '3', code: '3000', name: 'Owner Equity', type: 'Equity' },
-    { id: '4', code: '4000', name: 'Operating Revenue', type: 'Income' },
-    { id: '5', code: '5000', name: 'Operating Expenses', type: 'Expense' },
-  ];
+  const parentAccounts = accounts?.filter(
+    (acc) => (!isEdit || acc.id !== id) && acc.level === 1
+  ) || [];
+
+  if (isEdit && isLoadingAccount) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -216,7 +260,10 @@ export default function AccountForm() {
           </Card>
 
           <div className="flex gap-4">
-            <Button type="submit">
+            <Button type="submit" disabled={createAccount.isPending || updateAccount.isPending}>
+              {(createAccount.isPending || updateAccount.isPending) && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               {isEdit ? 'Update Account' : 'Create Account'}
             </Button>
             <Button type="button" variant="outline" onClick={() => navigate('/accounts/list')}>

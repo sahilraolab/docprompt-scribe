@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
-import { Plus, Search, BookOpen } from 'lucide-react';
+import { Plus, Search, BookOpen, Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -16,62 +16,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { useJournals } from '@/lib/hooks/useAccounts';
 
 export default function JournalsList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { data: journals, isLoading } = useJournals();
 
-  // Mock data
-  const journals = [
-    {
-      id: '1',
-      journalNo: 'JV-2024-001',
-      date: '2024-01-15',
-      description: 'Material purchase entry',
-      type: 'Payment',
-      debitTotal: 500000,
-      creditTotal: 500000,
-      status: 'Approved' as const,
-      createdBy: 'Accountant',
-    },
-    {
-      id: '2',
-      journalNo: 'JV-2024-002',
-      date: '2024-01-18',
-      description: 'Contractor payment - WO-2024-001',
-      type: 'Payment',
-      debitTotal: 850000,
-      creditTotal: 850000,
-      status: 'Pending' as const,
-      createdBy: 'Accountant',
-    },
-    {
-      id: '3',
-      journalNo: 'JV-2024-003',
-      date: '2024-01-20',
-      description: 'Revenue recognition - Green Valley',
-      type: 'Receipt',
-      debitTotal: 2000000,
-      creditTotal: 2000000,
-      status: 'Approved' as const,
-      createdBy: 'Finance Manager',
-    },
-    {
-      id: '4',
-      journalNo: 'JV-2024-004',
-      date: '2024-01-22',
-      description: 'Depreciation entry',
-      type: 'Journal',
-      debitTotal: 150000,
-      creditTotal: 150000,
-      status: 'Draft' as const,
-      createdBy: 'Accountant',
-    },
-  ];
-
-  const filteredJournals = journals.filter((journal) =>
-    journal.journalNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    journal.description.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredJournals = journals?.filter((journal) =>
+    journal.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    journal.narration?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const getTypeBadgeColor = (type: string) => {
@@ -81,11 +35,22 @@ export default function JournalsList() {
       case 'Receipt':
         return 'bg-green-100 text-green-800';
       case 'Journal':
+      case 'General':
         return 'bg-blue-100 text-blue-800';
+      case 'Contra':
+        return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -118,13 +83,13 @@ export default function JournalsList() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Journal No</TableHead>
+                    <TableHead>Journal Code</TableHead>
                     <TableHead>Date</TableHead>
-                    <TableHead>Description</TableHead>
+                    <TableHead>Narration</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Debit Total</TableHead>
                     <TableHead>Credit Total</TableHead>
-                    <TableHead>Created By</TableHead>
+                    <TableHead>Project</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -135,21 +100,21 @@ export default function JournalsList() {
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => navigate(`/accounts/journals/${journal.id}`)}
                     >
-                      <TableCell className="font-medium">{journal.journalNo}</TableCell>
+                      <TableCell className="font-medium">{journal.code}</TableCell>
                       <TableCell>{formatDate(journal.date)}</TableCell>
-                      <TableCell>{journal.description}</TableCell>
+                      <TableCell>{journal.narration || '-'}</TableCell>
                       <TableCell>
                         <Badge className={getTypeBadgeColor(journal.type)} variant="secondary">
                           {journal.type}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {formatCurrency(journal.debitTotal)}
+                        {formatCurrency(journal.totalDebit)}
                       </TableCell>
                       <TableCell className="font-medium">
-                        {formatCurrency(journal.creditTotal)}
+                        {formatCurrency(journal.totalCredit)}
                       </TableCell>
-                      <TableCell>{journal.createdBy}</TableCell>
+                      <TableCell>{journal.projectName || '-'}</TableCell>
                       <TableCell>
                         <StatusBadge status={journal.status} />
                       </TableCell>
@@ -166,14 +131,6 @@ export default function JournalsList() {
                 searchQuery
                   ? "No journals match your search criteria"
                   : "Create journal entries for accounting transactions"
-              }
-              action={
-                !searchQuery
-                  ? {
-                      label: "Create Journal",
-                      onClick: () => navigate('/accounts/journals/new'),
-                    }
-                  : undefined
               }
             />
           )}
