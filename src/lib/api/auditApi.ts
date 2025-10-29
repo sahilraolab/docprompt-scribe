@@ -18,5 +18,5 @@ export const auditApi = {
     entityType: string;
     entityId?: string;
     details?: string;
-  }) => apiClient.post(`/api/audit`, data),
+  }) => apiClient.request(`/api/audit`, { method: 'POST', body: JSON.stringify(data) }),
 };

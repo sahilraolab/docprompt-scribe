@@ -110,9 +110,9 @@ export default function RateManagement() {
   };
 
   // Unique supplier list
-  const uniqueSuppliers = Array.from(
+  const uniqueSuppliers: string[] = Array.from(
     new Set(formattedRates.map((r) => r.supplierName).filter(Boolean))
-  );
+  ) as string[];
 
   // UI States
   if (isLoading) {

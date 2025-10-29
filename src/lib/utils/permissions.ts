@@ -58,7 +58,7 @@ export const getRoleModulePermissions = (userRole: Role) => {
   const grouped: Record<string, string[]> = {};
 
   Object.entries(PERMISSIONS).forEach(([permissionKey, roles]) => {
-    if ((roles as Role[]).includes(userRole)) {
+    if ((roles as readonly Role[]).includes(userRole)) {
       const [module, action] = permissionKey.split('_');
       const formattedModule =
         module.charAt(0).toUpperCase() + module.slice(1).toLowerCase();

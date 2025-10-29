@@ -302,7 +302,7 @@ export default function PurchaseBillForm() {
 
           {/* Actions */}
           <div className="flex gap-4">
-            <Button type="submit" disabled={createBill.isLoading || updateBill.isLoading}>
+            <Button type="submit" disabled={createBill.isPending || updateBill.isPending}>
               {isEdit ? 'Update Bill' : 'Create Bill'}
             </Button>
             <Button type="button" variant="outline" onClick={() => navigate('/purchase/bills')}>

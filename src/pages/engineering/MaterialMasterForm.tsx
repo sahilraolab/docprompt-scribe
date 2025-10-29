@@ -63,7 +63,6 @@ const MaterialMasterForm = () => {
   const form = useForm<MaterialFormData>({
     resolver: zodResolver(materialSchema),
     defaultValues: {
-      code: null,
       name: '',
       category: '',
       uom: 'Nos',
@@ -75,7 +74,6 @@ const MaterialMasterForm = () => {
   useEffect(() => {
     if (material) {
       form.reset({
-        code: material.code || null,
         name: material.name || '',
         description: material.description || '',
         category: material.category || '',
@@ -142,7 +140,7 @@ const MaterialMasterForm = () => {
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <Label htmlFor="code">Code *</Label>
-              <Input {...form.register('code')} disabled placeholder="MAT-001" />
+              <Input value={material?.code || 'Auto-generated'} disabled placeholder="MAT-001" />
             </div>
 
             <div>

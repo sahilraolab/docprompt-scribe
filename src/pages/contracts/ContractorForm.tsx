@@ -36,7 +36,7 @@ const contractorSchema = z.object({
   bankName: z.string().optional(),
   accountNo: z.string().optional(),
   ifsc: z.string().optional(),
-  rating: z.string().optional(),
+  rating: z.union([z.string(), z.number()]).optional().transform(val => val ? Number(val) : undefined),
   active: z.boolean().default(true),
 });
 
@@ -69,7 +69,7 @@ export default function ContractorForm() {
       bankName: '',
       accountNo: '',
       ifsc: '',
-      rating: '',
+      rating: undefined,
       active: true,
     },
   });
@@ -91,7 +91,7 @@ export default function ContractorForm() {
         bankName: existingContractor.bankName || '',
         accountNo: existingContractor.accountNo || '',
         ifsc: existingContractor.ifsc || '',
-        rating: existingContractor.rating || '',
+        rating: existingContractor.rating || undefined,
         active: existingContractor.active ?? true,
       });
     }

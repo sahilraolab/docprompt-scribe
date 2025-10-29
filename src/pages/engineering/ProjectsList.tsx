@@ -19,7 +19,6 @@ import { formatCurrency, formatPercent, formatDate } from '@/lib/utils/format';
 import { exportToCSV, exportToExcel } from '@/lib/utils/export';
 import { Project } from '@/types';
 import { INDIAN_STATES } from '@/lib/constants';
-import { j } from 'node_modules/msw/lib/core/HttpResponse-DzhqZzTK';
 
 export default function ProjectsList() {
   const navigate = useNavigate();

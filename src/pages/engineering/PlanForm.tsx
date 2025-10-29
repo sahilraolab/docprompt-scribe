@@ -177,9 +177,9 @@ export default function PlanForm() {
     ]);
 
   const removeTask = (index: number) => setTasks(tasks.filter((_, i) => i !== index));
-  const updateTask = (index: number, field: keyof Task, value: string | number) => {
+  const updateTask = (index: number, field: keyof Task, value: any) => {
     const updated = [...tasks];
-    updated[index][field] = value;
+    updated[index][field] = value as never;
     setTasks(updated);
   };
 
@@ -190,10 +190,10 @@ export default function PlanForm() {
   const updateMilestone = (
     index: number,
     field: keyof Milestone,
-    value: string | boolean
+    value: any
   ) => {
     const updated = [...milestones];
-    updated[index][field] = value;
+    updated[index][field] = value as never;
     setMilestones(updated);
   };
 

@@ -52,7 +52,7 @@ export default function QuotationsList() {
         return matchesSearch && matchesStatus;
       })
       .sort((a: any, b: any) => {
-        if (sortBy === 'date') return new Date(b.createdAt) - new Date(a.createdAt);
+        if (sortBy === 'date') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         if (sortBy === 'supplier') return (a.supplierId?.name || '').localeCompare(b.supplierId?.name || '');
         if (sortBy === 'amount') return calculateTotal(b) - calculateTotal(a);
         return 0;

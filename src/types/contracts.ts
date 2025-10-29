@@ -7,8 +7,14 @@ export interface Contractor extends AuditMeta {
   phone?: string;
   email?: string;
   gst?: string;
+  pan?: string;
+  address?: string;
   city?: string;
   state?: string;
+  pincode?: string;
+  bankName?: string;
+  accountNo?: string;
+  ifsc?: string;
   rating?: number;
   active: boolean;
 }

@@ -274,7 +274,7 @@ export const useRABills = (params?: Record<string, any>) => {
           : "";
 
       const res = await apiClient.request(
-        `${CONTRACTS_BASE}/ra-bills${queryString}`,
+        `${API_BASE}/ra-bills${queryString}`,
         {
           method: "GET",
         }
@@ -291,7 +291,7 @@ export const useRABill = (id?: string) => {
   return useQuery({
     queryKey: ["raBill", id],
     queryFn: async () => {
-      const res = await apiClient.request(`${CONTRACTS_BASE}/ra-bills/${id}`, {
+      const res = await apiClient.request(`${API_BASE}/ra-bills/${id}`, {
         method: "GET",
       });
       // ✅ Handle consistent return
@@ -305,7 +305,7 @@ export const useCreateRABill = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: any) => {
-      const res = await apiClient.request(`${CONTRACTS_BASE}/ra-bills`, {
+      const res = await apiClient.request(`${API_BASE}/ra-bills`, {
         method: "POST",
         body: JSON.stringify(payload),
       });
@@ -321,7 +321,7 @@ export const useUpdateRABill = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
-      const res = await apiClient.request(`${CONTRACTS_BASE}/ra-bills/${id}`, {
+      const res = await apiClient.request(`${API_BASE}/ra-bills/${id}`, {
         method: "PUT",
         body: JSON.stringify(payload),
       });

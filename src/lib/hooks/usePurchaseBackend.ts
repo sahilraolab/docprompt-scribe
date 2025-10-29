@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { mrsApi, quotationsApi, csApi, posApi, purchaseBillsApi, itemsApi, suppliersApi, materialRatesApi } from '@/lib/api/purchaseApiBackend';
+import { mrsApi, quotationsApi, csApi, posApi, purchaseBillsApi, suppliersApi, materialRatesApi } from '@/lib/api/purchaseApiBackend';
 import { toast } from 'sonner';
 
 // Material Requisitions hooks
@@ -407,63 +407,7 @@ export function useDeletePurchaseBill() {
   });
 }
 
-// Items hooks
-export function useItems() {
-  return useQuery({
-    queryKey: ['items'],
-    queryFn: itemsApi.getAll,
-  });
-}
-
-export function useItem(id: string) {
-  return useQuery({
-    queryKey: ['items', id],
-    queryFn: () => itemsApi.getById(id),
-    enabled: !!id,
-  });
-}
-
-export function useCreateItem() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: itemsApi.create,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['items'] });
-      toast.success('Item created successfully');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to create item');
-    },
-  });
-}
-
-export function useUpdateItem() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => itemsApi.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['items'] });
-      toast.success('Item updated successfully');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update item');
-    },
-  });
-}
-
-export function useDeleteItem() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: itemsApi.delete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['items'] });
-      toast.success('Item deleted successfully');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete item');
-    },
-  });
-}
+// Note: Items moved to useSite.ts
 
 // Suppliers hooks
 export function useSuppliers() {

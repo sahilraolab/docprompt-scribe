@@ -64,10 +64,7 @@ export default function ComparativeStatementForm() {
   const { data: mrs } = useMRs();
   const { data: quotations = [], isLoading } = useQuotationsByMR(mrId || "");
   const createCS = useCreateComparativeStatement();
-  const { data: existingCS, isLoading: isCSLoading } = useComparativeStatement(
-    id || "",
-    { enabled: !!id }
-  );
+  const { data: existingCS, isLoading: isCSLoading } = useComparativeStatement(id || "");
 
   // ✅ Prefill data when editing
   useEffect(() => {

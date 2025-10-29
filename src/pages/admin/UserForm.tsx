@@ -88,7 +88,7 @@ export default function UserForm() {
 
   // When role changes → auto-set default permissions (editable)
   const handleRoleChange = (role: string) => {
-    const perms = getRoleModulePermissions(role);
+    const perms = getRoleModulePermissions(role as any);
     setRolePermissions(perms);
     form.setValue('permissions', perms);
     form.setValue('role', role);

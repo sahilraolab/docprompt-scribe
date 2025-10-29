@@ -45,7 +45,7 @@ export default function ItemForm() {
   const navigate = useNavigate();
   const isEdit = Boolean(id);
 
-  const { item, isLoading } = useItem(id);
+  const { data: item, isLoading } = useItem(id || '');
 
   const form = useForm<ItemFormData>({
     resolver: zodResolver(itemSchema),
@@ -253,9 +253,16 @@ export default function ItemForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>{name === 'reorderLevel' ? 'Reorder Level' : name === 'minStock' ? 'Min Stock' : 'Max Stock'}</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="number" />
-                      </FormControl>
+                       <FormControl>
+                         <Input 
+                           type="number" 
+                           value={field.value as number || 0}
+                           onChange={e => field.onChange(Number(e.target.value))}
+                           onBlur={field.onBlur}
+                           disabled={field.disabled}
+                           name={field.name}
+                         />
+                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

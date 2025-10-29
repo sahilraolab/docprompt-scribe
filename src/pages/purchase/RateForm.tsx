@@ -9,11 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   useSuppliers,
-  useItems,
   useMaterialRate,
   useCreateMaterialRate,
   useUpdateMaterialRate,
 } from '@/lib/hooks/usePurchaseBackend';
+import { useItems } from '@/lib/hooks/useSite';
 import { SearchableSelect } from '@/components/SearchableSelect';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
