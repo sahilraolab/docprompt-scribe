@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useLabourRate, useCreateLabourRate, useUpdateLabourRate } from '@/lib/hooks/useContracts';
 import { ArrowLeft, Loader2 } from 'lucide-react';
+import { SearchableSelect } from '@/components/SearchableSelect';
 
 const labourRateSchema = z.object({
   category: z.string().min(1, 'Category is required'),
@@ -49,6 +49,14 @@ export default function LabourRatesForm() {
 
   const category = watch('category');
   const location = watch('location');
+
+  // Helper to normalize select values
+  const normalizeSelectValue = (val: any) => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object' && 'value' in val) return val.value;
+    return String(val);
+  };
 
   useEffect(() => {
     if (existingRate && id) {
@@ -114,37 +122,46 @@ export default function LabourRatesForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="category">Labour Category *</Label>
-                <Select value={category} onValueChange={(val) => setValue('category', val)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="skilled">Skilled Labour</SelectItem>
-                    <SelectItem value="semiskilled">Semi-Skilled Labour</SelectItem>
-                    <SelectItem value="unskilled">Unskilled Labour</SelectItem>
-                    <SelectItem value="mason">Mason</SelectItem>
-                    <SelectItem value="carpenter">Carpenter</SelectItem>
-                    <SelectItem value="welder">Welder</SelectItem>
-                    <SelectItem value="electrician">Electrician</SelectItem>
-                    <SelectItem value="plumber">Plumber</SelectItem>
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  options={[
+                    { value: 'skilled', label: 'Skilled Labour' },
+                    { value: 'semiskilled', label: 'Semi-Skilled Labour' },
+                    { value: 'unskilled', label: 'Unskilled Labour' },
+                    { value: 'mason', label: 'Mason' },
+                    { value: 'carpenter', label: 'Carpenter' },
+                    { value: 'welder', label: 'Welder' },
+                    { value: 'electrician', label: 'Electrician' },
+                    { value: 'plumber', label: 'Plumber' },
+                  ]}
+                  value={normalizeSelectValue(category)}
+                  onChange={(raw) => {
+                    const value = normalizeSelectValue(raw);
+                    setValue('category', value);
+                  }}
+                  placeholder="Select labour category..."
+                />
                 {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="location">Location *</Label>
-                <Select value={location} onValueChange={(val) => setValue('location', val)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mumbai">Mumbai</SelectItem>
-                    <SelectItem value="delhi">Delhi</SelectItem>
-                    <SelectItem value="bangalore">Bangalore</SelectItem>
-                    <SelectItem value="pune">Pune</SelectItem>
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  options={[
+                    { value: 'mumbai', label: 'Mumbai' },
+                    { value: 'delhi', label: 'Delhi' },
+                    { value: 'bangalore', label: 'Bangalore' },
+                    { value: 'pune', label: 'Pune' },
+                    { value: 'hyderabad', label: 'Hyderabad' },
+                    { value: 'chennai', label: 'Chennai' },
+                    { value: 'kolkata', label: 'Kolkata' },
+                  ]}
+                  value={normalizeSelectValue(location)}
+                  onChange={(raw) => {
+                    const value = normalizeSelectValue(raw);
+                    setValue('location', value);
+                  }}
+                  placeholder="Select location..."
+                />
                 {errors.location && <p className="text-sm text-destructive">{errors.location.message}</p>}
               </div>
 

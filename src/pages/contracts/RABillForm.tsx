@@ -3,22 +3,16 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils/format';
+import { SearchableSelect } from '@/components/SearchableSelect';
 import {
   useWorkOrders,
   useRABill,
@@ -62,8 +56,8 @@ export default function RABillForm() {
 
   const { data: workOrdersData = [], isLoading: workOrdersLoading } = useWorkOrders();
   const { data: existingRABill, isLoading: billLoading } = useRABill(id);
-  const { mutateAsync: createRABill } = useCreateRABill();
-  const { mutateAsync: updateRABill } = useUpdateRABill();
+  const { mutateAsync: createRABill, isPending: isCreating } = useCreateRABill();
+  const { mutateAsync: updateRABill, isPending: isUpdating } = useUpdateRABill();
 
   const [raBillItems, setRaBillItems] = useState<any[]>([]);
 
@@ -88,6 +82,14 @@ export default function RABillForm() {
 
   // Fetch work order items when WO changes
   const { data: workOrderItems = [], isLoading: itemsLoading } = useWorkOrderItems(workOrderId);
+
+  // Helper to normalize select values
+  const normalizeSelectValue = (val: any) => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object' && 'value' in val) return val.value;
+    return String(val);
+  };
 
   // --------------------------
   // 📦 Load Existing Bill (Edit Mode)
@@ -212,28 +214,19 @@ export default function RABillForm() {
             {/* Work Order Select */}
             <div className="space-y-2">
               <Label htmlFor="workOrderId">Work Order *</Label>
-              <Select
-                value={workOrderId}
-                onValueChange={(value) => {
+              <SearchableSelect
+                options={workOrdersData.map((wo: any) => ({
+                  value: wo._id,
+                  label: `${wo.code} - ${wo.contractorId?.name || 'Unknown'} (${wo.projectId?.name || 'Unknown Project'})`,
+                }))}
+                value={normalizeSelectValue(workOrderId)}
+                onChange={(raw) => {
+                  const value = normalizeSelectValue(raw);
                   setValue('workOrderId', value);
                   setRaBillItems([]); // clear items when work order changes
                 }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select work order" />
-                </SelectTrigger>
-                <SelectContent>
-                  {workOrdersData.length > 0 ? (
-                    workOrdersData.map((wo: any) => (
-                      <SelectItem key={wo._id} value={wo._id}>
-                        {wo.code} - {wo.contractorId?.name || 'Unknown Contractor'}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <div className="p-2 text-sm text-muted-foreground">No work orders found</div>
-                  )}
-                </SelectContent>
-              </Select>
+                placeholder="Search and select work order..."
+              />
               {errors.workOrderId && (
                 <p className="text-sm text-destructive">{errors.workOrderId.message}</p>
               )}
@@ -378,7 +371,10 @@ export default function RABillForm() {
           <Button type="button" variant="outline" onClick={() => navigate('/contracts/ra-bills')}>
             Cancel
           </Button>
-          <Button type="submit">{id ? 'Update' : 'Create'} RA Bill</Button>
+          <Button type="submit" disabled={isCreating || isUpdating}>
+            {(isCreating || isUpdating) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {id ? 'Update' : 'Create'} RA Bill
+          </Button>
         </div>
       </form>
     </div>

@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
-import { useCreateContractor, useUpdateContractor, useContractor } from '@/lib/hooks/useContractors';
+import { useCreateContractor, useUpdateContractor, useContractor } from '@/lib/hooks/useContracts';
 
 
 // ✅ Validation Schema
