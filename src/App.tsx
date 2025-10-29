@@ -96,6 +96,10 @@ import JournalDetails from "./pages/accounts/JournalDetails";
 import LedgersList from "./pages/accounts/LedgersList";
 import LedgerDetails from "./pages/accounts/LedgerDetails";
 import ReportsList from "./pages/accounts/ReportsList";
+import TrialBalanceReport from "./pages/accounts/reports/TrialBalanceReport";
+import ProfitLossReport from "./pages/accounts/reports/ProfitLossReport";
+import BalanceSheetReport from "./pages/accounts/reports/BalanceSheetReport";
+import CashFlowReport from "./pages/accounts/reports/CashFlowReport";
 import Workflow from "./pages/workflow/index";
 import ApprovalsList from "./pages/workflow/ApprovalsList";
 import WorkflowConfigList from "./pages/workflow/WorkflowConfigList";
@@ -289,6 +293,10 @@ const App = () => (
             <Route path="/accounts/ledgers" element={<ProtectedRoute><AppLayout><LedgersList /></AppLayout></ProtectedRoute>} />
             <Route path="/accounts/ledgers/:id" element={<ProtectedRoute><AppLayout><LedgerDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/accounts/reports" element={<ProtectedRoute><AppLayout><ReportsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/accounts/reports/trial-balance" element={<ProtectedRoute><AppLayout><TrialBalanceReport /></AppLayout></ProtectedRoute>} />
+            <Route path="/accounts/reports/profit-loss" element={<ProtectedRoute><AppLayout><ProfitLossReport /></AppLayout></ProtectedRoute>} />
+            <Route path="/accounts/reports/balance-sheet" element={<ProtectedRoute><AppLayout><BalanceSheetReport /></AppLayout></ProtectedRoute>} />
+            <Route path="/accounts/reports/cash-flow" element={<ProtectedRoute><AppLayout><CashFlowReport /></AppLayout></ProtectedRoute>} />
 
             {/* -----------------------------
              * Workflow
