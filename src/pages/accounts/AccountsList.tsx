@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAccounts } from '@/lib/hooks/useAccounts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +18,7 @@ import {
 } from '@/components/ui/table';
 
 export default function AccountsList() {
+  const navigate = useNavigate();
   const { data: accounts, isLoading } = useAccounts();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -52,7 +54,7 @@ export default function AccountsList() {
           <h1 className="text-3xl font-bold">Chart of Accounts</h1>
           <p className="text-muted-foreground">Manage financial accounts and ledgers</p>
         </div>
-        <Button>
+        <Button onClick={() => navigate('/accounts/list/new')}>
           <Plus className="h-4 w-4 mr-2" />
           New Account
         </Button>
@@ -88,6 +90,7 @@ export default function AccountsList() {
                     <TableRow
                       key={account.id}
                       className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate(`/accounts/list/${account.id}/edit`)}
                     >
                       <TableCell className="font-medium">{account.code}</TableCell>
                       <TableCell>{account.name}</TableCell>

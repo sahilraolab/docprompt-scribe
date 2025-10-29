@@ -92,7 +92,9 @@ import AccountsList from "./pages/accounts/AccountsList";
 import AccountForm from "./pages/accounts/AccountForm";
 import JournalsList from "./pages/accounts/JournalsList";
 import JournalForm from "./pages/accounts/JournalForm";
+import JournalDetails from "./pages/accounts/JournalDetails";
 import LedgersList from "./pages/accounts/LedgersList";
+import LedgerDetails from "./pages/accounts/LedgerDetails";
 import ReportsList from "./pages/accounts/ReportsList";
 import Workflow from "./pages/workflow/index";
 import ApprovalsList from "./pages/workflow/ApprovalsList";
@@ -275,11 +277,13 @@ const App = () => (
             <Route path="/accounts" element={<ProtectedRoute><AppLayout><Accounts /></AppLayout></ProtectedRoute>} />
             <Route path="/accounts/list" element={<ProtectedRoute><AppLayout><AccountsList /></AppLayout></ProtectedRoute>} />
             <Route path="/accounts/list/new" element={<ProtectedRoute><AppLayout><AccountForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/accounts/list/:id" element={<ProtectedRoute><AppLayout><AccountForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/accounts/list/:id/edit" element={<ProtectedRoute><AppLayout><AccountForm /></AppLayout></ProtectedRoute>} />
             <Route path="/accounts/journals" element={<ProtectedRoute><AppLayout><JournalsList /></AppLayout></ProtectedRoute>} />
             <Route path="/accounts/journals/new" element={<ProtectedRoute><AppLayout><JournalForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/accounts/journals/:id" element={<ProtectedRoute><AppLayout><JournalForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/accounts/journals/:id/edit" element={<ProtectedRoute><AppLayout><JournalForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/accounts/journals/:id" element={<ProtectedRoute><AppLayout><JournalDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/accounts/ledgers" element={<ProtectedRoute><AppLayout><LedgersList /></AppLayout></ProtectedRoute>} />
+            <Route path="/accounts/ledgers/:id" element={<ProtectedRoute><AppLayout><LedgerDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/accounts/reports" element={<ProtectedRoute><AppLayout><ReportsList /></AppLayout></ProtectedRoute>} />
 
             {/* -----------------------------
