@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,17 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useProjects } from '@/lib/hooks/useProjects';
-import { useItems } from '@/lib/hooks/useSite';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { useItems, useIssue, useCreateIssue, useUpdateIssue } from '@/lib/hooks/useSite';
+import { ArrowLeft, Plus, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { SearchableSelect } from '@/components/SearchableSelect';
 
 const issueItemSchema = z.object({
   itemId: z.string().min(1, 'Item is required'),
@@ -40,8 +34,11 @@ export default function IssueForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { data: projects } = useProjects();
-  const { data: items } = useItems();
+  const { data: projects = [] } = useProjects();
+  const { data: items = [] } = useItems();
+  const { data: existingIssue, isLoading } = useIssue(id);
+  const { mutateAsync: createIssue, isPending: isCreating } = useCreateIssue();
+  const { mutateAsync: updateIssue, isPending: isUpdating } = useUpdateIssue();
   
   const [issueItems, setIssueItems] = useState<any[]>([
     { itemId: '', qty: 1, remarks: '' },
@@ -62,6 +59,28 @@ export default function IssueForm() {
 
   const selectedProjectId = watch('projectId');
 
+  // Helper to normalize select values
+  const normalizeSelectValue = (val: any) => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object' && 'value' in val) return val.value;
+    return String(val);
+  };
+
+  // Load existing issue in edit mode
+  useEffect(() => {
+    if (existingIssue && id) {
+      setValue('projectId', existingIssue.projectId?._id || existingIssue.projectId);
+      setValue('issueDate', existingIssue.issueDate?.split('T')[0]);
+      setValue('issuedTo', existingIssue.issuedTo);
+      setValue('purpose', existingIssue.purpose);
+      if (existingIssue.items?.length) {
+        setIssueItems(existingIssue.items);
+        setValue('items', existingIssue.items);
+      }
+    }
+  }, [existingIssue, id, setValue]);
+
   const addItem = () => {
     setIssueItems([...issueItems, { itemId: '', qty: 1, remarks: '' }]);
   };
@@ -79,14 +98,34 @@ export default function IssueForm() {
     setValue('items', updated);
   };
 
-  const onSubmit = (data: IssueFormData) => {
-    console.log('Issue Data:', data);
-    toast({
-      title: id ? 'Issue Updated' : 'Issue Created',
-      description: `Material issue has been ${id ? 'updated' : 'created'} successfully.`,
-    });
-    navigate('/site/issues');
+  const onSubmit = async (data: IssueFormData) => {
+    try {
+      if (id) {
+        await updateIssue({ id, data });
+        toast({ title: 'Issue Updated', description: 'Material issue updated successfully' });
+      } else {
+        await createIssue(data);
+        toast({ title: 'Issue Created', description: 'Material issue created successfully' });
+      }
+      navigate('/site/issues');
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.message || 'Failed to save material issue',
+        variant: 'destructive',
+      });
+    }
   };
+
+  if (isLoading && id) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const isSaving = isCreating || isUpdating;
 
   return (
     <div className="space-y-6">
@@ -109,21 +148,18 @@ export default function IssueForm() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="projectId">Project *</Label>
-                <Select
-                  value={selectedProjectId}
-                  onValueChange={(value) => setValue('projectId', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select project" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects?.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name} ({project.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  options={projects.map((project: any) => ({
+                    value: project._id,
+                    label: `${project.name} (${project.code})`,
+                  }))}
+                  value={normalizeSelectValue(selectedProjectId)}
+                  onChange={(raw) => {
+                    const value = normalizeSelectValue(raw);
+                    setValue('projectId', value);
+                  }}
+                  placeholder="Search and select project..."
+                />
                 {errors.projectId && (
                   <p className="text-sm text-destructive">{errors.projectId.message}</p>
                 )}
@@ -192,21 +228,18 @@ export default function IssueForm() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Item *</Label>
-                    <Select
-                      value={item.itemId}
-                      onValueChange={(value) => updateItem(index, 'itemId', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select item" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {items?.map((item) => (
-                          <SelectItem key={item.id} value={item.id}>
-                            {item.name} ({item.code})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      options={items.map((item: any) => ({
+                        value: item._id,
+                        label: `${item.name} (${item.code})`,
+                      }))}
+                      value={normalizeSelectValue(item.itemId)}
+                      onChange={(raw) => {
+                        const value = normalizeSelectValue(raw);
+                        updateItem(index, 'itemId', value);
+                      }}
+                      placeholder="Search and select item..."
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -237,7 +270,10 @@ export default function IssueForm() {
           <Button type="button" variant="outline" onClick={() => navigate('/site/issues')}>
             Cancel
           </Button>
-          <Button type="submit">{id ? 'Update' : 'Create'} Issue</Button>
+          <Button type="submit" disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {id ? 'Update' : 'Create'} Issue
+          </Button>
         </div>
       </form>
     </div>

@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useGRNs } from '@/lib/hooks/useSite';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { formatDate } from '@/lib/utils/format';
-import { Plus, Search, Package } from 'lucide-react';
+import { Plus, Search, Package, Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -19,50 +20,25 @@ import {
 export default function GRNList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { data: grns = [], isLoading } = useGRNs();
 
-  // Mock data
-  const grns = [
-    {
-      id: '1',
-      grnNo: 'GRN-2024-001',
-      poCode: 'PO-2024-001',
-      supplierName: 'ABC Suppliers',
-      projectName: 'Green Valley Apartments',
-      receivedDate: '2024-01-15',
-      itemsCount: 5,
-      status: 'Received' as const,
-      receivedBy: 'John Doe',
-    },
-    {
-      id: '2',
-      grnNo: 'GRN-2024-002',
-      poCode: 'PO-2024-002',
-      supplierName: 'XYZ Trading',
-      projectName: 'City Mall Extension',
-      receivedDate: '2024-01-18',
-      itemsCount: 3,
-      status: 'Pending' as const,
-      receivedBy: 'Jane Smith',
-    },
-    {
-      id: '3',
-      grnNo: 'GRN-2024-003',
-      poCode: 'PO-2024-003',
-      supplierName: 'BuildMart',
-      projectName: 'Smart Office Tower',
-      receivedDate: '2024-01-20',
-      itemsCount: 8,
-      status: 'Approved' as const,
-      receivedBy: 'Mike Johnson',
-    },
-  ];
+  const filteredGRNs = grns.filter((grn: any) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      grn.grnNo?.toLowerCase().includes(query) ||
+      grn.poId?.code?.toLowerCase().includes(query) ||
+      grn.poId?.supplierId?.name?.toLowerCase().includes(query) ||
+      grn.poId?.projectId?.name?.toLowerCase().includes(query)
+    );
+  });
 
-  const filteredGRNs = grns.filter((grn) =>
-    grn.grnNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    grn.poCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    grn.supplierName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    grn.projectName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -106,21 +82,21 @@ export default function GRNList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredGRNs.map((grn) => (
+                  {filteredGRNs.map((grn: any) => (
                     <TableRow
-                      key={grn.id}
+                      key={grn._id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/site/grn/${grn.id}`)}
+                      onClick={() => navigate(`/site/grn/${grn._id}`)}
                     >
                       <TableCell className="font-medium">{grn.grnNo}</TableCell>
-                      <TableCell>{grn.poCode}</TableCell>
-                      <TableCell>{grn.supplierName}</TableCell>
-                      <TableCell>{grn.projectName}</TableCell>
-                      <TableCell>{grn.itemsCount} items</TableCell>
-                      <TableCell>{grn.receivedBy}</TableCell>
-                      <TableCell>{formatDate(grn.receivedDate)}</TableCell>
+                      <TableCell>{grn.poId?.code || 'N/A'}</TableCell>
+                      <TableCell>{grn.poId?.supplierId?.name || 'N/A'}</TableCell>
+                      <TableCell>{grn.poId?.projectId?.name || 'N/A'}</TableCell>
+                      <TableCell>{grn.items?.length || 0} items</TableCell>
+                      <TableCell>{grn.receivedBy || 'N/A'}</TableCell>
+                      <TableCell>{formatDate(grn.grnDate)}</TableCell>
                       <TableCell>
-                        <StatusBadge status={grn.status} />
+                        <StatusBadge status={grn.status || 'Pending'} />
                       </TableCell>
                     </TableRow>
                   ))}

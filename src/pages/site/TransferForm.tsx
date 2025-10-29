@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,17 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useProjects } from '@/lib/hooks/useProjects';
-import { useItems } from '@/lib/hooks/useSite';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { useItems, useTransfer, useCreateTransfer, useUpdateTransfer } from '@/lib/hooks/useSite';
+import { ArrowLeft, Plus, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { SearchableSelect } from '@/components/SearchableSelect';
 
 const transferItemSchema = z.object({
   itemId: z.string().min(1, 'Item is required'),
@@ -42,8 +36,11 @@ export default function TransferForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { data: projects } = useProjects();
-  const { data: items } = useItems();
+  const { data: projects = [] } = useProjects();
+  const { data: items = [] } = useItems();
+  const { data: existingTransfer, isLoading } = useTransfer(id);
+  const { mutateAsync: createTransfer, isPending: isCreating } = useCreateTransfer();
+  const { mutateAsync: updateTransfer, isPending: isUpdating } = useUpdateTransfer();
   
   const [transferItems, setTransferItems] = useState<any[]>([
     { itemId: '', qty: 1, remarks: '' },
@@ -65,6 +62,30 @@ export default function TransferForm() {
   const fromProjectId = watch('fromProjectId');
   const toProjectId = watch('toProjectId');
 
+  // Helper to normalize select values
+  const normalizeSelectValue = (val: any) => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object' && 'value' in val) return val.value;
+    return String(val);
+  };
+
+  // Load existing transfer in edit mode
+  useEffect(() => {
+    if (existingTransfer && id) {
+      setValue('fromProjectId', existingTransfer.fromProjectId?._id || existingTransfer.fromProjectId);
+      setValue('toProjectId', existingTransfer.toProjectId?._id || existingTransfer.toProjectId);
+      setValue('transferDate', existingTransfer.transferDate?.split('T')[0]);
+      setValue('vehicleNo', existingTransfer.vehicleNo);
+      setValue('driverName', existingTransfer.driverName);
+      setValue('remarks', existingTransfer.remarks);
+      if (existingTransfer.items?.length) {
+        setTransferItems(existingTransfer.items);
+        setValue('items', existingTransfer.items);
+      }
+    }
+  }, [existingTransfer, id, setValue]);
+
   const addItem = () => {
     setTransferItems([...transferItems, { itemId: '', qty: 1, remarks: '' }]);
   };
@@ -82,7 +103,7 @@ export default function TransferForm() {
     setValue('items', updated);
   };
 
-  const onSubmit = (data: TransferFormData) => {
+  const onSubmit = async (data: TransferFormData) => {
     if (data.fromProjectId === data.toProjectId) {
       toast({
         title: 'Error',
@@ -92,13 +113,33 @@ export default function TransferForm() {
       return;
     }
 
-    console.log('Transfer Data:', data);
-    toast({
-      title: id ? 'Transfer Updated' : 'Transfer Created',
-      description: `Material transfer has been ${id ? 'updated' : 'created'} successfully.`,
-    });
-    navigate('/site/transfers');
+    try {
+      if (id) {
+        await updateTransfer({ id, data });
+        toast({ title: 'Transfer Updated', description: 'Material transfer updated successfully' });
+      } else {
+        await createTransfer(data);
+        toast({ title: 'Transfer Created', description: 'Material transfer created successfully' });
+      }
+      navigate('/site/transfers');
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.message || 'Failed to save transfer',
+        variant: 'destructive',
+      });
+    }
   };
+
+  if (isLoading && id) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const isSaving = isCreating || isUpdating;
 
   return (
     <div className="space-y-6">
@@ -121,21 +162,18 @@ export default function TransferForm() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="fromProjectId">From Project *</Label>
-                <Select
-                  value={fromProjectId}
-                  onValueChange={(value) => setValue('fromProjectId', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select source project" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects?.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name} ({project.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  options={projects.map((project: any) => ({
+                    value: project._id,
+                    label: `${project.name} (${project.code})`,
+                  }))}
+                  value={normalizeSelectValue(fromProjectId)}
+                  onChange={(raw) => {
+                    const value = normalizeSelectValue(raw);
+                    setValue('fromProjectId', value);
+                  }}
+                  placeholder="Search source project..."
+                />
                 {errors.fromProjectId && (
                   <p className="text-sm text-destructive">{errors.fromProjectId.message}</p>
                 )}
@@ -143,21 +181,18 @@ export default function TransferForm() {
 
               <div className="space-y-2">
                 <Label htmlFor="toProjectId">To Project *</Label>
-                <Select
-                  value={toProjectId}
-                  onValueChange={(value) => setValue('toProjectId', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select destination project" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects?.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name} ({project.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  options={projects.map((project: any) => ({
+                    value: project._id,
+                    label: `${project.name} (${project.code})`,
+                  }))}
+                  value={normalizeSelectValue(toProjectId)}
+                  onChange={(raw) => {
+                    const value = normalizeSelectValue(raw);
+                    setValue('toProjectId', value);
+                  }}
+                  placeholder="Search destination project..."
+                />
                 {errors.toProjectId && (
                   <p className="text-sm text-destructive">{errors.toProjectId.message}</p>
                 )}
@@ -223,21 +258,18 @@ export default function TransferForm() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Item *</Label>
-                    <Select
-                      value={item.itemId}
-                      onValueChange={(value) => updateItem(index, 'itemId', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select item" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {items?.map((item) => (
-                          <SelectItem key={item.id} value={item.id}>
-                            {item.name} ({item.code})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      options={items.map((item: any) => ({
+                        value: item._id,
+                        label: `${item.name} (${item.code})`,
+                      }))}
+                      value={normalizeSelectValue(item.itemId)}
+                      onChange={(raw) => {
+                        const value = normalizeSelectValue(raw);
+                        updateItem(index, 'itemId', value);
+                      }}
+                      placeholder="Search and select item..."
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -268,7 +300,10 @@ export default function TransferForm() {
           <Button type="button" variant="outline" onClick={() => navigate('/site/transfers')}>
             Cancel
           </Button>
-          <Button type="submit">{id ? 'Update' : 'Create'} Transfer</Button>
+          <Button type="submit" disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {id ? 'Update' : 'Create'} Transfer
+          </Button>
         </div>
       </form>
     </div>

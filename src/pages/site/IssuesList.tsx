@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useIssues } from '@/lib/hooks/useSite';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { formatDate } from '@/lib/utils/format';
-import { Plus, Search, Send } from 'lucide-react';
+import { Plus, Search, Send, Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -19,46 +20,24 @@ import {
 export default function IssuesList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { data: issues = [], isLoading } = useIssues();
 
-  // Mock data
-  const issues = [
-    {
-      id: '1',
-      issueNo: 'ISS-2024-001',
-      projectName: 'Green Valley Apartments',
-      issuedTo: 'Site Supervisor - Block A',
-      itemsCount: 4,
-      issueDate: '2024-01-15',
-      status: 'Sent' as const,
-      issuedBy: 'Store Manager',
-    },
-    {
-      id: '2',
-      issueNo: 'ISS-2024-002',
-      projectName: 'City Mall Extension',
-      issuedTo: 'Contractor Team',
-      itemsCount: 6,
-      issueDate: '2024-01-18',
-      status: 'Pending' as const,
-      issuedBy: 'Store Manager',
-    },
-    {
-      id: '3',
-      issueNo: 'ISS-2024-003',
-      projectName: 'Smart Office Tower',
-      issuedTo: 'Electrical Team',
-      itemsCount: 3,
-      issueDate: '2024-01-20',
-      status: 'Sent' as const,
-      issuedBy: 'Store Manager',
-    },
-  ];
+  const filteredIssues = issues.filter((issue: any) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      issue.issueNo?.toLowerCase().includes(query) ||
+      issue.projectId?.name?.toLowerCase().includes(query) ||
+      issue.issuedTo?.toLowerCase().includes(query)
+    );
+  });
 
-  const filteredIssues = issues.filter((issue) =>
-    issue.issueNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    issue.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    issue.issuedTo.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -101,20 +80,20 @@ export default function IssuesList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredIssues.map((issue) => (
+                  {filteredIssues.map((issue: any) => (
                     <TableRow
-                      key={issue.id}
+                      key={issue._id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/site/issues/${issue.id}`)}
+                      onClick={() => navigate(`/site/issues/${issue._id}`)}
                     >
                       <TableCell className="font-medium">{issue.issueNo}</TableCell>
-                      <TableCell>{issue.projectName}</TableCell>
+                      <TableCell>{issue.projectId?.name || 'N/A'}</TableCell>
                       <TableCell>{issue.issuedTo}</TableCell>
-                      <TableCell>{issue.itemsCount} items</TableCell>
-                      <TableCell>{issue.issuedBy}</TableCell>
+                      <TableCell>{issue.items?.length || 0} items</TableCell>
+                      <TableCell>{issue.issuedBy || 'N/A'}</TableCell>
                       <TableCell>{formatDate(issue.issueDate)}</TableCell>
                       <TableCell>
-                        <StatusBadge status={issue.status} />
+                        <StatusBadge status={issue.status || 'Pending'} />
                       </TableCell>
                     </TableRow>
                   ))}

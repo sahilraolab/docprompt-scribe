@@ -27,7 +27,7 @@ export function useCreateItem() {
       toast.success("Item created successfully");
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to create item");
+      toast.error(error?.message || "Failed to create item");
     },
   });
 }
@@ -39,10 +39,11 @@ export function useUpdateItem() {
       siteApi.updateItem(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["items"] });
+      queryClient.invalidateQueries({ queryKey: ["item"] });
       toast.success("Item updated successfully");
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to update item");
+      toast.error(error?.message || "Failed to update item");
     },
   });
 }
@@ -56,7 +57,7 @@ export function useDeleteItem() {
       toast.success("Item deleted successfully");
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to delete item");
+      toast.error(error?.message || "Failed to delete item");
     },
   });
 }
@@ -74,5 +75,203 @@ export function useStockById(id: string) {
     queryKey: ["stock", id],
     queryFn: () => siteApi.getStockById(id),
     enabled: !!id,
+  });
+}
+
+export function useStockByProject(projectId: string) {
+  return useQuery({
+    queryKey: ["stock", "project", projectId],
+    queryFn: () => siteApi.getStockByProject(projectId),
+    enabled: !!projectId,
+  });
+}
+
+// -------- GRN (Goods Receipt Notes) --------
+export function useGRNs() {
+  return useQuery({
+    queryKey: ["grns"],
+    queryFn: siteApi.getAllGRN,
+  });
+}
+
+export function useGRN(id?: string) {
+  return useQuery({
+    queryKey: ["grn", id],
+    queryFn: () => siteApi.getGRNById(id!),
+    enabled: !!id,
+  });
+}
+
+export function useCreateGRN() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: siteApi.createGRN,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["grns"] });
+      queryClient.invalidateQueries({ queryKey: ["stock"] });
+      toast.success("GRN created successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to create GRN");
+    },
+  });
+}
+
+export function useUpdateGRN() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      siteApi.updateGRN(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["grns"] });
+      queryClient.invalidateQueries({ queryKey: ["grn"] });
+      queryClient.invalidateQueries({ queryKey: ["stock"] });
+      toast.success("GRN updated successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to update GRN");
+    },
+  });
+}
+
+// -------- MATERIAL ISSUES --------
+export function useIssues() {
+  return useQuery({
+    queryKey: ["issues"],
+    queryFn: siteApi.getAllIssues,
+  });
+}
+
+export function useIssue(id?: string) {
+  return useQuery({
+    queryKey: ["issue", id],
+    queryFn: () => siteApi.getIssueById(id!),
+    enabled: !!id,
+  });
+}
+
+export function useCreateIssue() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: siteApi.createIssue,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["issues"] });
+      queryClient.invalidateQueries({ queryKey: ["stock"] });
+      toast.success("Material issue created successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to create material issue");
+    },
+  });
+}
+
+export function useUpdateIssue() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      siteApi.updateIssue(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["issues"] });
+      queryClient.invalidateQueries({ queryKey: ["issue"] });
+      queryClient.invalidateQueries({ queryKey: ["stock"] });
+      toast.success("Material issue updated successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to update material issue");
+    },
+  });
+}
+
+// -------- STOCK TRANSFERS --------
+export function useTransfers() {
+  return useQuery({
+    queryKey: ["transfers"],
+    queryFn: siteApi.getAllTransfers,
+  });
+}
+
+export function useTransfer(id?: string) {
+  return useQuery({
+    queryKey: ["transfer", id],
+    queryFn: () => siteApi.getTransferById(id!),
+    enabled: !!id,
+  });
+}
+
+export function useCreateTransfer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: siteApi.createTransfer,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transfers"] });
+      queryClient.invalidateQueries({ queryKey: ["stock"] });
+      toast.success("Stock transfer created successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to create stock transfer");
+    },
+  });
+}
+
+export function useUpdateTransfer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      siteApi.updateTransfer(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transfers"] });
+      queryClient.invalidateQueries({ queryKey: ["transfer"] });
+      queryClient.invalidateQueries({ queryKey: ["stock"] });
+      toast.success("Stock transfer updated successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to update stock transfer");
+    },
+  });
+}
+
+// -------- QUALITY CONTROL --------
+export function useQCs() {
+  return useQuery({
+    queryKey: ["qcs"],
+    queryFn: siteApi.getAllQC,
+  });
+}
+
+export function useQC(id?: string) {
+  return useQuery({
+    queryKey: ["qc", id],
+    queryFn: () => siteApi.getQCById(id!),
+    enabled: !!id,
+  });
+}
+
+export function useCreateQC() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: siteApi.createQC,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["qcs"] });
+      toast.success("QC inspection created successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to create QC inspection");
+    },
+  });
+}
+
+export function useUpdateQC() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      siteApi.updateQC(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["qcs"] });
+      queryClient.invalidateQueries({ queryKey: ["qc"] });
+      toast.success("QC inspection updated successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to update QC inspection");
+    },
   });
 }

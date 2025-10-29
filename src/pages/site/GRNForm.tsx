@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,16 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useItems } from '@/lib/hooks/useSite';
+import { useItems, useGRN, useCreateGRN, useUpdateGRN } from '@/lib/hooks/useSite';
+import { usePOs } from '@/lib/hooks/usePurchase';
+import { SearchableSelect } from '@/components/SearchableSelect';
 
 const grnItemSchema = z.object({
   itemId: z.string().min(1, 'Item is required'),
@@ -59,7 +54,11 @@ export default function GRNForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { data: items } = useItems();
+  const { data: items = [] } = useItems();
+  const { data: purchaseOrders = [] } = usePOs();
+  const { data: existingGRN, isLoading } = useGRN(id);
+  const { mutateAsync: createGRN, isPending: isCreating } = useCreateGRN();
+  const { mutateAsync: updateGRN, isPending: isUpdating } = useUpdateGRN();
   
   const [grnItems, setGrnItems] = useState<any[]>([
     { itemId: '', orderedQty: 0, receivedQty: 0, acceptedQty: 0, rejectedQty: 0, remarks: '' },
@@ -79,6 +78,30 @@ export default function GRNForm() {
   });
 
   const poId = watch('poId');
+
+  // Helper to normalize select values
+  const normalizeSelectValue = (val: any) => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object' && 'value' in val) return val.value;
+    return String(val);
+  };
+
+  // Load existing GRN in edit mode
+  useEffect(() => {
+    if (existingGRN && id) {
+      setValue('poId', existingGRN.poId?._id || existingGRN.poId);
+      setValue('grnDate', existingGRN.grnDate?.split('T')[0]);
+      setValue('invoiceNo', existingGRN.invoiceNo);
+      setValue('vehicleNo', existingGRN.vehicleNo);
+      setValue('driverName', existingGRN.driverName);
+      setValue('remarks', existingGRN.remarks);
+      if (existingGRN.items?.length) {
+        setGrnItems(existingGRN.items);
+        setValue('items', existingGRN.items);
+      }
+    }
+  }, [existingGRN, id, setValue]);
 
   const addItem = () => {
     setGrnItems([...grnItems, { itemId: '', orderedQty: 0, receivedQty: 0, acceptedQty: 0, rejectedQty: 0, remarks: '' }]);
@@ -114,20 +137,34 @@ export default function GRNForm() {
     setValue('items', updated);
   };
 
-  const onSubmit = (data: GRNFormData) => {
-    console.log('GRN Data:', data);
-    toast({
-      title: id ? 'GRN Updated' : 'GRN Created',
-      description: `Goods Receipt Note has been ${id ? 'updated' : 'created'} successfully.`,
-    });
-    navigate('/site/grn');
+  const onSubmit = async (data: GRNFormData) => {
+    try {
+      if (id) {
+        await updateGRN({ id, data });
+        toast({ title: 'GRN Updated', description: 'Goods Receipt Note updated successfully' });
+      } else {
+        await createGRN(data);
+        toast({ title: 'GRN Created', description: 'Goods Receipt Note created successfully' });
+      }
+      navigate('/site/grn');
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.message || 'Failed to save GRN',
+        variant: 'destructive',
+      });
+    }
   };
 
-  // Mock POs
-  const purchaseOrders = [
-    { id: '1', code: 'PO-2024-001', supplier: 'ABC Suppliers' },
-    { id: '2', code: 'PO-2024-002', supplier: 'XYZ Trading' },
-  ];
+  if (isLoading && id) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const isSaving = isCreating || isUpdating;
 
   return (
     <div className="space-y-6">
@@ -149,21 +186,18 @@ export default function GRNForm() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="poId">Purchase Order *</Label>
-              <Select
-                value={poId}
-                onValueChange={(value) => setValue('poId', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select purchase order" />
-                </SelectTrigger>
-                <SelectContent>
-                  {purchaseOrders.map((po) => (
-                    <SelectItem key={po.id} value={po.id}>
-                      {po.code} - {po.supplier}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                options={purchaseOrders.map((po: any) => ({
+                  value: po._id,
+                  label: `${po.code} - ${po.supplierId?.name || 'Unknown Supplier'}`,
+                }))}
+                value={normalizeSelectValue(poId)}
+                onChange={(raw) => {
+                  const value = normalizeSelectValue(raw);
+                  setValue('poId', value);
+                }}
+                placeholder="Search and select purchase order..."
+              />
               {errors.poId && (
                 <p className="text-sm text-destructive">{errors.poId.message}</p>
               )}
@@ -235,21 +269,18 @@ export default function GRNForm() {
                 <div className="grid grid-cols-3 gap-4">
                   <div className="col-span-3 space-y-2">
                     <Label>Item *</Label>
-                    <Select
-                      value={item.itemId}
-                      onValueChange={(value) => updateItem(index, 'itemId', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select item" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {items?.map((item) => (
-                          <SelectItem key={item.id} value={item.id}>
-                            {item.name} ({item.code})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      options={items.map((item: any) => ({
+                        value: item._id,
+                        label: `${item.name} (${item.code})`,
+                      }))}
+                      value={normalizeSelectValue(item.itemId)}
+                      onChange={(raw) => {
+                        const value = normalizeSelectValue(raw);
+                        updateItem(index, 'itemId', value);
+                      }}
+                      placeholder="Search and select item..."
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -313,7 +344,10 @@ export default function GRNForm() {
           <Button type="button" variant="outline" onClick={() => navigate('/site/grn')}>
             Cancel
           </Button>
-          <Button type="submit">{id ? 'Update' : 'Create'} GRN</Button>
+          <Button type="submit" disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {id ? 'Update' : 'Create'} GRN
+          </Button>
         </div>
       </form>
     </div>

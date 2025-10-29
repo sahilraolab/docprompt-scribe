@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTransfers } from '@/lib/hooks/useSite';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { formatDate } from '@/lib/utils/format';
-import { Plus, Search, ArrowRightLeft } from 'lucide-react';
+import { Plus, Search, ArrowRightLeft, Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -19,46 +20,24 @@ import {
 export default function TransfersList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { data: transfers = [], isLoading } = useTransfers();
 
-  // Mock data
-  const transfers = [
-    {
-      id: '1',
-      transferNo: 'TRF-2024-001',
-      fromProject: 'Green Valley Apartments',
-      toProject: 'City Mall Extension',
-      itemsCount: 3,
-      transferDate: '2024-01-15',
-      status: 'Sent' as const,
-      transferredBy: 'Store Manager',
-    },
-    {
-      id: '2',
-      transferNo: 'TRF-2024-002',
-      fromProject: 'Smart Office Tower',
-      toProject: 'Green Valley Apartments',
-      itemsCount: 5,
-      transferDate: '2024-01-18',
-      status: 'Pending' as const,
-      transferredBy: 'Site Manager',
-    },
-    {
-      id: '3',
-      transferNo: 'TRF-2024-003',
-      fromProject: 'City Mall Extension',
-      toProject: 'Smart Office Tower',
-      itemsCount: 2,
-      transferDate: '2024-01-20',
-      status: 'Received' as const,
-      transferredBy: 'Store Manager',
-    },
-  ];
+  const filteredTransfers = transfers.filter((transfer: any) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      transfer.transferNo?.toLowerCase().includes(query) ||
+      transfer.fromProjectId?.name?.toLowerCase().includes(query) ||
+      transfer.toProjectId?.name?.toLowerCase().includes(query)
+    );
+  });
 
-  const filteredTransfers = transfers.filter((transfer) =>
-    transfer.transferNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    transfer.fromProject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    transfer.toProject.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -101,20 +80,20 @@ export default function TransfersList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredTransfers.map((transfer) => (
+                  {filteredTransfers.map((transfer: any) => (
                     <TableRow
-                      key={transfer.id}
+                      key={transfer._id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/site/transfers/${transfer.id}`)}
+                      onClick={() => navigate(`/site/transfers/${transfer._id}`)}
                     >
                       <TableCell className="font-medium">{transfer.transferNo}</TableCell>
-                      <TableCell>{transfer.fromProject}</TableCell>
-                      <TableCell>{transfer.toProject}</TableCell>
-                      <TableCell>{transfer.itemsCount} items</TableCell>
-                      <TableCell>{transfer.transferredBy}</TableCell>
+                      <TableCell>{transfer.fromProjectId?.name || 'N/A'}</TableCell>
+                      <TableCell>{transfer.toProjectId?.name || 'N/A'}</TableCell>
+                      <TableCell>{transfer.items?.length || 0} items</TableCell>
+                      <TableCell>{transfer.transferredBy || 'N/A'}</TableCell>
                       <TableCell>{formatDate(transfer.transferDate)}</TableCell>
                       <TableCell>
-                        <StatusBadge status={transfer.status} />
+                        <StatusBadge status={transfer.status || 'Pending'} />
                       </TableCell>
                     </TableRow>
                   ))}

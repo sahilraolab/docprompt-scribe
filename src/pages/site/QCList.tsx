@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQCs } from '@/lib/hooks/useSite';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { formatDate } from '@/lib/utils/format';
-import { Plus, Search, ClipboardCheck } from 'lucide-react';
+import { Plus, Search, ClipboardCheck, Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -20,69 +21,17 @@ import { Badge } from '@/components/ui/badge';
 export default function QCList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { data: qcInspections = [], isLoading } = useQCs();
 
-  // Mock data
-  const qcInspections = [
-    {
-      id: '1',
-      inspectionNo: 'QC-2024-001',
-      projectName: 'Green Valley Apartments',
-      itemName: 'Cement - OPC 53 Grade',
-      batchNo: 'BATCH-001',
-      quantity: 100,
-      unit: 'Bags',
-      inspectionDate: '2024-01-15',
-      inspectedBy: 'Quality Engineer',
-      result: 'Pass',
-      remarks: 'All parameters within acceptable limits',
-    },
-    {
-      id: '2',
-      inspectionNo: 'QC-2024-002',
-      projectName: 'City Mall Extension',
-      itemName: 'Steel Bars - 12mm',
-      batchNo: 'BATCH-002',
-      quantity: 500,
-      unit: 'Pcs',
-      inspectionDate: '2024-01-18',
-      inspectedBy: 'Quality Engineer',
-      result: 'Fail',
-      remarks: 'Rust found on 5% of bars, rejected',
-    },
-    {
-      id: '3',
-      inspectionNo: 'QC-2024-003',
-      projectName: 'Smart Office Tower',
-      itemName: 'Ready Mix Concrete - M25',
-      batchNo: 'BATCH-003',
-      quantity: 50,
-      unit: 'CUM',
-      inspectionDate: '2024-01-20',
-      inspectedBy: 'Quality Engineer',
-      result: 'Pass',
-      remarks: 'Slump test passed, cube samples sent to lab',
-    },
-    {
-      id: '4',
-      inspectionNo: 'QC-2024-004',
-      projectName: 'Green Valley Apartments',
-      itemName: 'Tiles - Vitrified 600x600',
-      batchNo: 'BATCH-004',
-      quantity: 200,
-      unit: 'SQM',
-      inspectionDate: '2024-01-22',
-      inspectedBy: 'Site Engineer',
-      result: 'Hold',
-      remarks: 'Awaiting lab test results',
-    },
-  ];
-
-  const filteredInspections = qcInspections.filter((qc) =>
-    qc.inspectionNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    qc.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    qc.itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    qc.batchNo.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredInspections = qcInspections.filter((qc: any) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      qc.inspectionNo?.toLowerCase().includes(query) ||
+      qc.projectId?.name?.toLowerCase().includes(query) ||
+      qc.itemId?.name?.toLowerCase().includes(query) ||
+      qc.batchNo?.toLowerCase().includes(query)
+    );
+  });
 
   const getResultBadgeColor = (result: string) => {
     switch (result) {
@@ -96,6 +45,14 @@ export default function QCList() {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -139,15 +96,15 @@ export default function QCList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredInspections.map((qc) => (
+                  {filteredInspections.map((qc: any) => (
                     <TableRow
-                      key={qc.id}
+                      key={qc._id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/site/qc/${qc.id}`)}
+                      onClick={() => navigate(`/site/qc/${qc._id}`)}
                     >
                       <TableCell className="font-medium">{qc.inspectionNo}</TableCell>
-                      <TableCell>{qc.projectName}</TableCell>
-                      <TableCell>{qc.itemName}</TableCell>
+                      <TableCell>{qc.projectId?.name || 'N/A'}</TableCell>
+                      <TableCell>{qc.itemId?.name || 'N/A'}</TableCell>
                       <TableCell className="font-mono text-sm">{qc.batchNo}</TableCell>
                       <TableCell>
                         {qc.quantity} {qc.unit}
@@ -155,8 +112,8 @@ export default function QCList() {
                       <TableCell>{qc.inspectedBy}</TableCell>
                       <TableCell>{formatDate(qc.inspectionDate)}</TableCell>
                       <TableCell>
-                        <Badge className={getResultBadgeColor(qc.result)} variant="secondary">
-                          {qc.result}
+                        <Badge className={getResultBadgeColor(qc.result || 'Pending')} variant="secondary">
+                          {qc.result || 'Pending'}
                         </Badge>
                       </TableCell>
                     </TableRow>
