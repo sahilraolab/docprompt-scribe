@@ -1,10 +1,32 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Warehouse, PackageCheck, Send, ArrowRightLeft, ClipboardCheck, TrendingDown, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Package, Warehouse, PackageCheck, Send, ArrowRightLeft, ClipboardCheck, TrendingDown, AlertTriangle, Download } from 'lucide-react';
 import { KPICard } from '@/components/KPICard';
+import { useItems, useStock } from '@/lib/hooks/useSite';
+import { exportToCSV } from '@/lib/utils/export';
+import { formatCurrency } from '@/lib/utils/format';
 
 export default function SiteIndex() {
   const navigate = useNavigate();
+  const { data: items = [], isLoading: loadingItems } = useItems();
+  const { data: stock = [], isLoading: loadingStock } = useStock();
+  const { data: grns = [], isLoading: loadingGRNs } = useItems();
+
+  const totalItems = items.length;
+  const stockValue = stock.reduce((sum: number, s: any) => sum + ((s.quantity || 0) * (s.rate || 0)), 0);
+  const lowStockItems = stock.filter((s: any) => s.quantity < (s.reorderLevel || 10)).length;
+  const pendingGRNs = grns.filter((g: any) => g.status === 'pending').length;
+
+  const handleExport = () => {
+    const data = [
+      { Module: 'Items', Total: totalItems },
+      { Module: 'Stock Value', Amount: stockValue },
+      { Module: 'Low Stock Items', Count: lowStockItems },
+      { Module: 'Pending GRNs', Count: pendingGRNs },
+    ];
+    exportToCSV(data, `site-overview-${new Date().toISOString().split('T')[0]}`);
+  };
 
   const modules = [
     {
@@ -59,34 +81,40 @@ export default function SiteIndex() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Site & Store Management</h1>
-        <p className="text-muted-foreground mt-1">Inventory and material management</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Site & Store Management</h1>
+          <p className="text-muted-foreground mt-1">Inventory and material management</p>
+        </div>
+        <Button onClick={handleExport} variant="outline" disabled={loadingItems}>
+          <Download className="h-4 w-4 mr-2" />
+          Export Overview
+        </Button>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
           title="Total Items"
-          value="342"
+          value={loadingItems ? '...' : totalItems.toString()}
           description="In catalog"
           icon={Package}
         />
         <KPICard
           title="Stock Value"
-          value="₹42.5L"
+          value={loadingStock ? '...' : formatCurrency(stockValue, 'short')}
           description="Current inventory"
           icon={Warehouse}
         />
         <KPICard
           title="Low Stock Items"
-          value="15"
+          value={loadingStock ? '...' : lowStockItems.toString()}
           description="Below reorder level"
           icon={AlertTriangle}
         />
         <KPICard
           title="Pending GRNs"
-          value="8"
+          value={loadingGRNs ? '...' : pendingGRNs.toString()}
           description="Awaiting receipt"
           icon={TrendingDown}
         />

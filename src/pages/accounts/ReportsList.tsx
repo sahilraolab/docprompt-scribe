@@ -1,12 +1,24 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, TrendingUp, PieChart, BarChart3, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { FileText, TrendingUp, PieChart, BarChart3, Loader2, Download } from 'lucide-react';
 import { useFinancialSummary } from '@/lib/hooks/useAccounts';
 import { formatCurrency } from '@/lib/utils/format';
+import { exportToCSV } from '@/lib/utils/export';
 
 export default function ReportsList() {
   const navigate = useNavigate();
   const { data: summary, isLoading } = useFinancialSummary();
+
+  const handleExportSummary = () => {
+    if (!summary) return;
+    const data = [
+      { Metric: 'Total Assets', Amount: summary.totalAssets },
+      { Metric: 'Total Liabilities', Amount: summary.totalLiabilities },
+      { Metric: 'Net Worth', Amount: summary.netWorth },
+    ];
+    exportToCSV(data, `financial-summary-${new Date().toISOString().split('T')[0]}`);
+  };
 
   const reports = [
     {
@@ -41,9 +53,15 @@ export default function ReportsList() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Financial Reports</h1>
-        <p className="text-muted-foreground">View and generate financial statements</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Financial Reports</h1>
+          <p className="text-muted-foreground">View and generate financial statements</p>
+        </div>
+        <Button onClick={handleExportSummary} variant="outline" disabled={isLoading || !summary}>
+          <Download className="h-4 w-4 mr-2" />
+          Export Summary
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

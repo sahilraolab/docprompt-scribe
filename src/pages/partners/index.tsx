@@ -1,11 +1,33 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, DollarSign, TrendingUp, Building2, Receipt, Percent } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, DollarSign, TrendingUp, Building2, Receipt, Percent, Download, Clock } from 'lucide-react';
 import { KPICard } from '@/components/KPICard';
 import { formatCurrency } from '@/lib/utils/format';
+import { usePartners, useInvestments, useProfitEvents, useDistributions } from '@/lib/hooks/usePartners';
+import { exportToCSV } from '@/lib/utils/export';
 
 export default function PartnersIndex() {
   const navigate = useNavigate();
+  const { data: partners = [], isLoading: loadingPartners } = usePartners();
+  const { data: investments = [], isLoading: loadingInvestments } = useInvestments();
+  const { data: profitEvents = [], isLoading: loadingProfits } = useProfitEvents();
+  const { data: distributions = [], isLoading: loadingDistributions } = useDistributions();
+
+  const activePartners = partners.filter((p: any) => p.status === 'active').length;
+  const totalInvestment = investments.reduce((sum: number, i: any) => sum + (i.amount || 0), 0);
+  const totalProfit = profitEvents.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+  const pendingDistributions = distributions.filter((d: any) => d.status === 'pending').length;
+
+  const handleExport = () => {
+    const data = [
+      { Module: 'Partners', Total: partners.length, Active: activePartners },
+      { Module: 'Investments', Total: investments.length, Amount: totalInvestment },
+      { Module: 'Profit Events', Total: profitEvents.length, Amount: totalProfit },
+      { Module: 'Distributions', Total: distributions.length, Pending: pendingDistributions },
+    ];
+    exportToCSV(data, `partners-overview-${new Date().toISOString().split('T')[0]}`);
+  };
 
   const modules = [
     {
@@ -44,36 +66,42 @@ export default function PartnersIndex() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Partners & Investments</h1>
-        <p className="text-muted-foreground mt-1">Manage partners, investments and profit distributions</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Partners & Investments</h1>
+          <p className="text-muted-foreground mt-1">Manage partners, investments and profit distributions</p>
+        </div>
+        <Button onClick={handleExport} variant="outline" disabled={loadingPartners}>
+          <Download className="h-4 w-4 mr-2" />
+          Export Overview
+        </Button>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
-          title="Total Partners"
-          value="15"
-          description="Active investors"
+          title="Active Partners"
+          value={loadingPartners ? '...' : activePartners.toString()}
+          description="Registered partners"
           icon={Users}
         />
         <KPICard
           title="Total Investment"
-          value={formatCurrency(125000000, 'short')}
-          description="Capital contributions"
+          value={loadingInvestments ? '...' : formatCurrency(totalInvestment, 'short')}
+          description="Across all projects"
           icon={DollarSign}
         />
         <KPICard
-          title="Pending Distributions"
-          value={formatCurrency(8500000, 'short')}
-          description="Profit to distribute"
-          icon={Receipt}
+          title="Total Profit"
+          value={loadingProfits ? '...' : formatCurrency(totalProfit, 'short')}
+          description="All profit events"
+          icon={TrendingUp}
         />
         <KPICard
-          title="Active Projects"
-          value="8"
-          description="With partner investments"
-          icon={Building2}
+          title="Pending Distributions"
+          value={loadingDistributions ? '...' : pendingDistributions.toString()}
+          description="Awaiting approval"
+          icon={Clock}
         />
       </div>
 

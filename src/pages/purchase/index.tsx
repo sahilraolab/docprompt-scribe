@@ -1,11 +1,32 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Package, ShoppingCart, FileSpreadsheet, Building, TrendingUp, Clock, DollarSign } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { FileText, Package, ShoppingCart, FileSpreadsheet, Building, TrendingUp, Clock, DollarSign, Download } from 'lucide-react';
 import { KPICard } from '@/components/KPICard';
 import { formatCurrency } from '@/lib/utils/format';
+import { useSuppliers, useMRs, usePOs } from '@/lib/hooks/usePurchase';
+import { exportToCSV } from '@/lib/utils/export';
 
 export default function PurchaseIndex() {
   const navigate = useNavigate();
+  const { data: suppliers = [], isLoading: loadingSuppliers } = useSuppliers();
+  const { data: mrs = [], isLoading: loadingMRs } = useMRs();
+  const { data: pos = [], isLoading: loadingPOs } = usePOs();
+
+  const activeSuppliers = suppliers.filter((s: any) => s.status === 'active').length;
+  const pendingMRs = mrs.filter((m: any) => m.status === 'pending').length;
+  const openPOs = pos.filter((p: any) => p.status !== 'completed').length;
+  const totalPOValue = pos.reduce((sum: number, po: any) => sum + (po.totalAmount || 0), 0);
+
+  const handleExport = () => {
+    const data = [
+      { Module: 'Suppliers', Total: suppliers.length, Active: activeSuppliers },
+      { Module: 'MRs', Total: mrs.length, Pending: pendingMRs },
+      { Module: 'POs', Total: pos.length, Open: openPOs },
+      { Module: 'Total PO Value', Amount: totalPOValue },
+    ];
+    exportToCSV(data, `purchase-overview-${new Date().toISOString().split('T')[0]}`);
+  };
 
   const modules = [
     {
@@ -68,35 +89,41 @@ export default function PurchaseIndex() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Purchase Management</h1>
-        <p className="text-muted-foreground mt-1">Procurement and supplier management</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Purchase Management</h1>
+          <p className="text-muted-foreground mt-1">Procurement and supplier management</p>
+        </div>
+        <Button onClick={handleExport} variant="outline" disabled={loadingSuppliers}>
+          <Download className="h-4 w-4 mr-2" />
+          Export Overview
+        </Button>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
           title="Active Suppliers"
-          value="48"
+          value={loadingSuppliers ? '...' : activeSuppliers.toString()}
           description="Verified vendors"
           icon={Building}
         />
         <KPICard
           title="Pending MRs"
-          value="12"
+          value={loadingMRs ? '...' : pendingMRs.toString()}
           description="Awaiting approval"
           icon={Clock}
         />
         <KPICard
           title="Open POs"
-          value="23"
+          value={loadingPOs ? '...' : openPOs.toString()}
           description="Not yet delivered"
           icon={ShoppingCart}
         />
         <KPICard
           title="Total PO Value"
-          value={formatCurrency(8750000, 'short')}
-          description="This month"
+          value={loadingPOs ? '...' : formatCurrency(totalPOValue, 'short')}
+          description="All time"
           icon={DollarSign}
         />
       </div>

@@ -25,6 +25,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
+import { exportToCSV } from '@/lib/utils/export';
 import {
   BarChart,
   Bar,
@@ -145,6 +146,20 @@ export default function Dashboard() {
   const recentPOs = poList.slice(0, 5);
   const recentWOs = woList.slice(0, 5);
 
+  const handleExportDashboard = () => {
+    const dashboardData = [
+      { Metric: 'Active Projects', Value: kpis.activeProjects },
+      { Metric: 'Total Budget', Value: kpis.totalBudget },
+      { Metric: 'Budget Utilized', Value: kpis.budgetUtilized },
+      { Metric: 'Purchase Orders', Value: kpis.totalPOs },
+      { Metric: 'Work Orders', Value: kpis.totalWOs },
+      { Metric: 'Stock Value', Value: kpis.totalStockValue },
+      { Metric: 'Low Stock Items', Value: kpis.lowStockItems },
+      { Metric: 'Pending MRs', Value: kpis.pendingMRs },
+    ];
+    exportToCSV(dashboardData, `dashboard-overview-${new Date().toISOString().split('T')[0]}`);
+  };
+
   const quickActions = [
     { label: 'New Project', icon: Building2, path: '/engineering/projects/new', color: 'text-blue-600' },
     { label: 'Create MR', icon: Package, path: '/purchase/mrs/new', color: 'text-green-600' },
@@ -167,9 +182,15 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">ERP Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Comprehensive view across all modules</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">ERP Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Comprehensive view across all modules</p>
+        </div>
+        <Button onClick={handleExportDashboard} variant="outline">
+          <Download className="h-4 w-4 mr-2" />
+          Export Dashboard
+        </Button>
       </div>
 
       {/* Quick Actions */}

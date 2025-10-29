@@ -1,11 +1,38 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, Book, BarChart3, Wallet, TrendingUp, TrendingDown, DollarSign, FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { BookOpen, Book, BarChart3, Wallet, TrendingUp, TrendingDown, DollarSign, FileText, Download } from 'lucide-react';
 import { KPICard } from '@/components/KPICard';
 import { formatCurrency } from '@/lib/utils/format';
+import { useAccounts, useJournals } from '@/lib/hooks/useAccounts';
+import { exportToCSV } from '@/lib/utils/export';
 
 export default function Accounts() {
   const navigate = useNavigate();
+  const { data: accounts = [], isLoading } = useAccounts();
+  const { data: journals = [] } = useAccounts();
+
+  const totalRevenue = accounts
+    .filter(a => a.type === 'revenue')
+    .reduce((sum, a) => sum + (a.balance || 0), 0);
+  
+  const totalExpenses = accounts
+    .filter(a => a.type === 'expense')
+    .reduce((sum, a) => sum + (a.balance || 0), 0);
+  
+  const netProfit = totalRevenue - totalExpenses;
+  const pendingEntries = journals.filter((j: any) => j.status === 'draft').length;
+
+  const handleExport = () => {
+    const data = [
+      { Metric: 'Total Revenue', Amount: totalRevenue },
+      { Metric: 'Total Expenses', Amount: totalExpenses },
+      { Metric: 'Net Profit', Amount: netProfit },
+      { Metric: 'Total Accounts', Count: accounts.length },
+      { Metric: 'Pending Entries', Count: pendingEntries },
+    ];
+    exportToCSV(data, `accounts-overview-${new Date().toISOString().split('T')[0]}`);
+  };
 
   const modules = [
     {
@@ -44,37 +71,41 @@ export default function Accounts() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Accounts & Finance</h1>
-        <p className="text-muted-foreground mt-1">Financial management and accounting</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Accounts & Finance</h1>
+          <p className="text-muted-foreground mt-1">Financial management and accounting</p>
+        </div>
+        <Button onClick={handleExport} variant="outline" disabled={isLoading}>
+          <Download className="h-4 w-4 mr-2" />
+          Export Overview
+        </Button>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
-          title="Total Revenue"
-          value={formatCurrency(28500000, 'short')}
-          description="This year"
+          title="Revenue"
+          value={isLoading ? '...' : formatCurrency(totalRevenue, 'short')}
+          description="Total revenue"
           icon={TrendingUp}
-          trend={{ value: 15, isPositive: true }}
         />
         <KPICard
-          title="Total Expenses"
-          value={formatCurrency(19200000, 'short')}
-          description="This year"
+          title="Expenses"
+          value={isLoading ? '...' : formatCurrency(totalExpenses, 'short')}
+          description="Total expenses"
           icon={TrendingDown}
         />
         <KPICard
           title="Net Profit"
-          value={formatCurrency(9300000, 'short')}
-          description="This year"
+          value={isLoading ? '...' : formatCurrency(netProfit, 'short')}
+          description="Profit/Loss"
           icon={DollarSign}
-          trend={{ value: 22, isPositive: true }}
         />
         <KPICard
           title="Pending Entries"
-          value="12"
-          description="To be posted"
+          value={isLoading ? '...' : pendingEntries.toString()}
+          description="Draft journals"
           icon={FileText}
         />
       </div>
