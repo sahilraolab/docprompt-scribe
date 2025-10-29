@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { PageHeader } from '@/components/PageHeader';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { SearchableSelect } from '@/components/SearchableSelect';
+import { toast } from 'sonner';
 import { useProfitEvent, useCreateProfitEvent, useUpdateProfitEvent } from '@/lib/hooks/usePartners';
 import { useProjects } from '@/lib/hooks/useProjects';
 
