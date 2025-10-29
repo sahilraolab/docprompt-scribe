@@ -80,7 +80,7 @@ export default function ProjectForm() {
       try {
         setLoadingUsers(true);
         const token = localStorage.getItem('erp_auth_token');
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5005/api'}/users`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://88.222.244.251:5005/api'}/users`, {
           headers: {
             'Content-Type': 'application/json',
             Authorization: token ? `Bearer ${token}` : '',

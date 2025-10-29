@@ -2,7 +2,7 @@ import { http, HttpResponse } from 'msw';
 import { projects } from '../data/projects';
 import { boqs } from '../data/boq';
 
-const API_URL = 'http://localhost:5005/api';
+const API_URL = 'http://88.222.244.251:5005/api';
 
 // Helper to check auth
 function checkAuth(request: Request) {

@@ -53,7 +53,7 @@ export default function ProjectDetails() {
 
   const spent = project.budgetUtilized ?? project.spent ?? 0;
   const budgetUtilization = project.budget ? (spent / project.budget) * 100 : 0;
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://88.222.244.251:5005/api';
   const API_ORIGIN = (() => { try { return new URL(API_URL).origin; } catch { return (API_URL || '').replace(/\/api$/, ''); } })();
   const buildFileUrl = (u?: string) => {
     if (!u) return '';

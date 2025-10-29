@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://88.222.244.251:5005/api';
 
 // Helper function for API calls
 async function apiCall(endpoint: string, options?: RequestInit) {

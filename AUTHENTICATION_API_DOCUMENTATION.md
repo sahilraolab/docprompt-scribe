@@ -672,7 +672,7 @@ FRONTEND_URL=http://localhost:8080
 
 ### Frontend (.env)
 ```bash
-VITE_API_URL=http://localhost:5005/api
+VITE_API_URL=http://88.222.244.251:5005/api
 ```
 
 ---
