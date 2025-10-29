@@ -3,22 +3,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { CheckSquare, Settings, Clock, AlertCircle, CheckCircle2, Download } from 'lucide-react';
 import { KPICard } from '@/components/KPICard';
-import { useApprovals, useWorkflowConfigs, useSLAs } from '@/lib/hooks/useWorkflow';
+import { useApprovalRequests, useWorkflowConfigs, useSLAConfigs } from '@/lib/hooks/useWorkflow';
 import { exportToCSV } from '@/lib/utils/export';
 
 export default function Workflow() {
   const navigate = useNavigate();
-  const { data: approvals = [], isLoading: loadingApprovals } = useApprovals();
+  const { data: approvals = [], isLoading: loadingApprovals } = useApprovalRequests();
   const { data: workflows = [], isLoading: loadingWorkflows } = useWorkflowConfigs();
-  const { data: slas = [], isLoading: loadingSLAs } = useSLAs();
+  const { data: slas = [], isLoading: loadingSLAs } = useSLAConfigs();
 
-  const pendingApprovals = approvals.filter((a: any) => a.status === 'pending').length;
+  const pendingApprovals = approvals.filter((a: any) => a.status === 'Pending').length;
   const approvedToday = approvals.filter((a: any) => {
     const today = new Date().toDateString();
-    return a.status === 'approved' && new Date(a.updatedAt).toDateString() === today;
+    return a.status === 'Approved' && new Date(a.updatedAt).toDateString() === today;
   }).length;
   const slaBreaches = approvals.filter((a: any) => a.slaStatus === 'breached').length;
-  const activeWorkflows = workflows.filter((w: any) => w.status === 'active').length;
+  const activeWorkflows = workflows.filter((w: any) => w.active === true).length;
 
   const handleExport = () => {
     const data = [

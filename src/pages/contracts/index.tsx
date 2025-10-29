@@ -12,8 +12,8 @@ export default function ContractsIndex() {
   const { data: contractors = [], isLoading: loadingContractors } = useContractors();
   const { data: workOrders = [], isLoading: loadingWOs } = useWorkOrders();
 
-  const activeContractors = contractors.length;
-  const activeWOs = workOrders.filter(wo => wo.status === 'active').length;
+  const activeContractors = contractors.filter((c: any) => c.active === true).length;
+  const activeWOs = workOrders.filter(wo => wo.status === 'Active').length;
   const totalWOValue = workOrders.reduce((sum, wo) => sum + (wo.amount || 0), 0);
 
   const handleExport = () => {
