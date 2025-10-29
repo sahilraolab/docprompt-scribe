@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,29 +8,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { SearchableSelect } from '@/components/SearchableSelect';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  useWorkflowConfig,
+  useCreateWorkflowConfig,
+  useUpdateWorkflowConfig,
+} from '@/lib/hooks/useWorkflow';
 
 const approvalLevelSchema = z.object({
   level: z.number().min(1),
   role: z.string().min(1, 'Role is required'),
-  minAmount: z.number().min(0).optional(),
-  maxAmount: z.number().min(0).optional(),
+  threshold: z.number().min(0).optional(),
 });
 
 const workflowSchema = z.object({
   name: z.string().min(1, 'Workflow name is required'),
-  module: z.enum(['Purchase', 'Contracts', 'Accounts', 'Site']),
-  documentType: z.string().min(1, 'Document type is required'),
-  description: z.string().optional(),
+  module: z.string().min(1, 'Module is required'),
+  entity: z.string().min(1, 'Entity type is required'),
+  slaHours: z.number().min(0).optional(),
   active: z.boolean(),
   levels: z.array(approvalLevelSchema).min(1, 'At least one approval level is required'),
 });
@@ -41,9 +39,14 @@ export default function WorkflowConfigForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+  const isEdit = !!id;
+
+  const { data: workflow, isLoading: isLoadingWorkflow } = useWorkflowConfig(id);
+  const createWorkflow = useCreateWorkflowConfig();
+  const updateWorkflow = useUpdateWorkflowConfig();
+
   const [approvalLevels, setApprovalLevels] = useState<any[]>([
-    { level: 1, role: '', minAmount: 0, maxAmount: 0 },
+    { level: 1, role: '', threshold: 0 },
   ]);
 
   const {
@@ -56,20 +59,41 @@ export default function WorkflowConfigForm() {
     resolver: zodResolver(workflowSchema),
     defaultValues: {
       active: true,
+      slaHours: 24,
     },
   });
+
+  useEffect(() => {
+    if (workflow && isEdit) {
+      setValue('name', workflow.name);
+      setValue('module', workflow.module);
+      setValue('entity', workflow.entity);
+      setValue('slaHours', workflow.slaHours || 24);
+      setValue('active', workflow.active);
+      if (workflow.levels && workflow.levels.length > 0) {
+        setApprovalLevels(
+          workflow.levels.map((l, idx) => ({
+            level: idx + 1,
+            role: l.role,
+            threshold: l.threshold || 0,
+          }))
+        );
+      }
+    }
+  }, [workflow, isEdit, setValue]);
 
   const module = watch('module');
   const active = watch('active');
 
   const addLevel = () => {
     const nextLevel = approvalLevels.length + 1;
-    setApprovalLevels([...approvalLevels, { level: nextLevel, role: '', minAmount: 0, maxAmount: 0 }]);
+    setApprovalLevels([...approvalLevels, { level: nextLevel, role: '', threshold: 0 }]);
   };
 
   const removeLevel = (index: number) => {
     if (approvalLevels.length > 1) {
-      setApprovalLevels(approvalLevels.filter((_, i) => i !== index));
+      const updated = approvalLevels.filter((_, i) => i !== index);
+      setApprovalLevels(updated.map((l, idx) => ({ ...l, level: idx + 1 })));
     }
   };
 
@@ -80,29 +104,85 @@ export default function WorkflowConfigForm() {
     setValue('levels', updated);
   };
 
-  const onSubmit = (data: WorkflowFormData) => {
-    console.log('Workflow Data:', data);
-    toast({
-      title: id ? 'Workflow Updated' : 'Workflow Created',
-      description: `Approval workflow has been ${id ? 'updated' : 'created'} successfully.`,
-    });
-    navigate('/workflow/config');
+  const onSubmit = async (data: WorkflowFormData) => {
+    try {
+      const workflowData = {
+        name: data.name,
+        module: data.module,
+        entity: data.entity,
+        slaHours: data.slaHours,
+        active: data.active,
+        levels: approvalLevels.map((l, idx) => ({
+          id: `level-${idx + 1}`,
+          level: idx + 1,
+          role: l.role as any,
+          threshold: l.threshold || 0,
+        })),
+      };
+
+      if (isEdit && id) {
+        await updateWorkflow.mutateAsync({ id, data: workflowData });
+      } else {
+        await createWorkflow.mutateAsync(workflowData);
+      }
+      navigate('/workflow/config');
+    } catch (error) {
+      console.error('Failed to save workflow:', error);
+    }
   };
 
-  const roles = [
-    'Admin',
-    'ProjectManager',
-    'PurchaseOfficer',
-    'SiteEngineer',
-    'Accountant',
-    'Approver',
+  if (isEdit && isLoadingWorkflow) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const roleOptions = [
+    { value: 'Admin', label: 'Admin' },
+    { value: 'ProjectManager', label: 'Project Manager' },
+    { value: 'PurchaseOfficer', label: 'Purchase Officer' },
+    { value: 'SiteEngineer', label: 'Site Engineer' },
+    { value: 'Accountant', label: 'Accountant' },
+    { value: 'Approver', label: 'Approver' },
+    { value: 'FinanceManager', label: 'Finance Manager' },
   ];
 
-  const documentTypesByModule: Record<string, string[]> = {
-    Purchase: ['Material Requisition', 'Purchase Order', 'Quotation', 'Purchase Bill'],
-    Contracts: ['Work Order', 'RA Bill', 'Contractor'],
-    Accounts: ['Journal Entry', 'Payment', 'Receipt'],
-    Site: ['GRN', 'Material Issue', 'Transfer'],
+  const moduleOptions = [
+    { value: 'Purchase', label: 'Purchase' },
+    { value: 'Contracts', label: 'Contracts' },
+    { value: 'Accounts', label: 'Accounts' },
+    { value: 'Site', label: 'Site' },
+    { value: 'Engineering', label: 'Engineering' },
+  ];
+
+  const documentTypesByModule: Record<string, { value: string; label: string }[]> = {
+    Purchase: [
+      { value: 'MR', label: 'Material Requisition' },
+      { value: 'PO', label: 'Purchase Order' },
+      { value: 'Quotation', label: 'Quotation' },
+      { value: 'PurchaseBill', label: 'Purchase Bill' },
+    ],
+    Contracts: [
+      { value: 'WO', label: 'Work Order' },
+      { value: 'RABill', label: 'RA Bill' },
+      { value: 'Contractor', label: 'Contractor' },
+    ],
+    Accounts: [
+      { value: 'Journal', label: 'Journal Entry' },
+      { value: 'Payment', label: 'Payment' },
+      { value: 'Receipt', label: 'Receipt' },
+    ],
+    Site: [
+      { value: 'GRN', label: 'GRN' },
+      { value: 'Issue', label: 'Material Issue' },
+      { value: 'Transfer', label: 'Transfer' },
+    ],
+    Engineering: [
+      { value: 'BOQ', label: 'BOQ' },
+      { value: 'Estimate', label: 'Estimate' },
+    ],
   };
 
   return (
@@ -112,7 +192,7 @@ export default function WorkflowConfigForm() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">{id ? 'Edit' : 'New'} Workflow</h1>
+          <h1 className="text-3xl font-bold">{isEdit ? 'Edit' : 'New'} Workflow</h1>
           <p className="text-muted-foreground">Configure approval workflow and levels</p>
         </div>
       </div>
@@ -131,58 +211,42 @@ export default function WorkflowConfigForm() {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="module">Module *</Label>
-                <Select
+                <SearchableSelect
+                  options={moduleOptions}
                   value={module}
-                  onValueChange={(value) => setValue('module', value as any)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select module" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Purchase">Purchase</SelectItem>
-                    <SelectItem value="Contracts">Contracts</SelectItem>
-                    <SelectItem value="Accounts">Accounts</SelectItem>
-                    <SelectItem value="Site">Site</SelectItem>
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => setValue('module', value)}
+                  placeholder="Select module"
+                />
                 {errors.module && (
                   <p className="text-sm text-destructive">{errors.module.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="documentType">Document Type *</Label>
-                <Select
-                  value={watch('documentType')}
-                  onValueChange={(value) => setValue('documentType', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select document type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {module && documentTypesByModule[module]?.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.documentType && (
-                  <p className="text-sm text-destructive">{errors.documentType.message}</p>
+                <Label htmlFor="entity">Entity Type *</Label>
+                <SearchableSelect
+                  options={module ? documentTypesByModule[module] || [] : []}
+                  value={watch('entity')}
+                  onChange={(value) => setValue('entity', value)}
+                  placeholder="Select entity type"
+                />
+                {errors.entity && (
+                  <p className="text-sm text-destructive">{errors.entity.message}</p>
                 )}
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                {...register('description')}
-                placeholder="Workflow purpose and conditions"
-                rows={2}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="slaHours">SLA Hours</Label>
+                <Input
+                  type="number"
+                  {...register('slaHours', { valueAsNumber: true })}
+                  placeholder="24"
+                  min="0"
+                />
+              </div>
             </div>
 
             <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -225,43 +289,27 @@ export default function WorkflowConfigForm() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Approver Role *</Label>
-                    <Select
+                    <SearchableSelect
+                      options={roleOptions}
                       value={level.role}
-                      onValueChange={(value) => updateLevel(index, 'role', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {roles.map((role) => (
-                          <SelectItem key={role} value={role}>
-                            {role}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Min Amount (₹)</Label>
-                    <Input
-                      type="number"
-                      value={level.minAmount}
-                      onChange={(e) => updateLevel(index, 'minAmount', parseFloat(e.target.value) || 0)}
-                      min="0"
+                      onChange={(value) => updateLevel(index, 'role', value)}
+                      placeholder="Select role"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Max Amount (₹)</Label>
+                    <Label>Amount Threshold (₹)</Label>
                     <Input
                       type="number"
-                      value={level.maxAmount}
-                      onChange={(e) => updateLevel(index, 'maxAmount', parseFloat(e.target.value) || 0)}
+                      value={level.threshold}
+                      onChange={(e) =>
+                        updateLevel(index, 'threshold', parseFloat(e.target.value) || 0)
+                      }
                       min="0"
+                      placeholder="0"
                     />
                   </div>
                 </div>
@@ -274,7 +322,15 @@ export default function WorkflowConfigForm() {
           <Button type="button" variant="outline" onClick={() => navigate('/workflow/config')}>
             Cancel
           </Button>
-          <Button type="submit">{id ? 'Update' : 'Create'} Workflow</Button>
+          <Button
+            type="submit"
+            disabled={createWorkflow.isPending || updateWorkflow.isPending}
+          >
+            {(createWorkflow.isPending || updateWorkflow.isPending) && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            {isEdit ? 'Update' : 'Create'} Workflow
+          </Button>
         </div>
       </form>
     </div>

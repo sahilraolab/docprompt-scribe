@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/EmptyState';
-import { Plus, Search, Clock } from 'lucide-react';
+import { Plus, Search, Clock, Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -14,83 +14,25 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { useSLAConfigs } from '@/lib/hooks/useWorkflow';
 
 export default function SLAList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { data: slas, isLoading } = useSLAConfigs();
 
-  // Mock data
-  const slas = [
-    {
-      id: '1',
-      name: 'MR Approval Response Time',
-      module: 'Purchase',
-      targetHours: 24,
-      breachCount: 2,
-      complianceRate: 92,
-      priority: 'High',
-    },
-    {
-      id: '2',
-      name: 'PO Processing Time',
-      module: 'Purchase',
-      targetHours: 48,
-      breachCount: 1,
-      complianceRate: 96,
-      priority: 'High',
-    },
-    {
-      id: '3',
-      name: 'Work Order Approval',
-      module: 'Contracts',
-      targetHours: 72,
-      breachCount: 0,
-      complianceRate: 100,
-      priority: 'Medium',
-    },
-    {
-      id: '4',
-      name: 'RA Bill Processing',
-      module: 'Contracts',
-      targetHours: 120,
-      breachCount: 3,
-      complianceRate: 88,
-      priority: 'Medium',
-    },
-    {
-      id: '5',
-      name: 'Journal Entry Approval',
-      module: 'Accounts',
-      targetHours: 24,
-      breachCount: 5,
-      complianceRate: 85,
-      priority: 'High',
-    },
-  ];
-
-  const filteredSLAs = slas.filter((sla) =>
-    sla.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    sla.module.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredSLAs = slas?.filter((sla) =>
+    sla.module.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    sla.entity.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getPriorityBadgeColor = (priority: string) => {
-    switch (priority) {
-      case 'High':
-        return 'bg-red-100 text-red-800';
-      case 'Medium':
-        return 'bg-amber-100 text-amber-800';
-      case 'Low':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getComplianceColor = (rate: number) => {
-    if (rate >= 95) return 'text-green-600';
-    if (rate >= 85) return 'text-amber-600';
-    return 'text-red-600';
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -118,17 +60,15 @@ export default function SLAList() {
           </div>
         </CardHeader>
         <CardContent>
-          {filteredSLAs.length > 0 ? (
+          {filteredSLAs && filteredSLAs.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>SLA Name</TableHead>
                     <TableHead>Module</TableHead>
-                    <TableHead>Target Time</TableHead>
-                    <TableHead>Breaches</TableHead>
-                    <TableHead>Compliance Rate</TableHead>
-                    <TableHead>Priority</TableHead>
+                    <TableHead>Entity</TableHead>
+                    <TableHead>SLA Hours</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -138,24 +78,12 @@ export default function SLAList() {
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => navigate(`/workflow/sla/${sla.id}`)}
                     >
-                      <TableCell className="font-medium">{sla.name}</TableCell>
-                      <TableCell>{sla.module}</TableCell>
-                      <TableCell>{sla.targetHours} hours</TableCell>
+                      <TableCell className="font-medium">{sla.module}</TableCell>
+                      <TableCell>{sla.entity}</TableCell>
+                      <TableCell>{sla.slaHours} hours</TableCell>
                       <TableCell>
-                        {sla.breachCount > 0 ? (
-                          <span className="text-red-600 font-medium">{sla.breachCount}</span>
-                        ) : (
-                          <span className="text-green-600 font-medium">0</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <span className={`font-semibold ${getComplianceColor(sla.complianceRate)}`}>
-                          {sla.complianceRate}%
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getPriorityBadgeColor(sla.priority)} variant="secondary">
-                          {sla.priority}
+                        <Badge variant={sla.active ? 'default' : 'secondary'}>
+                          {sla.active ? 'Active' : 'Inactive'}
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -171,14 +99,6 @@ export default function SLAList() {
                 searchQuery
                   ? "No SLAs match your search criteria"
                   : "Define service level agreements for process monitoring"
-              }
-              action={
-                !searchQuery
-                  ? {
-                      label: "Create SLA",
-                      onClick: () => navigate('/workflow/sla/new'),
-                    }
-                  : undefined
               }
             />
           )}

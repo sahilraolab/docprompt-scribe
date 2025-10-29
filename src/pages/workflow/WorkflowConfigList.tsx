@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/EmptyState';
-import { Plus, Search, Settings } from 'lucide-react';
+import { Plus, Search, Settings, Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -15,56 +15,15 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { useWorkflowConfigs, useToggleWorkflowConfig } from '@/lib/hooks/useWorkflow';
 
 export default function WorkflowConfigList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { data: workflows, isLoading } = useWorkflowConfigs();
+  const toggleWorkflow = useToggleWorkflowConfig();
 
-  // Mock data
-  const workflows = [
-    {
-      id: '1',
-      name: 'Material Requisition Approval',
-      module: 'Purchase',
-      levels: 2,
-      approvers: ['Site Manager', 'Project Manager'],
-      isActive: true,
-    },
-    {
-      id: '2',
-      name: 'Purchase Order Approval',
-      module: 'Purchase',
-      levels: 3,
-      approvers: ['Procurement Manager', 'Finance Manager', 'Director'],
-      isActive: true,
-    },
-    {
-      id: '3',
-      name: 'Work Order Approval',
-      module: 'Contracts',
-      levels: 2,
-      approvers: ['Project Manager', 'Director'],
-      isActive: true,
-    },
-    {
-      id: '4',
-      name: 'RA Bill Approval',
-      module: 'Contracts',
-      levels: 3,
-      approvers: ['Site Engineer', 'Project Manager', 'Finance Manager'],
-      isActive: true,
-    },
-    {
-      id: '5',
-      name: 'Journal Entry Approval',
-      module: 'Accounts',
-      levels: 2,
-      approvers: ['Accountant', 'Finance Manager'],
-      isActive: false,
-    },
-  ];
-
-  const filteredWorkflows = workflows.filter((workflow) =>
+  const filteredWorkflows = workflows?.filter((workflow) =>
     workflow.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     workflow.module.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -77,10 +36,24 @@ export default function WorkflowConfigList() {
         return 'bg-green-100 text-green-800';
       case 'Accounts':
         return 'bg-purple-100 text-purple-800';
+      case 'Site':
+        return 'bg-amber-100 text-amber-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const handleToggle = async (id: string, currentValue: boolean) => {
+    await toggleWorkflow.mutateAsync({ id, active: !currentValue });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -108,15 +81,15 @@ export default function WorkflowConfigList() {
           </div>
         </CardHeader>
         <CardContent>
-          {filteredWorkflows.length > 0 ? (
+          {filteredWorkflows && filteredWorkflows.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                    <TableRow>
                     <TableHead>Workflow Name</TableHead>
                     <TableHead>Module</TableHead>
+                    <TableHead>Entity</TableHead>
                     <TableHead>Approval Levels</TableHead>
-                    <TableHead>Approvers</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -130,23 +103,14 @@ export default function WorkflowConfigList() {
                           {workflow.module}
                         </Badge>
                       </TableCell>
-                      <TableCell>{workflow.levels} levels</TableCell>
+                      <TableCell>{workflow.entity}</TableCell>
+                      <TableCell>{workflow.levels?.length || 0} levels</TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {workflow.approvers.slice(0, 2).map((approver, idx) => (
-                            <Badge key={idx} variant="outline" className="text-xs">
-                              {approver}
-                            </Badge>
-                          ))}
-                          {workflow.approvers.length > 2 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{workflow.approvers.length - 2} more
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Switch checked={workflow.isActive} />
+                        <Switch 
+                          checked={workflow.active} 
+                          onCheckedChange={() => handleToggle(workflow.id, workflow.active)}
+                          disabled={toggleWorkflow.isPending}
+                        />
                       </TableCell>
                       <TableCell>
                         <Button
@@ -170,14 +134,6 @@ export default function WorkflowConfigList() {
                 searchQuery
                   ? "No workflows match your search criteria"
                   : "Configure approval workflows for your modules"
-              }
-              action={
-                !searchQuery
-                  ? {
-                      label: "Create Workflow",
-                      onClick: () => navigate('/workflow/config/new'),
-                    }
-                  : undefined
               }
             />
           )}
