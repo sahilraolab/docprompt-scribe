@@ -60,7 +60,7 @@ export default function LedgersList() {
           <h1 className="text-3xl font-bold">Chart of Accounts</h1>
           <p className="text-muted-foreground">Manage ledger accounts and balances</p>
         </div>
-        <Button onClick={() => navigate('/accounts/ledgers/new')}>
+        <Button onClick={() => navigate('/accounts/list/new')}>
           <Plus className="h-4 w-4 mr-2" />
           New Account
         </Button>

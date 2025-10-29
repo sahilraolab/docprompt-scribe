@@ -278,6 +278,10 @@ const App = () => (
             <Route path="/accounts/list" element={<ProtectedRoute><AppLayout><AccountsList /></AppLayout></ProtectedRoute>} />
             <Route path="/accounts/list/new" element={<ProtectedRoute><AppLayout><AccountForm /></AppLayout></ProtectedRoute>} />
             <Route path="/accounts/list/:id/edit" element={<ProtectedRoute><AppLayout><AccountForm /></AppLayout></ProtectedRoute>} />
+            {/* Aliases to avoid 404s */}
+            <Route path="/accounts/list/:id" element={<Navigate to="/accounts/list/:id/edit" replace />} />
+            <Route path="/accounts/ledgers/new" element={<Navigate to="/accounts/list/new" replace />} />
+            <Route path="/accounts/ledgers/:id/edit" element={<Navigate to="/accounts/list/:id/edit" replace />} />
             <Route path="/accounts/journals" element={<ProtectedRoute><AppLayout><JournalsList /></AppLayout></ProtectedRoute>} />
             <Route path="/accounts/journals/new" element={<ProtectedRoute><AppLayout><JournalForm /></AppLayout></ProtectedRoute>} />
             <Route path="/accounts/journals/:id/edit" element={<ProtectedRoute><AppLayout><JournalForm /></AppLayout></ProtectedRoute>} />
