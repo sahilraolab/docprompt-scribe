@@ -618,6 +618,212 @@ export default function EngineeringIndex() {
         </Card>
       </div>
 
+      {/* Recent Projects */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Projects</CardTitle>
+          <CardDescription>Latest active and planning projects</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {projectsData.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No projects available</p>
+          ) : (
+            <div className="space-y-4">
+              {projectsData.slice(0, 5).map((project: any) => (
+                <div key={project.id} className="flex items-center justify-between border-b pb-3 last:border-0">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Building className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{project.name}</span>
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {project.code} • {project.city}, {project.state}
+                    </div>
+                    <div className="flex items-center gap-4 mt-2 text-sm">
+                      <span className={`px-2 py-0.5 rounded-full text-xs ${
+                        project.status === 'Active' ? 'bg-green-100 text-green-700' :
+                        project.status === 'Planning' ? 'bg-blue-100 text-blue-700' :
+                        project.status === 'Completed' ? 'bg-gray-100 text-gray-700' :
+                        'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {project.status}
+                      </span>
+                      <span>Progress: {project.progress || 0}%</span>
+                      <span>Budget: {formatCurrency(project.budget || 0)}</span>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => navigate(`/engineering/projects/${project.id}`)}>
+                    View
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Recent Estimates and BOQ */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Estimates</CardTitle>
+            <CardDescription>Latest cost estimates</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {estimatesData.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No estimates available</p>
+            ) : (
+              <div className="space-y-3">
+                {estimatesData.slice(0, 5).map((estimate: any) => (
+                  <div key={estimate.id} className="flex items-center justify-between border-b pb-2 last:border-0">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{estimate.projectName || estimate.projectId}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Version {estimate.version} • {estimate.status}
+                      </div>
+                      <div className="text-sm font-semibold mt-1">
+                        {formatCurrency(estimate.total || 0)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent BOQ</CardTitle>
+            <CardDescription>Latest bill of quantities</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {boqData.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No BOQ items available</p>
+            ) : (
+              <div className="space-y-3">
+                {boqData.slice(0, 5).map((boq: any) => (
+                  <div key={boq.id} className="flex items-center justify-between border-b pb-2 last:border-0">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <ListChecks className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{boq.projectName || boq.projectId}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Version {boq.version} • {boq.status} • {boq.items?.length || 0} items
+                      </div>
+                      <div className="text-sm font-semibold mt-1">
+                        {formatCurrency(boq.totalCost || 0)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Documents and Plans */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Documents</CardTitle>
+            <CardDescription>Latest uploaded files</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {documentsData.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No documents available</p>
+            ) : (
+              <div className="space-y-3">
+                {documentsData.slice(0, 5).map((doc: any) => (
+                  <div key={doc.id} className="flex items-center justify-between border-b pb-2 last:border-0">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{doc.name}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {doc.type} • Version {doc.version}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {doc.projectName || doc.projectId}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Plans & Tasks</CardTitle>
+            <CardDescription>Latest project tasks</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {plansData.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No plans available</p>
+            ) : (
+              <div className="space-y-3">
+                {plansData.slice(0, 5).map((plan: any) => (
+                  <div key={plan.id} className="flex items-center justify-between border-b pb-2 last:border-0">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{plan.name}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {plan.status} • Progress: {plan.progress || 0}%
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Assigned: {plan.assignedToName || 'Unassigned'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Material Master Overview */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Material Master Database</CardTitle>
+          <CardDescription>Top materials by category</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {materialsData.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No materials available</p>
+          ) : (
+            <div className="space-y-3">
+              {materialsData.slice(0, 8).map((material: any) => (
+                <div key={material.id} className="flex items-center justify-between border-b pb-2 last:border-0">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">{material.name}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {material.category} • {material.code}
+                    </div>
+                  </div>
+                  <div className="text-sm font-semibold">
+                    {formatCurrency(material.rate || 0)}/{material.unit}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Exports */}
       <Card>
         <CardHeader>
