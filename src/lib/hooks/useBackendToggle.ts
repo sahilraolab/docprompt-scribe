@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 // Toggle between mock API and real backend
 // Set to true to use real backend, false to use MSW mock data
-export const USE_REAL_BACKEND = false;
+export const USE_REAL_BACKEND = true;
 
 export function useBackendToggle() {
   const [useRealBackend, setUseRealBackend] = useState(USE_REAL_BACKEND);

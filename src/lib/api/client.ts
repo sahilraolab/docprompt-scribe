@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://88.222.244.251:5005/api";
+const API_URL = import.meta.env.VITE_API_URL || "https://dreamtonexiv.xyz/api";
 const TOKEN_KEY = "erp_auth_token";
 let inMemoryToken: string | null = localStorage.getItem(TOKEN_KEY) || null;
 
