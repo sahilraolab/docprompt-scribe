@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { workflowApi } from '@/lib/api/workflowApi';
 
 interface ApproveRequestParams {
   id: string;
@@ -13,18 +14,11 @@ export function useApproveRequest() {
 
   return useMutation({
     mutationFn: async ({ id, action, remarks }: ApproveRequestParams) => {
-      const endpoint = action === 'approve' ? 'approve' : 'reject';
-      const response = await fetch(`/api/approval-requests/${id}/${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ remarks }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to ${action} request`);
+      if (action === 'approve') {
+        return workflowApi.approveRequest(id, remarks);
+      } else {
+        return workflowApi.rejectRequest(id, remarks || '');
       }
-
-      return response.json();
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['approval-requests'] });
@@ -51,13 +45,7 @@ export function useBulkApprove() {
 
   return useMutation({
     mutationFn: async (ids: string[]) => {
-      const promises = ids.map(id =>
-        fetch(`/api/approval-requests/${id}/approve`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        })
-      );
-
+      const promises = ids.map(id => workflowApi.approveRequest(id));
       const results = await Promise.all(promises);
       return results;
     },
