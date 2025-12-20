@@ -1,44 +1,16 @@
 /**
  * Purchase Module API Client
  * This file contains all API calls for the Purchase Module
- * Update the BASE_URL to point to your Node.js + MongoDB backend
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
+import { apiClient } from './client';
 
-// Helper function to get auth token
-const getAuthToken = () => {
-  return localStorage.getItem('erp_auth_token') || '';
-};
-
-// Helper function to make API requests
+// Helper function to make API requests using the centralized client
 async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = `${BASE_URL}${endpoint}`;
-  const token = getAuthToken();
-
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
-
-  const result = await response.json();
-
-  if (!response.ok || !result.success) {
-    throw new Error(result.message || `HTTP ${response.status}`);
-  }
-
+  const result = await apiClient.request(endpoint, options);
   return result; // Return full { success, data, message } structure
 }
 
