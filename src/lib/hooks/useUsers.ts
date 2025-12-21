@@ -55,17 +55,16 @@ export function useUpdateUser() {
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
       const response = await userApi.update(id, data);
-      return response.data;
+      // Handle both { data: {...} } and direct object response
+      return response?.data || response;
     },
 
-    // ✅ Use variables.id safely here
     onSuccess: (response, variables) => {
       if (variables?.id) {
         queryClient.invalidateQueries({ queryKey: ["users", variables.id] });
       }
       queryClient.invalidateQueries({ queryKey: ["users"] });
-
-      toast.success(response?.message || "User updated successfully");
+      toast.success("User updated successfully");
     },
 
     onError: (error: any) => {
