@@ -1,13 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { userApi } from "@/lib/api/userApi";
 import { toast } from "sonner";
+import type { User } from "@/types";
+
+// Helper to normalize user data from backend
+const normalizeUser = (userData: any): User => ({
+  ...userData,
+  id: userData.id || userData._id,
+  _id: userData._id || userData.id,
+});
 
 export function useUsers() {
   return useQuery({
     queryKey: ["users"],
     queryFn: async () => {
       const response = await userApi.getAll();
-      return response.data;
+      // Handle both { data: [...] } and direct array formats
+      const users = response?.data || response || [];
+      return Array.isArray(users) ? users.map(normalizeUser) : [];
     },
   });
 }
@@ -17,7 +27,9 @@ export function useUser(id: string) {
     queryKey: ["users", id],
     queryFn: async () => {
       const response = await userApi.getById(id);
-      return response.data;
+      // Handle both { data: {...} } and direct object formats
+      const userData = response?.data || response;
+      return userData ? normalizeUser(userData) : null;
     },
     enabled: !!id,
   });

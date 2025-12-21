@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     tryRestore();
   }, [user]);
 
-  // LOGIN
+// LOGIN
   const login = async (credentials: LoginCredentials) => {
     try {
       const res = await fetch(`${apiClient.API_URL}/auth/login`, {
@@ -85,13 +85,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || 'Login failed');
 
-      const { accessToken, user } = data;
+      // Handle both { accessToken, user } and { data: { accessToken, user } } formats
+      const accessToken = data.accessToken || data.data?.accessToken;
+      const userData = data.user || data.data?.user || data.data;
+      
+      if (!accessToken) throw new Error('No access token received');
+      if (!userData) throw new Error('No user data received');
+
+      // Normalize user object - ensure id is set from _id if needed
+      const normalizedUser: User = {
+        ...userData,
+        id: userData.id || userData._id,
+        _id: userData._id || userData.id,
+      };
+
       apiClient.setToken(accessToken);
       setToken(accessToken);
-      setUser(user);
-      localStorage.setItem(USER_KEY, JSON.stringify(user));
+      setUser(normalizedUser);
+      localStorage.setItem(USER_KEY, JSON.stringify(normalizedUser));
 
-      toast.success(`Welcome back, ${user.name || 'User'}!`);
+      toast.success(`Welcome back, ${normalizedUser.name || 'User'}!`);
       navigate('/dashboard');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Login failed';
