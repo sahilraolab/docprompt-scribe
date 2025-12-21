@@ -16,8 +16,14 @@ export interface UserPrefs {
   theme?: 'light' | 'dark';
 }
 
+export interface UserPermission {
+  module: string;
+  actions: string[];
+}
+
 export interface User {
   id: ID;
+  _id?: string; // MongoDB ObjectId from backend
   name: string;
   email: string;
   phone?: string;
@@ -26,6 +32,7 @@ export interface User {
   avatarUrl?: string;
   active: boolean;
   preferences?: UserPrefs;
+  permissions?: UserPermission[];
   createdAt?: string;
   updatedAt?: string;
 }

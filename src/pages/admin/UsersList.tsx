@@ -88,9 +88,9 @@ export default function UsersList() {
                 <TableBody>
                   {filteredUsers.map((user) => (
                     <TableRow
-                      key={user._id}
+                      key={user._id || user.id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/admin/users/${user._id}`)}
+                      onClick={() => navigate(`/admin/users/${user._id || user.id}`)}
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">
