@@ -21,8 +21,10 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
-    if (result.success && result.data?.accessToken) {
-      setClientToken(result.data.accessToken);
+    // Handle both { token } and { accessToken } formats
+    const authToken = result.token || result.accessToken || result.data?.token || result.data?.accessToken;
+    if (authToken) {
+      setClientToken(authToken);
     }
     return result;
   },
@@ -47,8 +49,10 @@ export const authApi = {
     const result = await apiClient.request(`${AUTH_BASE}/refresh`, {
       method: 'POST',
     });
-    if (result.success && result.data?.accessToken) {
-      setClientToken(result.data.accessToken);
+    // Handle both { token } and { accessToken } formats
+    const authToken = result.token || result.accessToken || result.data?.token || result.data?.accessToken;
+    if (authToken) {
+      setClientToken(authToken);
     }
     return result;
   },

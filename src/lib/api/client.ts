@@ -1,3 +1,4 @@
+// src/lib/api/client.ts
 const API_URL = import.meta.env.VITE_API_URL || "https://dreamtonexiv.xyz/api";
 const TOKEN_KEY = "erp_auth_token";
 let inMemoryToken: string | null = localStorage.getItem(TOKEN_KEY) || null;
@@ -16,9 +17,11 @@ async function refreshAccessToken(): Promise<string | null> {
       headers: { "Content-Type": "application/json" },
     });
     const data = await res.json();
-    if (data?.success && data.accessToken) {
-      setClientToken(data.accessToken);
-      return data.accessToken;
+    // Handle both { token } and { accessToken } formats
+    const newToken = data?.token || data?.accessToken || data?.data?.token || data?.data?.accessToken;
+    if (newToken) {
+      setClientToken(newToken);
+      return newToken;
     }
   } catch {}
   setClientToken(null);
@@ -59,13 +62,17 @@ export const apiClient = {
       ? await res.json()
       : await res.text();
 
-    if (!res.ok || (data && !data.success)) {
-      const message = data?.message || res.statusText;
+    // Handle error responses - check both HTTP status and explicit error fields
+    if (!res.ok) {
+      const message = data?.message || data?.error || res.statusText;
       const err = new Error(message);
       (err as any).status = res.status;
+      (err as any).data = data;
       throw err;
     }
 
+    // For successful responses, just return the data as-is
+    // Don't require a `success` field - let the caller handle the structure
     return data;
   },
   setToken: setClientToken,
