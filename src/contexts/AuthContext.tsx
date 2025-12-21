@@ -57,22 +57,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Auto-refresh access token if possible
   useEffect(() => {
     const tryRestore = async () => {
-      if (!user) {
+      if (!user && token) {
         try {
           const data = await apiClient.request('/auth/refresh', { method: 'POST' });
-          if (data?.accessToken) {
-            apiClient.setToken(data.accessToken);
-            setToken(data.accessToken);
+          const newToken = data?.token || data?.accessToken;
+          if (newToken) {
+            apiClient.setToken(newToken);
+            setToken(newToken);
           }
         } catch {
-          // ignore expired refresh
+          // Token refresh failed - clear invalid token
+          apiClient.setToken(null);
+          setToken(null);
+          localStorage.removeItem(USER_KEY);
         }
       }
     };
     tryRestore();
-  }, [user]);
+  }, []);
 
-// LOGIN
+  // LOGIN
   const login = async (credentials: LoginCredentials) => {
     try {
       const res = await fetch(`${apiClient.API_URL}/auth/login`, {
@@ -83,24 +87,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || 'Login failed');
-
-      // Handle both { accessToken, user } and { data: { accessToken, user } } formats
-      const accessToken = data.accessToken || data.data?.accessToken;
-      const userData = data.user || data.data?.user || data.data;
       
-      if (!accessToken) throw new Error('No access token received');
-      if (!userData) throw new Error('No user data received');
+      // Check for error response
+      if (!res.ok) {
+        throw new Error(data.message || data.error || 'Login failed');
+      }
 
-      // Normalize user object - ensure id is set from _id if needed
+      // Handle multiple response formats:
+      // { token, user } - your backend format
+      // { accessToken, user } - alternative format
+      // { data: { token, user } } - wrapped format
+      const authToken = data.token || data.accessToken || data.data?.token || data.data?.accessToken;
+      const userData = data.user || data.data?.user;
+      
+      if (!authToken) {
+        throw new Error('No authentication token received');
+      }
+      if (!userData) {
+        throw new Error('No user data received');
+      }
+
+      // Normalize user object
       const normalizedUser: User = {
         ...userData,
         id: userData.id || userData._id,
         _id: userData._id || userData.id,
       };
 
-      apiClient.setToken(accessToken);
-      setToken(accessToken);
+      apiClient.setToken(authToken);
+      setToken(authToken);
       setUser(normalizedUser);
       localStorage.setItem(USER_KEY, JSON.stringify(normalizedUser));
 
