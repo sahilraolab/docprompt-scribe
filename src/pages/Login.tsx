@@ -4,9 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Building2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 export default function Login() {
   const { login, isAuthenticated } = useAuth();
@@ -18,7 +18,7 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      navigate('/profile');
     }
   }, [isAuthenticated, navigate]);
 
@@ -41,15 +41,10 @@ export default function Login() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4">
           <div className="flex items-center justify-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 shadow-sm">
-              <Building2 className="h-5 w-5 text-primary-foreground" />
-            </div>
             <div className="text-left">
               <CardTitle className="text-xl font-semibold">Construction ERP</CardTitle>
-              <CardDescription className="text-[10px]">Mock Environment</CardDescription>
             </div>
           </div>
-          <CardDescription>Enter your credentials to access the system</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -90,15 +85,6 @@ export default function Login() {
               Sign In
             </Button>
 
-            <div className="rounded-lg bg-muted p-4 text-sm space-y-2">
-              <p className="font-medium">Test Credentials:</p>
-              <ul className="space-y-1 text-xs text-muted-foreground">
-                <li>• admin@erp.local (Admin)</li>
-                <li>• pm@erp.local (Project Manager)</li>
-                <li>• po@erp.local (Purchase Officer)</li>
-                <li>• Password: Pass@1234</li>
-              </ul>
-            </div>
           </form>
         </CardContent>
       </Card>
