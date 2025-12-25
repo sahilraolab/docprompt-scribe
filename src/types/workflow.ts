@@ -1,5 +1,4 @@
 import { ID, AuditMeta } from './common';
-import { Role } from './auth';
 
 export interface WorkflowConfig extends AuditMeta {
   id: ID;
@@ -14,9 +13,9 @@ export interface WorkflowConfig extends AuditMeta {
 export interface WorkflowLevel {
   id: ID;
   level: number;
-  role: Role;
+  role: string; // Role name
   threshold?: number;
-  escalateToRole?: Role;
+  escalateToRole?: string;
   escalateAfterHours?: number;
 }
 
@@ -54,7 +53,7 @@ export interface SLAConfig extends AuditMeta {
   module: string;
   entity: string;
   slaHours: number;
-  escalateRole?: Role;
-  notifyRoles: Role[];
+  escalateRole?: string;
+  notifyRoles: string[];
   active: boolean;
 }

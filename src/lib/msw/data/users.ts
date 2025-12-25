@@ -1,6 +1,6 @@
-import { User } from '@/types';
+import { MockUser } from '@/types';
 
-export const users: User[] = [
+export const users: MockUser[] = [
   {
     id: 'user-1',
     name: 'Admin User',

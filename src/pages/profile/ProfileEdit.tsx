@@ -20,14 +20,11 @@ export default function ProfileEdit() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const updateProfile = useUpdateProfile();
-
-  // ✅ Moved INSIDE the component
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
     name: user?.name || '',
     phone: user?.phone || '',
-    department: user?.department || '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,10 +39,7 @@ export default function ProfileEdit() {
     try {
       setIsSubmitting(true);
       await updateProfile.mutateAsync(formData);
-
-      // ✅ Force query refresh before navigation
       await queryClient.invalidateQueries({ queryKey: ['profile'] });
-
       toast.success('Profile updated successfully');
       navigate('/profile');
     } catch (error: any) {
@@ -104,19 +98,6 @@ export default function ProfileEdit() {
                   value={formData.phone}
                   onChange={(e) =>
                     setFormData({ ...formData, phone: e.target.value })
-                  }
-                />
-              </div>
-
-              {/* Department */}
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <Input
-                  id="department"
-                  value={formData.department}
-                  disabled
-                  onChange={(e) =>
-                    setFormData({ ...formData, department: e.target.value })
                   }
                 />
               </div>

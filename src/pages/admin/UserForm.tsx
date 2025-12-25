@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useUser, useCreateUser, useUpdateUser } from '@/lib/hooks/useUsers';
+import { useUser, useCreateUser, useUpdateUser, useRoles } from '@/lib/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,59 +15,51 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { SearchableSelect } from '@/components/SearchableSelect';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft } from 'lucide-react';
-import { ACTION_MAP, getRoleModulePermissions } from '@/lib/utils/permissions';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-const userSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Invalid email'),
-  phone: z.string().optional(),
-  role: z.string().min(1, 'Role is required'),
-  department: z.string().optional(),
-  password: z.string().min(6, 'Password must be at least 6 characters').optional(),
-  active: z.boolean().default(true),
-  permissions: z
-    .array(
-      z.object({
-        module: z.string(),
-        actions: z.array(z.string()),
-      })
-    )
-    .default([]),
+// Schema matches backend: name, email, phone, password, roleId
+const createUserSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100),
+  email: z.string().email('Invalid email').max(255),
+  phone: z.string().min(10, 'Phone must be at least 10 characters').max(15),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  roleId: z.number({ required_error: 'Role is required' }).min(1, 'Role is required'),
 });
 
-type UserFormData = z.infer<typeof userSchema>;
+const updateUserSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100),
+  phone: z.string().min(10, 'Phone must be at least 10 characters').max(15),
+  isActive: z.boolean(),
+  roleId: z.number().min(1, 'Role is required'),
+});
+
+type CreateUserData = z.infer<typeof createUserSchema>;
+type UpdateUserData = z.infer<typeof updateUserSchema>;
 
 export default function UserForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
 
-  const { data: userData, isLoading } = useUser(id!);
+  const { data: userData, isLoading: userLoading } = useUser(id || '');
+  const { data: roles = [], isLoading: rolesLoading } = useRoles();
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
 
-  const [rolePermissions, setRolePermissions] = useState<
-    { module: string; actions: string[] }[]
-  >([]);
-
-  const form = useForm<UserFormData>({
-    resolver: zodResolver(userSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
-      role: '',
-      department: '',
-      password: '',
-      active: true,
-      permissions: [],
-    },
+  const form = useForm<CreateUserData | UpdateUserData>({
+    resolver: zodResolver(isEdit ? updateUserSchema : createUserSchema),
+    defaultValues: isEdit
+      ? { name: '', phone: '', isActive: true, roleId: 0 }
+      : { name: '', email: '', phone: '', password: '', roleId: 0 },
   });
 
   // Load existing user (edit)
@@ -75,49 +67,36 @@ export default function UserForm() {
     if (userData && isEdit) {
       form.reset({
         name: userData.name,
-        email: userData.email,
         phone: userData.phone || '',
-        role: userData.role,
-        department: userData.department || '',
-        active: userData.active,
-        permissions: userData.permissions || [],
+        isActive: userData.isActive,
+        roleId: userData.roleId || userData.role?.id || 0,
       });
-      setRolePermissions(userData.permissions || []);
     }
   }, [userData, isEdit, form]);
 
-  // When role changes → auto-set default permissions (editable)
-  const handleRoleChange = (role: string) => {
-    const perms = getRoleModulePermissions(role as any);
-    setRolePermissions(perms);
-    form.setValue('permissions', perms);
-    form.setValue('role', role);
-  };
-
-  const onSubmit = async (data: UserFormData) => {
+  const onSubmit = async (data: CreateUserData | UpdateUserData) => {
     try {
-      // Convert UI-friendly actions to backend-friendly enums
-      data.permissions = rolePermissions.map((perm) => ({
-        module: perm.module,
-        actions: perm.actions.map((a) => ACTION_MAP[a] || a),
-      }));
-
       if (isEdit) {
-        await updateUser.mutateAsync({ id: id!, data });
-        toast.success('User updated successfully');
+        await updateUser.mutateAsync({
+          id: id!,
+          data: data as UpdateUserData,
+        });
       } else {
-        await createUser.mutateAsync(data);
-        toast.success('User created successfully');
+        await createUser.mutateAsync(data as CreateUserData);
       }
-
       navigate('/admin/users');
-    } catch {
-      toast.error('Something went wrong');
+    } catch (err: any) {
+      toast.error(err?.message || 'Something went wrong');
     }
   };
 
-  if (isLoading && isEdit)
-    return <div className="flex items-center justify-center py-12">Loading...</div>;
+  if ((userLoading && isEdit) || rolesLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -132,7 +111,7 @@ export default function UserForm() {
           </h1>
           <p className="text-muted-foreground">
             {isEdit
-              ? 'Update user information and permissions'
+              ? 'Update user information'
               : 'Add a new user to the system'}
           </p>
         </div>
@@ -140,7 +119,6 @@ export default function UserForm() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* BASIC INFO */}
           <Card>
             <CardHeader>
               <CardTitle>User Information</CardTitle>
@@ -152,7 +130,7 @@ export default function UserForm() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>Full Name *</FormLabel>
                     <FormControl>
                       <Input placeholder="John Doe" {...field} />
                     </FormControl>
@@ -161,20 +139,22 @@ export default function UserForm() {
                 )}
               />
 
-              {/* Email */}
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="john@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Email - only for create */}
+              {!isEdit && (
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email *</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="john@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               {/* Phone */}
               <FormField
@@ -182,7 +162,7 @@ export default function UserForm() {
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone</FormLabel>
+                    <FormLabel>Phone *</FormLabel>
                     <FormControl>
                       <Input placeholder="+91 9876543210" {...field} />
                     </FormControl>
@@ -191,145 +171,72 @@ export default function UserForm() {
                 )}
               />
 
-              {/* Role */}
+              {/* Role - Select from backend roles */}
               <FormField
                 control={form.control}
-                name="role"
+                name="roleId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Role</FormLabel>
-                    <FormControl>
-                      <SearchableSelect
-                        options={[
-                          { value: 'Admin', label: 'Admin' },
-                          { value: 'ProjectManager', label: 'Project Manager' },
-                          { value: 'PurchaseOfficer', label: 'Purchase Officer' },
-                          { value: 'SiteEngineer', label: 'Site Engineer' },
-                          { value: 'Accountant', label: 'Accountant' },
-                          { value: 'Approver', label: 'Approver' },
-                          { value: 'Viewer', label: 'Viewer' },
-                        ]}
-                        value={field.value}
-                        onChange={handleRoleChange}
-                        placeholder="Select a role"
-                      />
-                    </FormControl>
+                    <FormLabel>Role *</FormLabel>
+                    <Select
+                      value={field.value?.toString() || ''}
+                      onValueChange={(v) => field.onChange(parseInt(v, 10))}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {roles.map((role) => (
+                          <SelectItem key={role.id} value={role.id.toString()}>
+                            {role.name.replace(/_/g, ' ')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {/* Department */}
-              <FormField
-                control={form.control}
-                name="department"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Department (Optional)</FormLabel>
-                    <FormControl>
-                      <SearchableSelect
-                        options={[
-                          { value: 'Engineering', label: 'Engineering' },
-                          { value: 'Purchase', label: 'Purchase' },
-                          { value: 'Site', label: 'Site' },
-                          { value: 'Accounts', label: 'Accounts' },
-                          { value: 'Contracts', label: 'Contracts' },
-                          { value: 'Admin', label: 'Admin' },
-                        ]}
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Select department"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Password - only for create */}
+              {!isEdit && (
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password *</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Min 6 characters" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
-              {/* Active */}
-              <FormField
-                control={form.control}
-                name="active"
-                render={({ field }) => (
-                  <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                    <div>
-                      <FormLabel>Active Status</FormLabel>
-                      <p className="text-sm text-muted-foreground">
-                        User can access the system
-                      </p>
-                    </div>
-                    <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          {/* ROLE-BASED PERMISSIONS SECTION */}
-          {rolePermissions.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Permissions for {form.watch('role')}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {rolePermissions.map((perm, i) => (
-                  <div key={i} className="border rounded-md p-3">
-                    <p className="font-semibold mb-2">{perm.module}</p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {['View', 'Create', 'Edit', 'Delete', 'Approve', 'Config'].map(
-                        (action) => (
-                          <div key={action} className="flex items-center space-x-2">
-                            <Checkbox
-                              checked={perm.actions.includes(action)}
-                              onCheckedChange={(checked) => {
-                                const updated = [...rolePermissions];
-                                const actions = checked
-                                  ? [...perm.actions, action]
-                                  : perm.actions.filter((a) => a !== action);
-                                updated[i] = { ...perm, actions };
-                                setRolePermissions(updated);
-                              }}
-                            />
-                            <Label className="text-sm">{action}</Label>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* PASSWORD */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Security</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder={
-                          isEdit
-                            ? 'Leave blank to keep existing password'
-                            : 'Enter password'
-                        }
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Active Status - only for edit */}
+              {isEdit && (
+                <FormField
+                  control={form.control}
+                  name="isActive"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                      <div>
+                        <FormLabel>Active Status</FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          User can access the system
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              )}
             </CardContent>
           </Card>
 
@@ -339,11 +246,16 @@ export default function UserForm() {
               Cancel
             </Button>
             <Button type="submit" disabled={createUser.isPending || updateUser.isPending}>
-              {createUser.isPending || updateUser.isPending
-                ? 'Saving...'
-                : isEdit
-                  ? 'Update User'
-                  : 'Create User'}
+              {createUser.isPending || updateUser.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : isEdit ? (
+                'Update User'
+              ) : (
+                'Create User'
+              )}
             </Button>
           </div>
         </form>

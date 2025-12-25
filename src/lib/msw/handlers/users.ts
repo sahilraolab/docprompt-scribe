@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { users, findUserById } from '../data/users';
-import { User } from '@/types';
+import { MockUser } from '@/types';
 
 let mockUsers = [...users];
 
@@ -55,7 +55,7 @@ export const userHandlers = [
       );
     }
 
-    const body = await request.json() as Partial<User> & { password: string };
+    const body = await request.json() as Partial<MockUser> & { password: string };
     
     if (!body.name || !body.email || !body.password || !body.role) {
       return HttpResponse.json(
@@ -72,7 +72,7 @@ export const userHandlers = [
       );
     }
 
-    const newUser: User = {
+    const newUser: MockUser = {
       id: `user-${Date.now()}`,
       name: body.name,
       email: body.email,
@@ -86,8 +86,6 @@ export const userHandlers = [
         currency: 'INR',
         numberFormat: 'short',
       },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     };
 
     mockUsers.push(newUser);
@@ -117,11 +115,10 @@ export const userHandlers = [
       );
     }
 
-    const body = await request.json() as Partial<User>;
-    const updatedUser = {
+    const body = await request.json() as Partial<MockUser>;
+    const updatedUser: MockUser = {
       ...mockUsers[userIndex],
       ...body,
-      updatedAt: new Date().toISOString(),
     };
 
     mockUsers[userIndex] = updatedUser;

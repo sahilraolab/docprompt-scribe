@@ -25,51 +25,7 @@ import {
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils/format';
 import { toast } from 'sonner';
-
-/* ----------------------------------
-   Permission normalization
----------------------------------- */
-
-const MODULE_LABELS: Record<string, string> = {
-  engineering: 'Engineering',
-  purchase: 'Purchase',
-  site: 'Site',
-  inventory: 'Inventory',
-  contracts: 'Contracts',
-  accounts: 'Accounts',
-  workflow: 'Workflow',
-  admin: 'Administration',
-  masters: 'Masters',
-  mis: 'MIS & Reports',
-};
-
-const ACTION_LABELS: Record<string, string> = {
-  view: 'Read',
-  create: 'Create',
-  update: 'Update',
-  delete: 'Delete',
-  approve: 'Approve',
-  issue: 'Issue',
-  post: 'Post',
-  report: 'Reports',
-  action: 'Actions',
-};
-
-function normalizePermissions(perms: string[]) {
-  const map: Record<string, Set<string>> = {};
-  perms.forEach((p) => {
-    const parts = p.split('.');
-    const action = parts.pop()!;
-    const module = parts[0];
-    if (!map[module]) map[module] = new Set();
-    map[module].add(action);
-  });
-  return map;
-}
-
-/* ----------------------------------
-   Component
----------------------------------- */
+import { groupPermissionsByModule, MODULE_LABELS, ACTION_LABELS } from '@/lib/utils/permissions';
 
 export default function UserProfile() {
   const { user } = useAuth();
@@ -83,7 +39,14 @@ export default function UserProfile() {
 
   if (!user) return null;
 
-  const permissions = normalizePermissions(user.permissions || []);
+  // Group permissions by module for display
+  const permissions = groupPermissionsByModule(user.permissions || []);
+
+  // Get role display name
+  const getRoleName = () => {
+    if (!user.role) return 'User';
+    return typeof user.role === 'object' ? user.role.name : user.role;
+  };
 
   /* ---------------- Password Change ---------------- */
 
@@ -160,7 +123,7 @@ export default function UserProfile() {
                   value={user.phone || '—'}
                 />
 
-                <Info icon={Shield} label="Role" value={user.role} />
+                <Info icon={Shield} label="Role" value={getRoleName()} />
 
                 <Info
                   icon={Calendar}
@@ -177,9 +140,9 @@ export default function UserProfile() {
               <span className="text-sm text-muted-foreground">
                 Account Status
               </span>
-              <Badge className="flex items-center gap-1 bg-green-100 text-green-700">
+              <Badge className={`flex items-center gap-1 ${user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                 <CheckCircle2 className="h-3 w-3" />
-                Active
+                {user.isActive ? 'Active' : 'Inactive'}
               </Badge>
             </div>
           </CardContent>
@@ -245,7 +208,7 @@ export default function UserProfile() {
                   <Shield className="h-4 w-4 text-green-600" />
                   <span className="text-sm">
                     <strong>{MODULE_LABELS[module] || module}:</strong>{' '}
-                    {Array.from(actions)
+                    {actions
                       .map((a) => ACTION_LABELS[a] || a)
                       .join(', ')}
                   </span>
