@@ -3,46 +3,47 @@ import { apiClient } from "./client";
 const ADMIN_BASE = '/admin';
 
 export const userApi = {
+  // Users - matches backend routes
   getAll: () => apiClient.request(`${ADMIN_BASE}/users`),
-  getById: (id: string) => apiClient.request(`${ADMIN_BASE}/users/${id}`),
-  create: (data: any) =>
-    apiClient.request(`${ADMIN_BASE}/users`, {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
-  update: (id: string, data: any) =>
-    apiClient.request(`${ADMIN_BASE}/users/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    }),
-  delete: (id: string) =>
-    apiClient.request(`${ADMIN_BASE}/users/${id}`, {
-      method: "DELETE",
-    }),
   
-  // Roles
+  getById: (id: string | number) => apiClient.request(`${ADMIN_BASE}/users/${id}`),
+  
+  create: (data: {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+    roleId: number;
+  }) => apiClient.request(`${ADMIN_BASE}/users`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  }),
+  
+  update: (id: string | number, data: {
+    name?: string;
+    phone?: string;
+    isActive?: boolean;
+    roleId?: number;
+  }) => apiClient.request(`${ADMIN_BASE}/users/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  }),
+
+  // Roles - matches backend routes
   getRoles: () => apiClient.request(`${ADMIN_BASE}/roles`),
-  getRole: (id: string) => apiClient.request(`${ADMIN_BASE}/roles/${id}`),
-  createRole: (data: any) =>
+  
+  createRole: (data: { name: string }) =>
     apiClient.request(`${ADMIN_BASE}/roles`, {
       method: "POST",
       body: JSON.stringify(data),
     }),
-  updateRole: (id: string, data: any) =>
-    apiClient.request(`${ADMIN_BASE}/roles/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    }),
-  deleteRole: (id: string) =>
-    apiClient.request(`${ADMIN_BASE}/roles/${id}`, {
-      method: "DELETE",
-    }),
-
-  // Permissions
-  getPermissions: () => apiClient.request(`${ADMIN_BASE}/permissions`),
-  assignPermissions: (roleId: string, permissions: string[]) =>
+  
+  assignPermissions: (roleId: number, permissions: string[]) =>
     apiClient.request(`${ADMIN_BASE}/roles/${roleId}/permissions`, {
-      method: "PUT",
+      method: "POST",
       body: JSON.stringify({ permissions }),
     }),
+
+  // Audit logs - matches backend route
+  getAuditLogs: () => apiClient.request(`${ADMIN_BASE}/audit-logs`),
 };

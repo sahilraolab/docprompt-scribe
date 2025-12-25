@@ -4,11 +4,10 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  roles?: string[];           // optional role-based restriction
-  departments?: string[];     // optional department-based restriction
+  roles?: string[];           // optional role-based restriction (role name)
 }
 
-export function ProtectedRoute({ children, roles, departments }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, roles }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
@@ -26,14 +25,12 @@ export function ProtectedRoute({ children, roles, departments }: ProtectedRouteP
     return <Navigate to="/login" replace />;
   }
 
-  // Role restriction
-  if (roles && user && !roles.includes(user.role)) {
-    return <Navigate to="/403" replace />;
-  }
-
-  // Department restriction (optional)
-  if (departments && user && !departments.includes(user.department || "")) {
-    return <Navigate to="/403" replace />;
+  // Role restriction - check role.name or direct role string
+  if (roles && user) {
+    const userRoleName = typeof user.role === 'object' ? user.role?.name : user.role;
+    if (userRoleName && !roles.includes(userRoleName)) {
+      return <Navigate to="/403" replace />;
+    }
   }
 
   return <>{children}</>;

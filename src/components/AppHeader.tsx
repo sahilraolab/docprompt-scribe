@@ -17,6 +17,12 @@ export function AppHeader() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  // Get role display name
+  const getRoleName = () => {
+    if (!user?.role) return 'User';
+    return typeof user.role === 'object' ? user.role.name : user.role;
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b bg-background/80 backdrop-blur-xl">
       <div className="flex h-full items-center justify-between px-6">
@@ -48,7 +54,7 @@ export function AppHeader() {
                 <p className="text-sm font-medium">{user?.name}</p>
                 <p className="text-xs text-muted-foreground">{user?.email}</p>
                 <Badge variant="secondary" className="text-xs">
-                  {user?.role}
+                  {getRoleName()}
                 </Badge>
               </div>
             </DropdownMenuLabel>
