@@ -1,10 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  useProfile,
-  useChangePassword,
-  useUpdateNotifications,
-} from '@/lib/hooks/useProfile';
+import { apiClient } from '@/lib/api/client';
 import {
   Card,
   CardContent,
@@ -15,396 +11,297 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
   User,
-  Phone,
-  Building,
+  Mail,
   Shield,
-  Clock,
-  Edit,
+  Calendar,
+  Lock,
   Key,
+  CheckCircle2,
+  Phone,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils/format';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+
+/* ----------------------------------
+   Permission normalization
+---------------------------------- */
+
+const MODULE_LABELS: Record<string, string> = {
+  engineering: 'Engineering',
+  purchase: 'Purchase',
+  site: 'Site',
+  inventory: 'Inventory',
+  contracts: 'Contracts',
+  accounts: 'Accounts',
+  workflow: 'Workflow',
+  admin: 'Administration',
+  masters: 'Masters',
+  mis: 'MIS & Reports',
+};
+
+const ACTION_LABELS: Record<string, string> = {
+  view: 'Read',
+  create: 'Create',
+  update: 'Update',
+  delete: 'Delete',
+  approve: 'Approve',
+  issue: 'Issue',
+  post: 'Post',
+  report: 'Reports',
+  action: 'Actions',
+};
+
+function normalizePermissions(perms: string[]) {
+  const map: Record<string, Set<string>> = {};
+  perms.forEach((p) => {
+    const parts = p.split('.');
+    const action = parts.pop()!;
+    const module = parts[0];
+    if (!map[module]) map[module] = new Set();
+    map[module].add(action);
+  });
+  return map;
+}
+
+/* ----------------------------------
+   Component
+---------------------------------- */
 
 export default function UserProfile() {
   const { user } = useAuth();
-  const navigate = useNavigate();
 
-  // ✅ All hooks must be declared at the top level (to avoid React hook order errors)
-  const { data: profile, isLoading } = useProfile();
-  const changePassword = useChangePassword();
-  const updateNotifications = useUpdateNotifications();
-
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
+  const [password, setPassword] = useState({
+    current: '',
+    next: '',
+    confirm: '',
   });
+  const [loading, setLoading] = useState(false);
 
-  // --------------------------
-  // Conditional Rendering
-  // --------------------------
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
-        Loading profile...
-      </div>
-    );
-  }
+  if (!user) return null;
 
-  if (!profile || Object.keys(profile).length === 0) {
-    return (
-      <div className="text-center text-muted-foreground py-10">
-        No profile data found.
-      </div>
-    );
-  }
+  const permissions = normalizePermissions(user.permissions || []);
 
-  // --------------------------
-  // Handlers
-  // --------------------------
-  const handlePasswordChange = async (e: React.FormEvent) => {
+  /* ---------------- Password Change ---------------- */
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
+
+    if (password.next !== password.confirm) {
       toast.error('Passwords do not match');
       return;
     }
 
     try {
-      await changePassword.mutateAsync({
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword,
-      });
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
+      setLoading(true);
+      await apiClient.request('/auth/me/password', {
+        method: 'PUT',
+        body: JSON.stringify({
+          oldPassword: password.current,
+          newPassword: password.next,
+        }),
       });
       toast.success('Password updated successfully');
-    } catch (error) {
-      console.error('Password change failed:', error);
-      toast.error('Failed to update password');
+      setPassword({ current: '', next: '', confirm: '' });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update password');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleNotificationToggle = (key: string, value: boolean) => {
-    const updated = { ...profile.notifications, [key]: value };
-    updateNotifications.mutate({ notifications: updated });
-  };
+  /* ---------------- UI ---------------- */
 
-  const getInitials = (name: string) =>
-    name
-      ?.split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase();
-
-  // --------------------------
-  // JSX
-  // --------------------------
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">My Profile</h1>
-        <p className="text-muted-foreground">
-          Manage your account settings and preferences
-        </p>
-      </div>
+    <div className="p-6 w-full">
+      <div className="space-y-6 animate-fade-in">
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Overview */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Profile</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col items-center text-center space-y-4">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={profile.avatarUrl} alt={profile.name} />
-                <AvatarFallback className="text-2xl">
-                  {getInitials(profile.name || 'U')}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="text-xl font-semibold">{profile.name}</h3>
-                <p className="text-sm text-muted-foreground">{profile.role}</p>
-                {profile.department && (
-                  <Badge variant="secondary" className="mt-2">
-                    {profile.department}
-                  </Badge>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => navigate('/profile/edit')}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Profile
-              </Button>
-            </div>
+        {/* HEADER */}
+        <div>
+          <h1 className="text-3xl font-bold">Profile Settings</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your account settings and preferences
+          </p>
+        </div>
 
-            <Separator />
-
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center gap-3">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Email:</span>
-                <span className="font-medium break-all">{profile.email}</span>
-              </div>
-              {profile.phone && (
-                <div className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Phone:</span>
-                  <span className="font-medium">{profile.phone}</span>
-                </div>
-              )}
-              {profile.department && (
-                <div className="flex items-center gap-3">
-                  <Building className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Department:</span>
-                  <span className="font-medium">{profile.department}</span>
-                </div>
-              )}
-              {profile.createdAt && (
-                <div className="flex items-center gap-3">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Joined:</span>
-                  <span className="font-medium">
-                    {formatDate(profile.createdAt)}
-                  </span>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Detailed Settings */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Account Settings</CardTitle>
+        {/* PERSONAL INFO */}
+        <Card className="enterprise-card w-full">
+          <CardHeader className="enterprise-header">
+            <CardTitle className="text-base">Personal Information</CardTitle>
             <CardDescription>
-              Manage your account details and preferences
+              Your account details and role information
             </CardDescription>
           </CardHeader>
+
           <CardContent>
-            <Tabs defaultValue="general" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="security">Security</TabsTrigger>
-                <TabsTrigger value="notifications">Notifications</TabsTrigger>
-                <TabsTrigger value="permissions">Permissions</TabsTrigger>
-              </TabsList>
+            <div className="flex flex-col md:flex-row gap-8">
+              <div className="flex flex-col items-center gap-4">
+                <Avatar className="h-24 w-24">
+                  <AvatarFallback className="text-2xl font-semibold bg-primary text-primary-foreground">
+                    {user.name
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')
+                      .toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
 
-              {/* General Info */}
-              <TabsContent value="general" className="space-y-4">
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    View your profile information. Click “Edit Profile” above to
-                    make changes.
-                  </p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Full Name</Label>
-                      <Input defaultValue={profile.name} disabled />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Email</Label>
-                      <Input type="email" defaultValue={profile.email} disabled />
-                    </div>
-                    {profile.phone && (
-                      <div className="space-y-2">
-                        <Label>Phone</Label>
-                        <Input defaultValue={profile.phone} disabled />
-                      </div>
-                    )}
-                    {profile.department && (
-                      <div className="space-y-2">
-                        <Label>Department</Label>
-                        <Input defaultValue={profile.department} disabled />
-                      </div>
-                    )}
-                    <div className="space-y-2">
-                      <Label>Role</Label>
-                      <Input defaultValue={profile.role} disabled />
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Info icon={User} label="Full Name" value={user.name} />
+                <Info icon={Mail} label="Email Address" value={user.email} />
 
-              {/* Password */}
-              <TabsContent value="security" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Change Password</CardTitle>
-                    <CardDescription>
-                      Update your password to keep your account secure
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handlePasswordChange} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="currentPassword">Current Password</Label>
-                        <Input
-                          id="currentPassword"
-                          type="password"
-                          value={passwordData.currentPassword}
-                          onChange={(e) =>
-                            setPasswordData({
-                              ...passwordData,
-                              currentPassword: e.target.value,
-                            })
-                          }
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="newPassword">New Password</Label>
-                        <Input
-                          id="newPassword"
-                          type="password"
-                          value={passwordData.newPassword}
-                          onChange={(e) =>
-                            setPasswordData({
-                              ...passwordData,
-                              newPassword: e.target.value,
-                            })
-                          }
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">
-                          Confirm New Password
-                        </Label>
-                        <Input
-                          id="confirmPassword"
-                          type="password"
-                          value={passwordData.confirmPassword}
-                          onChange={(e) =>
-                            setPasswordData({
-                              ...passwordData,
-                              confirmPassword: e.target.value,
-                            })
-                          }
-                          required
-                        />
-                      </div>
-                      {passwordData.newPassword &&
-                        passwordData.confirmPassword &&
-                        passwordData.newPassword !==
-                          passwordData.confirmPassword && (
-                          <p className="text-sm text-destructive">
-                            Passwords do not match
-                          </p>
-                        )}
-                      <Button
-                        type="submit"
-                        disabled={changePassword.isPending}
-                        className="w-full"
-                      >
-                        <Key className="h-4 w-4 mr-2" />
-                        {changePassword.isPending
-                          ? 'Updating...'
-                          : 'Update Password'}
-                      </Button>
-                    </form>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                <Info
+                  icon={Phone}
+                  label="Phone Number"
+                  value={user.phone || '—'}
+                />
 
-              {/* Notifications */}
-              <TabsContent value="notifications" className="space-y-4">
-                {Object.entries(profile.notifications || {}).map(
-                  ([key, value]) => {
-                    const labelMap: Record<string, string> = {
-                      email: 'Email Notifications',
-                      approvals: 'Approval Requests',
-                      sla: 'SLA Breaches',
-                      projects: 'Project Updates',
-                      weeklyReports: 'Weekly Reports',
-                    };
+                <Info icon={Shield} label="Role" value={user.role} />
 
-                    const descMap: Record<string, string> = {
-                      email: 'Receive email notifications for important updates',
-                      approvals: 'Notify when items need your approval',
-                      sla: 'Alert when SLA targets are missed',
-                      projects: 'Get notified about project milestones',
-                      weeklyReports:
-                        'Receive weekly summary reports via email',
-                    };
+                <Info
+                  icon={Calendar}
+                  label="Member Since"
+                  value={formatDate(user.createdAt)}
+                />
+              </div>
 
-                    return (
-                      <div
-                        key={key}
-                        className="flex items-center justify-between p-4 border rounded-lg"
-                      >
-                        <div className="space-y-0.5">
-                          <Label className="font-medium">
-                            {labelMap[key] || key}
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            {descMap[key] || ''}
-                          </p>
-                        </div>
-                        <Switch
-                          checked={!!value}
-                          onCheckedChange={(val) =>
-                            handleNotificationToggle(key, val)
-                          }
-                        />
-                      </div>
-                    );
-                  }
-                )}
-              </TabsContent>
+            </div>
 
-              {/* Permissions */}
-              <TabsContent value="permissions" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Shield className="h-4 w-4" />
-                      Your Permissions
-                    </CardTitle>
-                    <CardDescription>
-                      Permissions granted to your role
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {profile.permissions && profile.permissions.length > 0 ? (
-                      <div className="grid grid-cols-2 gap-3">
-                        {profile.permissions.map((perm: any, idx: number) => (
-                          <div
-                            key={idx}
-                            className="flex items-center gap-2 p-3 border rounded-lg"
-                          >
-                            <Shield className="h-4 w-4 text-green-600" />
-                            <span className="text-sm">
-                              {perm.module}: {perm.actions.join(', ')}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        No permissions assigned.
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
+            <div className="my-6 border-t" />
+
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">
+                Account Status
+              </span>
+              <Badge className="flex items-center gap-1 bg-green-100 text-green-700">
+                <CheckCircle2 className="h-3 w-3" />
+                Active
+              </Badge>
+            </div>
           </CardContent>
         </Card>
+
+        {/* CHANGE PASSWORD */}
+        <Card className="enterprise-card w-full">
+          <CardHeader className="enterprise-header">
+            <div className="flex items-center gap-2">
+              <Lock className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-base">Change Password</CardTitle>
+            </div>
+            <CardDescription>
+              Update your password to keep your account secure
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent>
+            <form onSubmit={handlePasswordSubmit} className="space-y-5 max-w-md">
+              <Field
+                label="Current Password"
+                value={password.current}
+                onChange={(v) => setPassword({ ...password, current: v })}
+              />
+              <Field
+                label="New Password"
+                value={password.next}
+                onChange={(v) => setPassword({ ...password, next: v })}
+              />
+              <Field
+                label="Confirm New Password"
+                value={password.confirm}
+                onChange={(v) => setPassword({ ...password, confirm: v })}
+              />
+
+              <Button type="submit" disabled={loading}>
+                <Key className="h-4 w-4 mr-2" />
+                {loading ? 'Updating…' : 'Update Password'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* PERMISSIONS */}
+        <Card className="w-full">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-base">Your Permissions</CardTitle>
+            </div>
+            <CardDescription>
+              Permissions granted to your role
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {Object.entries(permissions).map(([module, actions]) => (
+                <div
+                  key={module}
+                  className="flex items-center gap-2 p-3 border rounded-lg"
+                >
+                  <Shield className="h-4 w-4 text-green-600" />
+                  <span className="text-sm">
+                    <strong>{MODULE_LABELS[module] || module}:</strong>{' '}
+                    {Array.from(actions)
+                      .map((a) => ACTION_LABELS[a] || a)
+                      .join(', ')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
       </div>
+    </div>
+  );
+}
+
+/* ----------------------------------
+   Small helpers
+---------------------------------- */
+
+function Info({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: any;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Icon className="h-4 w-4" />
+        <span className="text-sm">{label}</span>
+      </div>
+      <p className="font-medium">{value}</p>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Input
+        type="password"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required
+      />
     </div>
   );
 }

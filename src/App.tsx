@@ -352,7 +352,7 @@ const App = () => (
              * Profile & Error Pages
              * ----------------------------- */}
             <Route path="/profile" element={<ProtectedRoute><AppLayout><UserProfile /></AppLayout></ProtectedRoute>} />
-            <Route path="/profile/edit" element={<ProtectedRoute><AppLayout><ProfileEdit /></AppLayout></ProtectedRoute>} />
+            {/* <Route path="/profile/edit" element={<ProtectedRoute><AppLayout><ProfileEdit /></AppLayout></ProtectedRoute>} /> */}
 
             <Route path="/403" element={<Forbidden />} />
             <Route path="*" element={<NotFound />} />

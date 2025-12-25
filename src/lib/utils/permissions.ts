@@ -76,3 +76,27 @@ export const getRoleModulePermissions = (userRole: Role) => {
     actions,
   }));
 };
+
+
+// src/lib/utils/permissions.ts
+
+/**
+ * Check if user has at least one required permission
+ */
+export function hasAnyPermission(
+  userPermissions: string[] = [],
+  required?: string[]
+): boolean {
+  if (!required || required.length === 0) return true;
+  return required.some(p => userPermissions.includes(p));
+}
+
+/**
+ * Optional helper if needed later (safe to keep)
+ */
+export function hasAllPermissions(
+  userPermissions: string[] = [],
+  required: string[] = []
+): boolean {
+  return required.every(p => userPermissions.includes(p));
+}
