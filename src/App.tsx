@@ -106,11 +106,11 @@ import WorkflowConfigList from "./pages/workflow/WorkflowConfigList";
 import WorkflowConfigForm from "./pages/workflow/WorkflowConfigForm";
 import SLAList from "./pages/workflow/SLAList";
 import SLAForm from "./pages/workflow/SLAForm";
-import Admin from "./pages/admin/index";
-import UsersList from "./pages/admin/UsersList";
-import UserForm from "./pages/admin/UserForm";
-import UserDetails from "./pages/admin/UserDetails";
-import AuditTrailList from "./pages/admin/AuditTrailList";
+// import Admin from "./pages/admin/index";
+// import UsersList from "./pages/admin/UsersList";
+// import UserForm from "./pages/admin/UserForm";
+// import UserDetails from "./pages/admin/UserDetails";
+// import AuditTrailList from "./pages/admin/AuditTrailList";
 
 // Partners
 import PartnersIndex from "./pages/partners/index";
@@ -122,6 +122,10 @@ import ProfitEventsList from "./pages/partners/ProfitEventsList";
 import ProfitEventForm from "./pages/partners/ProfitEventForm";
 import DistributionsList from "./pages/partners/DistributionsList";
 import DistributionDetails from "./pages/partners/DistributionDetails";
+import Admin from "./pages/admin";
+import UsersList from "./pages/admin/UsersList";
+import RolesList from "./pages/admin/RolesList";
+import AuditTrailList from "./pages/admin/AuditTrailList";
 
 const queryClient = new QueryClient();
 
@@ -321,9 +325,7 @@ const App = () => (
              * ----------------------------- */}
             <Route path="/admin" element={<ProtectedRoute><AppLayout><Admin /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute><AppLayout><UsersList /></AppLayout></ProtectedRoute>} />
-            <Route path="/admin/users/new" element={<ProtectedRoute><AppLayout><UserForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/admin/users/:id/edit" element={<ProtectedRoute><AppLayout><UserForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/admin/users/:id" element={<ProtectedRoute><AppLayout><UserDetails /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/roles" element={<ProtectedRoute><AppLayout><RolesList /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/audit" element={<ProtectedRoute><AppLayout><AuditTrailList /></AppLayout></ProtectedRoute>} />
 
             {/* -----------------------------

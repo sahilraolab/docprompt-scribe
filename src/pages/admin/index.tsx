@@ -13,58 +13,59 @@ export default function Admin() {
   const modules = [
     {
       title: 'User Management',
-      description: 'Create and manage system users',
+      description: 'Create and manage system users with role-based access control',
       icon: Users,
       path: '/admin/users',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
     },
     {
       title: 'Roles & Permissions',
-      description: 'Control access and system privileges',
+      description: 'Define roles and assign granular permissions',
       icon: ShieldCheck,
       path: '/admin/roles',
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
+      color: 'text-info',
+      bgColor: 'bg-info/10',
     },
     {
       title: 'System Activity Logs',
-      description: 'View system actions and user activities',
+      description: 'Monitor all user activities and system events',
       icon: Activity,
       path: '/admin/audit',
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
+      color: 'text-success',
+      bgColor: 'bg-success/10',
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Administration</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Administration</h1>
         <p className="text-muted-foreground mt-1">
-          Manage users, access control, and system activities
+          Manage users, access control, and monitor system activities
         </p>
       </div>
 
       {/* Admin Modules */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {modules.map((module) => (
+        {modules.map((module, index) => (
           <Card
             key={module.path}
             onClick={() => navigate(module.path)}
-            className="cursor-pointer transition-all hover:shadow-md border-l-4 hover:border-l-primary"
+            className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/50 border-l-4 border-l-transparent hover:border-l-primary group"
+            style={{ animationDelay: `${index * 100}ms` }}
           >
             <CardHeader>
-              <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-lg ${module.bgColor}`}>
+              <div className="flex items-start gap-4">
+                <div className={`p-3 rounded-lg ${module.bgColor} transition-transform group-hover:scale-110`}>
                   <module.icon className={`h-6 w-6 ${module.color}`} />
                 </div>
-                <div>
-                  <CardTitle className="text-lg">
+                <div className="flex-1">
+                  <CardTitle className="text-lg group-hover:text-primary transition-colors">
                     {module.title}
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="mt-1">
                     {module.description}
                   </CardDescription>
                 </div>
