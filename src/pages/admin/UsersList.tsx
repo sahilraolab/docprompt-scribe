@@ -48,6 +48,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { Eye, EyeOff } from 'lucide-react';
 
 // Validation schemas
 const createUserSchema = z.object({
@@ -85,6 +86,8 @@ export default function UsersList() {
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSaving, setIsSaving] = useState(false);
+
+  const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
@@ -134,7 +137,7 @@ export default function UsersList() {
   // Validate and save
   const handleSave = async () => {
     setErrors({});
-    
+
     try {
       if (editingUser) {
         // Update validation
@@ -144,7 +147,7 @@ export default function UsersList() {
           isActive: form.isActive,
           roleId: form.roleId,
         });
-        
+
         if (!result.success) {
           const fieldErrors: FormErrors = {};
           result.error.errors.forEach(err => {
@@ -169,7 +172,7 @@ export default function UsersList() {
           password: form.password,
           roleId: form.roleId,
         });
-        
+
         if (!result.success) {
           const fieldErrors: FormErrors = {};
           result.error.errors.forEach(err => {
@@ -312,8 +315,8 @@ export default function UsersList() {
 
                 <TableBody>
                   {filteredUsers.map((user, index) => (
-                    <TableRow 
-                      key={user.id} 
+                    <TableRow
+                      key={user.id}
                       className="hover:bg-muted/30 transition-colors"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
@@ -346,7 +349,7 @@ export default function UsersList() {
                       </TableCell>
 
                       <TableCell>
-                        <Badge 
+                        <Badge
                           variant={user.role?.name?.includes('ADMIN') ? 'destructive' : 'secondary'}
                           className="gap-1"
                         >
@@ -356,7 +359,7 @@ export default function UsersList() {
                       </TableCell>
 
                       <TableCell>
-                        <Badge 
+                        <Badge
                           variant={user.isActive ? 'default' : 'outline'}
                           className={user.isActive ? 'bg-success text-success-foreground' : ''}
                         >
@@ -418,7 +421,7 @@ export default function UsersList() {
               )}
             </DialogTitle>
             <DialogDescription>
-              {editingUser 
+              {editingUser
                 ? 'Update user information and access settings'
                 : 'Add a new user to the system with role-based access'
               }
@@ -481,14 +484,31 @@ export default function UsersList() {
             {!editingUser && (
               <div className="space-y-2">
                 <Label htmlFor="password">Password *</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter password (min 6 characters)"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className={errors.password ? 'border-destructive' : ''}
-                />
+
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter password (min 6 characters)"
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    className={`pr-10 ${errors.password ? 'border-destructive' : ''}`}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(prev => !prev)}
+                    className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+
                 {errors.password && (
                   <p className="text-sm text-destructive">{errors.password}</p>
                 )}

@@ -1,6 +1,6 @@
-// Default permission templates per role type
+// permissionDefaults.ts
+
 export const ROLE_PERMISSION_DEFAULTS: Record<string, string[]> = {
-  // ---- ADMIN ----
   ADMIN: [
     'admin.view',
     'admin.users.view',
@@ -8,9 +8,7 @@ export const ROLE_PERMISSION_DEFAULTS: Record<string, string[]> = {
     'admin.audit.view',
   ],
 
-  SUPER_ADMIN: [
-    '*', // special marker → full access
-  ],
+  SUPER_ADMIN: ['*'],
 
   SYSTEM_ADMIN: [
     'admin.view',
@@ -19,7 +17,6 @@ export const ROLE_PERMISSION_DEFAULTS: Record<string, string[]> = {
     'admin.audit.view',
   ],
 
-  // ---- ENGINEERING ----
   ENGINEER: [
     'engineering.view',
     'engineering.create',
@@ -33,7 +30,6 @@ export const ROLE_PERMISSION_DEFAULTS: Record<string, string[]> = {
     'engineering.approve',
   ],
 
-  // ---- SITE ----
   SITE_ENGINEER: [
     'site.view',
     'site.create',
@@ -48,7 +44,6 @@ export const ROLE_PERMISSION_DEFAULTS: Record<string, string[]> = {
     'site.approve',
   ],
 
-  // ---- PURCHASE ----
   PURCHASE_OFFICER: [
     'purchase.view',
     'purchase.create',
@@ -62,7 +57,6 @@ export const ROLE_PERMISSION_DEFAULTS: Record<string, string[]> = {
     'purchase.approve',
   ],
 
-  // ---- ACCOUNTS ----
   ACCOUNTANT: [
     'accounts.view',
     'accounts.create',
@@ -76,7 +70,6 @@ export const ROLE_PERMISSION_DEFAULTS: Record<string, string[]> = {
     'accounts.report',
   ],
 
-  // ---- WORKFLOW ----
   WORKFLOW_MANAGER: [
     'workflow.view',
     'workflow.action',

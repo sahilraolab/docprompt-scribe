@@ -150,14 +150,15 @@ export default function RolesList() {
     const openPermissionsDialog = (role: BackendRole) => {
         setSelectedRole(role);
 
-        // If role already has permissions → use them
-        if (role.permissions && role.permissions.length > 0) {
+        if (role.permissions?.length) {
             setSelectedPermissions(role.permissions.map(p => p.key));
         } else {
-            // Apply frontend defaults
             const defaults = ROLE_PERMISSION_DEFAULTS[role.name] || [];
-
-            setSelectedPermissions(defaults);
+            setSelectedPermissions(
+                defaults.includes('*')
+                    ? SYSTEM_PERMISSIONS.map(p => p.key)
+                    : defaults
+            );
         }
 
         setShowPermissionsDialog(true);
@@ -516,113 +517,96 @@ export default function RolesList() {
                     </DialogHeader>
 
                     <div className="flex-1 overflow-y-auto py-4">
-                        <Accordion type="multiple" className="w-full">
-                            {Object.entries(getGroupedPermissions(selectedRole.permissions)).map(([module, permissions]) => {
-                                // const allSelected = permissions.every(p => selectedPermissions.includes(p.key));
-                                const resolvedSelected = resolvePermissions(
-                                    selectedRole?.permissions || [],
-                                    selectedPermissions
-                                );
+                        {selectedRole && (
+                            <Accordion type="multiple" className="w-full">
+                                {Object.entries(groupedPermissions).map(([module, permissions]) => {
+                                    const allSelected = permissions.every(p =>
+                                        selectedPermissions.includes(p.key)
+                                    );
 
-                                const allSelected = permissions.every(p =>
-                                    resolvedSelected.includes(p.key)
-                                );
+                                    const someSelected = permissions.some(p =>
+                                        selectedPermissions.includes(p.key)
+                                    );
 
-                                const someSelected = permissions.some(p => selectedPermissions.includes(p.key));
-                                const Icon = ModuleIcons[module] || Settings;
+                                    const Icon = ModuleIcons[module] || Settings;
 
-                                return (
-                                    <AccordionItem key={module} value={module}>
-                                        <AccordionTrigger className="hover:no-underline">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${allSelected ? 'bg-success/10 text-success' :
-                                                    someSelected ? 'bg-warning/10 text-warning' : 'bg-muted text-muted-foreground'
-                                                    }`}>
-                                                    <Icon className="h-4 w-4" />
+                                    return (
+                                        <AccordionItem key={module} value={module}>
+                                            <AccordionTrigger className="hover:no-underline">
+                                                <div className="flex items-center gap-3">
+                                                    <div
+                                                        className={`h-8 w-8 rounded-lg flex items-center justify-center ${allSelected
+                                                            ? 'bg-success/10 text-success'
+                                                            : someSelected
+                                                                ? 'bg-warning/10 text-warning'
+                                                                : 'bg-muted text-muted-foreground'
+                                                            }`}
+                                                    >
+                                                        <Icon className="h-4 w-4" />
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <p className="font-medium">
+                                                            {module.replace(/_/g, ' ')}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {
+                                                                permissions.filter(p =>
+                                                                    selectedPermissions.includes(p.key)
+                                                                ).length
+                                                            } / {permissions.length} selected
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <div className="text-left">
-                                                    <p className="font-medium">{module.replace(/_/g, ' ')}</p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {permissions.filter(p => selectedPermissions.includes(p.key)).length} / {permissions.length} selected
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </AccordionTrigger>
-                                        <AccordionContent>
-                                            <div className="space-y-2 pt-2">
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => toggleModulePermissions(permissions)}
-                                                    className="mb-2"
-                                                >
-                                                    {allSelected ? 'Deselect All' : 'Select All'}
-                                                </Button>
-                                                <div className="grid gap-2">
-                                                    {permissions.map(permission => (
-                                                        <div
-                                                            key={permission.key}
-                                                            className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
-                                                        >
-                                                            <Checkbox
-                                                                id={permission.key}
-                                                                checked={selectedPermissions.includes(permission.key)}
-                                                                onCheckedChange={() => togglePermission(permission.key)}
-                                                            />
-                                                            <div className="flex-1">
-                                                                <Label
-                                                                    htmlFor={permission.key}
-                                                                    className="font-medium cursor-pointer"
-                                                                >
-                                                                    {permission.action?.replace(/_/g, ' ') || permission.key}
-                                                                </Label>
-                                                                {permission.description && (
-                                                                    <p className="text-xs text-muted-foreground">
-                                                                        {permission.description}
-                                                                    </p>
-                                                                )}
+                                            </AccordionTrigger>
+
+                                            <AccordionContent>
+                                                <div className="space-y-2 pt-2">
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => toggleModulePermissions(permissions)}
+                                                        className="mb-2"
+                                                    >
+                                                        {allSelected ? 'Deselect All' : 'Select All'}
+                                                    </Button>
+
+                                                    <div className="grid gap-2">
+                                                        {permissions.map(permission => (
+                                                            <div
+                                                                key={permission.key}
+                                                                className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-muted/50"
+                                                            >
+                                                                <Checkbox
+                                                                    checked={selectedPermissions.includes(permission.key)}
+                                                                    onCheckedChange={() =>
+                                                                        togglePermission(permission.key)
+                                                                    }
+                                                                />
+                                                                <div className="flex-1">
+                                                                    <Label className="font-medium cursor-pointer">
+                                                                        {permission.action.replace(/_/g, ' ')}
+                                                                    </Label>
+                                                                    {permission.description && (
+                                                                        <p className="text-xs text-muted-foreground">
+                                                                            {permission.description}
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+                                                                <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
+                                                                    {permission.key}
+                                                                </code>
                                                             </div>
-                                                            <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
-                                                                {permission.key}
-                                                            </code>
-                                                        </div>
-                                                    ))}
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                );
-                            })}
-                        </Accordion>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    );
+                                })}
+                            </Accordion>
+                        )}
                     </div>
-
-                    <Accordion type="multiple">
-                        {Object.entries(groupedPermissions).map(([module, permissions]) => {
-                            const allSelected = permissions.every(p =>
-                                assignedKeys.includes(p.key)
-                            );
-
-                            return (
-                                <AccordionItem key={module} value={module}>
-                                    <AccordionTrigger>{module}</AccordionTrigger>
-                                    <AccordionContent>
-                                        {permissions.map(permission => (
-                                            <div key={permission.key} className="flex items-center gap-3">
-                                                <Checkbox
-                                                    checked={selectedPermissions.includes(permission.key)}
-                                                    onCheckedChange={() => togglePermission(permission.key)}
-                                                />
-                                                <span>{permission.action}</span>
-                                                <code>{permission.key}</code>
-                                            </div>
-                                        ))}
-                                    </AccordionContent>
-                                </AccordionItem>
-                            );
-                        })}
-                    </Accordion>
-
 
                     <DialogFooter className="border-t pt-4">
                         <div className="flex items-center gap-2 mr-auto">
