@@ -85,8 +85,11 @@ const ModuleIcons: Record<string, any> = {
 };
 
 // Group permissions by module - defined before use
-const getGroupedPermissions = (permissions: SystemPermission[] = []) => {
-    const grouped: Record<string, SystemPermission[]> = {};
+// Generic type to work with both SystemPermission and BackendPermission
+type PermissionLike = { key: string; module: string; action: string; description?: string };
+
+const getGroupedPermissions = <T extends PermissionLike>(permissions: T[] = []): Record<string, T[]> => {
+    const grouped: Record<string, T[]> = {};
     permissions.forEach(p => {
         const module = p.module || 'OTHER';
         if (!grouped[module]) grouped[module] = [];
@@ -121,7 +124,7 @@ export default function RolesList() {
         r.name.toLowerCase().includes(search.toLowerCase())
     );
 
-    const resolvePermissions = (allPermissions: SystemPermission[], selected: string[]) => {
+    const resolvePermissions = (allPermissions: PermissionLike[], selected: string[]) => {
         if (selected.includes('*')) {
             return allPermissions.map(p => p.key);
         }
@@ -209,7 +212,7 @@ export default function RolesList() {
     };
 
     // Toggle all permissions in a module
-    const toggleModulePermissions = (permissions: SystemPermission[]) => {
+    const toggleModulePermissions = (permissions: PermissionLike[]) => {
         const keys = permissions.map(p => p.key);
         const allSelected = keys.every(k => selectedPermissions.includes(k));
 
