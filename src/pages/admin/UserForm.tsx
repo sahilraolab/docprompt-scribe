@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useUser, useCreateUser, useUpdateUser, useRoles } from '@/lib/hooks/useAdmin';
+import { useUser, useCreateUser, useUpdateUser, useRoles } from '@/lib/hooks/useAdminModule';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -77,12 +77,25 @@ export default function UserForm() {
   const onSubmit = async (data: CreateUserData | UpdateUserData) => {
     try {
       if (isEdit) {
+        const updateData = data as UpdateUserData;
         await updateUser.mutateAsync({
           id: id!,
-          data: data as UpdateUserData,
+          data: {
+            name: updateData.name,
+            phone: updateData.phone,
+            isActive: updateData.isActive,
+            roleId: updateData.roleId,
+          },
         });
       } else {
-        await createUser.mutateAsync(data as CreateUserData);
+        const createData = data as CreateUserData;
+        await createUser.mutateAsync({
+          name: createData.name,
+          email: createData.email,
+          phone: createData.phone,
+          password: createData.password,
+          roleId: createData.roleId,
+        });
       }
       navigate('/admin/users');
     } catch (err: any) {

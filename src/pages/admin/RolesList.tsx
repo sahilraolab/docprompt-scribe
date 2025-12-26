@@ -7,7 +7,8 @@ import {
     PERMISSION_MODULES
 } from '@/lib/constants/adminConstants';
 import { ROLE_PERMISSION_DEFAULTS } from '@/lib/constants/permissionDefaults';
-import type { UserType, Role, Permission } from '@/types/admin';
+import type { UserType, SystemPermission } from '@/types/admin';
+import type { BackendRole, BackendPermission } from '@/types/auth';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -83,6 +84,17 @@ const ModuleIcons: Record<string, any> = {
     WORKFLOW: GitBranch,
 };
 
+// Group permissions by module - defined before use
+const getGroupedPermissions = (permissions: SystemPermission[] = []) => {
+    const grouped: Record<string, SystemPermission[]> = {};
+    permissions.forEach(p => {
+        const module = p.module || 'OTHER';
+        if (!grouped[module]) grouped[module] = [];
+        grouped[module].push(p);
+    });
+    return grouped;
+};
+
 export default function RolesList() {
     const { data: roles = [], isLoading } = useRoles();
     const createRole = useCreateRole();
@@ -91,7 +103,7 @@ export default function RolesList() {
     const [search, setSearch] = useState('');
     const [showCreateDialog, setShowCreateDialog] = useState(false);
     const [showPermissionsDialog, setShowPermissionsDialog] = useState(false);
-    const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+    const [selectedRole, setSelectedRole] = useState<BackendRole | null>(null);
     const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -104,13 +116,12 @@ export default function RolesList() {
     const assignedKeys = selectedRole?.permissions?.map(p => p.key) || [];
     const groupedPermissions = getGroupedPermissions(SYSTEM_PERMISSIONS);
 
-
     // Filter roles
     const filteredRoles = roles.filter((r) =>
         r.name.toLowerCase().includes(search.toLowerCase())
     );
 
-    const resolvePermissions = (allPermissions: Permission[], selected: string[]) => {
+    const resolvePermissions = (allPermissions: SystemPermission[], selected: string[]) => {
         if (selected.includes('*')) {
             return allPermissions.map(p => p.key);
         }
@@ -123,17 +134,6 @@ export default function RolesList() {
         return ROLE_SUGGESTIONS.find(r => r.userType === userType)?.suggestions || [];
     };
 
-    // Group permissions by module
-    const getGroupedPermissions = (permissions: Permission[] = []) => {
-        const grouped: Record<string, Permission[]> = {};
-        permissions.forEach(p => {
-            const module = p.module || 'OTHER';
-            if (!grouped[module]) grouped[module] = [];
-            grouped[module].push(p);
-        });
-        return grouped;
-    };
-
     // Open create dialog
     const openCreateDialog = () => {
         setUserType('');
@@ -144,7 +144,7 @@ export default function RolesList() {
     };
 
     // Open permissions dialog
-    const openPermissionsDialog = (role: Role) => {
+    const openPermissionsDialog = (role: BackendRole) => {
         setSelectedRole(role);
 
         // If role already has permissions → use them
@@ -209,7 +209,7 @@ export default function RolesList() {
     };
 
     // Toggle all permissions in a module
-    const toggleModulePermissions = (permissions: Permission[]) => {
+    const toggleModulePermissions = (permissions: SystemPermission[]) => {
         const keys = permissions.map(p => p.key);
         const allSelected = keys.every(k => selectedPermissions.includes(k));
 
@@ -559,7 +559,7 @@ export default function RolesList() {
                                                 <div className="grid gap-2">
                                                     {permissions.map(permission => (
                                                         <div
-                                                            key={permission.id}
+                                                            key={permission.key}
                                                             className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
                                                         >
                                                             <Checkbox

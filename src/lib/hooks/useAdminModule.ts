@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "@/lib/api/adminApi";
 import { toast } from "sonner";
-import type { User, Role, AuditLog, CreateUserFormData, UpdateUserFormData, CreateRoleFormData } from "@/types/admin";
+import type { User, BackendRole, AuditLog } from "@/types/auth";
+import type { CreateUserFormData, UpdateUserFormData, CreateRoleFormData } from "@/types/admin";
 
 // ================= USERS =================
 
@@ -60,7 +61,7 @@ export function useUpdateUser() {
 // ================= ROLES =================
 
 export function useRoles() {
-  return useQuery<Role[]>({
+  return useQuery<BackendRole[]>({
     queryKey: ['admin-roles'],
     queryFn: async () => {
       const response = await adminApi.getRoles();
