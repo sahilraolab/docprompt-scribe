@@ -196,7 +196,7 @@ export default function WorkOrderForm() {
               <div className="space-y-2">
                 <Label>Project *</Label>
                 <SearchableSelect
-                  options={projects.map((p) => ({ value: p._id, label: `${p.name} (${p.code})` }))}
+                  options={projects.map((p) => ({ value: String(p.id), label: `${p.name} (${p.code})` }))}
                   value={normalizeSelectValue(selectedProjectId)}
                   onChange={(raw) => {
                     const value = normalizeSelectValue(raw);

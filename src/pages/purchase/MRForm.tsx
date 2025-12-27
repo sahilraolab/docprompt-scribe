@@ -112,7 +112,7 @@ export default function MRForm() {
 
   // Dropdowns
   const projectOptions = (Array.isArray(projects) ? projects : []).map((p) => ({
-    value: p._id || p.id,
+    value: String(p.id),
     label: `${p.name} (${p.code})`,
   }));
 

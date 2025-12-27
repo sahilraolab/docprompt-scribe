@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useEffect, useState } from 'react';
 import { useBOQ, useCreateBOQ, useUpdateBOQ } from '@/lib/hooks/useBOQ';
-import { useProjects } from '@/lib/hooks/useEngineering';
+import { useMasterProjects } from '@/lib/hooks/useMasters';
 import { useMaterialMaster } from '@/lib/hooks/useMaterialMaster';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,7 +46,7 @@ export default function BOQForm() {
   const isEdit = !!id;
 
   const { data: boqData } = useBOQ(id || '');
-  const { data: projects } = useProjects();
+  const { data: projects } = useMasterProjects();
   const { data: materialsData } = useMaterialMaster();
   const createBOQ = useCreateBOQ();
   const updateBOQ = useUpdateBOQ();
@@ -74,7 +74,7 @@ export default function BOQForm() {
   }));
 
   const projectOptions = (projects || []).map((p) => ({
-    value: p._id || p.id,
+    value: String(p.id),
     label: `${p.code || ''} - ${p.name || ''}`,
   }));
 

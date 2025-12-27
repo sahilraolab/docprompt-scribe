@@ -41,10 +41,10 @@ export default function EngineeringIndex() {
         ]);
         
         // Masters API returns data directly, engineering API returns { success, data }
-        const projects = Array.isArray(projRes) ? projRes : (projRes?.data || []);
-        const estimates = estRes?.data || [];
-        const bbs = bbsRes?.data || [];
-        const drawings = drawRes?.data || [];
+        const projects = Array.isArray(projRes) ? projRes : ((projRes as any)?.data || []);
+        const estimates = (estRes as any)?.data || [];
+        const bbs = (bbsRes as any)?.data || [];
+        const drawings = (drawRes as any)?.data || [];
         
         setProjectsData(projects);
         setEstimatesData(estimates);
