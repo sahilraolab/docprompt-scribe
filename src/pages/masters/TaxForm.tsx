@@ -7,28 +7,35 @@ import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription
+  Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from '@/components/ui/form';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select';
 import { ArrowLeft, Save } from 'lucide-react';
-import { useMasterTaxes, useCreateMasterTax, useUpdateMasterTax } from '@/lib/hooks/useMasters';
+import { useMasterTax, useCreateMasterTax, useUpdateMasterTax } from '@/lib/hooks/useMasters';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import type { TaxFormData, Tax } from '@/types/masters';
+import type { TaxFormData } from '@/types/masters';
 
-const TAX_TYPES = ['GST', 'IGST', 'CGST', 'SGST', 'CESS', 'TDS', 'TCS', 'OTHER'];
+const TAX_TYPES = [
+  { value: 'GST', label: 'GST' },
+  { value: 'CGST', label: 'CGST' },
+  { value: 'SGST', label: 'SGST' },
+  { value: 'IGST', label: 'IGST' },
+  { value: 'VAT', label: 'VAT' },
+  { value: 'CESS', label: 'CESS' },
+  { value: 'OTHER', label: 'Other' },
+];
 
 const schema = z.object({
-  name: z.string().min(1, 'Name is required').max(100),
   code: z.string().min(1, 'Code is required').max(20),
+  name: z.string().min(1, 'Name is required').max(100),
   rate: z.coerce.number().min(0).max(100),
-  type: z.string().optional(),
+  type: z.enum(['GST', 'CGST', 'SGST', 'IGST', 'VAT', 'CESS', 'OTHER']),
+  accountId: z.coerce.number().optional(),
   description: z.string().max(500).optional(),
-  isActive: z.boolean().default(true),
 });
 
 export default function TaxForm() {
@@ -36,36 +43,34 @@ export default function TaxForm() {
   const { id } = useParams();
   const isEdit = !!id;
 
-  const { data: taxes = [], isLoading } = useMasterTaxes();
+  const { data: tax, isLoading } = useMasterTax(Number(id));
   const createTax = useCreateMasterTax();
   const updateTax = useUpdateMasterTax();
-
-  const existingTax = isEdit ? taxes.find((t: Tax) => t.id === Number(id)) : null;
 
   const form = useForm<TaxFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: '',
       code: '',
+      name: '',
       rate: 0,
       type: 'GST',
+      accountId: undefined,
       description: '',
-      isActive: true,
     },
   });
 
   useEffect(() => {
-    if (existingTax) {
+    if (tax) {
       form.reset({
-        name: existingTax.name,
-        code: existingTax.code,
-        rate: existingTax.rate,
-        type: existingTax.type || 'GST',
-        description: existingTax.description || '',
-        isActive: existingTax.isActive,
+        code: tax.code,
+        name: tax.name,
+        rate: tax.rate,
+        type: tax.type,
+        accountId: tax.accountId,
+        description: tax.description || '',
       });
     }
-  }, [existingTax, form]);
+  }, [tax, form]);
 
   const onSubmit = (data: TaxFormData) => {
     if (isEdit) {
@@ -105,7 +110,7 @@ export default function TaxForm() {
                     <FormItem>
                       <FormLabel>Tax Code *</FormLabel>
                       <FormControl>
-                        <Input placeholder="GST18" {...field} />
+                        <Input placeholder="GST18" disabled={isEdit} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -145,7 +150,7 @@ export default function TaxForm() {
                   name="type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tax Type</FormLabel>
+                      <FormLabel>Tax Type *</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -154,12 +159,26 @@ export default function TaxForm() {
                         </FormControl>
                         <SelectContent>
                           {TAX_TYPES.map((type) => (
-                            <SelectItem key={type} value={type}>
-                              {type}
+                            <SelectItem key={type.value} value={type.value}>
+                              {type.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="accountId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ledger Account ID</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Account ID" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -176,27 +195,6 @@ export default function TaxForm() {
                       <Textarea placeholder="Description..." {...field} />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="isActive"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Active</FormLabel>
-                      <FormDescription>
-                        Enable this tax for use in transactions
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
                   </FormItem>
                 )}
               />

@@ -6,24 +6,29 @@ import { z } from 'zod';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from '@/components/ui/form';
 import { ArrowLeft, Save } from 'lucide-react';
-import { useMasterCompanies, useCreateMasterCompany, useUpdateMasterCompany } from '@/lib/hooks/useMasters';
+import { useMasterCompany, useMasterCompanies, useCreateMasterCompany, useUpdateMasterCompany } from '@/lib/hooks/useMasters';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import type { CompanyFormData, Company } from '@/types/masters';
+import type { CompanyFormData } from '@/types/masters';
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   code: z.string().min(1, 'Code is required').max(20),
-  address: z.string().max(500).optional(),
   phone: z.string().max(20).optional(),
   email: z.string().email().max(100).optional().or(z.literal('')),
-  gstNo: z.string().max(20).optional(),
-  panNo: z.string().max(20).optional(),
+  gstin: z.string().max(20).optional(),
+  pan: z.string().max(20).optional(),
+  addressLine1: z.string().max(200).optional(),
+  addressLine2: z.string().max(200).optional(),
+  city: z.string().max(100).optional(),
+  state: z.string().max(100).optional(),
+  pincode: z.string().max(10).optional(),
+  country: z.string().max(100).optional(),
+  currency: z.string().max(10).optional(),
 });
 
 export default function CompanyForm() {
@@ -31,38 +36,48 @@ export default function CompanyForm() {
   const { id } = useParams();
   const isEdit = !!id;
 
-  const { data: companies = [], isLoading } = useMasterCompanies();
+  const { data: company, isLoading } = useMasterCompany(Number(id));
   const createCompany = useCreateMasterCompany();
   const updateCompany = useUpdateMasterCompany();
-
-  const existingCompany = isEdit ? companies.find((c: Company) => c.id === Number(id)) : null;
 
   const form = useForm<CompanyFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: '',
       code: '',
-      address: '',
       phone: '',
       email: '',
-      gstNo: '',
-      panNo: '',
+      gstin: '',
+      pan: '',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      state: '',
+      pincode: '',
+      country: 'India',
+      currency: 'INR',
     },
   });
 
   useEffect(() => {
-    if (existingCompany) {
+    if (company) {
       form.reset({
-        name: existingCompany.name,
-        code: existingCompany.code,
-        address: existingCompany.address || '',
-        phone: existingCompany.phone || '',
-        email: existingCompany.email || '',
-        gstNo: existingCompany.gstNo || '',
-        panNo: existingCompany.panNo || '',
+        name: company.name,
+        code: company.code,
+        phone: company.phone || '',
+        email: company.email || '',
+        gstin: company.gstin || '',
+        pan: company.pan || '',
+        addressLine1: company.addressLine1 || '',
+        addressLine2: company.addressLine2 || '',
+        city: company.city || '',
+        state: company.state || '',
+        pincode: company.pincode || '',
+        country: company.country || 'India',
+        currency: company.currency || 'INR',
       });
     }
-  }, [existingCompany, form]);
+  }, [company, form]);
 
   const onSubmit = (data: CompanyFormData) => {
     if (isEdit) {
@@ -102,7 +117,7 @@ export default function CompanyForm() {
                     <FormItem>
                       <FormLabel>Company Code *</FormLabel>
                       <FormControl>
-                        <Input placeholder="CMP001" {...field} />
+                        <Input placeholder="CMP001" disabled={isEdit} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -153,10 +168,10 @@ export default function CompanyForm() {
 
                 <FormField
                   control={form.control}
-                  name="gstNo"
+                  name="gstin"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>GST No.</FormLabel>
+                      <FormLabel>GSTIN</FormLabel>
                       <FormControl>
                         <Input placeholder="GST number" {...field} />
                       </FormControl>
@@ -167,10 +182,10 @@ export default function CompanyForm() {
 
                 <FormField
                   control={form.control}
-                  name="panNo"
+                  name="pan"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>PAN No.</FormLabel>
+                      <FormLabel>PAN</FormLabel>
                       <FormControl>
                         <Input placeholder="PAN number" {...field} />
                       </FormControl>
@@ -180,19 +195,109 @@ export default function CompanyForm() {
                 />
               </div>
 
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Address</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Company address..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Address Section */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-muted-foreground">Address</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="addressLine1"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Address Line 1</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Street address" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="addressLine2"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Address Line 2</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Apartment, suite, etc." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>City</FormLabel>
+                        <FormControl>
+                          <Input placeholder="City" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="state"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>State</FormLabel>
+                        <FormControl>
+                          <Input placeholder="State" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="pincode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Pincode</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Pincode" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="country"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Country</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Country" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="currency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Currency</FormLabel>
+                        <FormControl>
+                          <Input placeholder="INR" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
 
               <div className="flex justify-end gap-2">
                 <Button

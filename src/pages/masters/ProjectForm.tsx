@@ -14,24 +14,37 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/SearchableSelect';
 import { ArrowLeft, Save } from 'lucide-react';
 import {
-  useMasterProjects, useCreateMasterProject, useUpdateMasterProject,
+  useMasterProject, useCreateMasterProject, useUpdateMasterProject,
   useMasterCompanies
 } from '@/lib/hooks/useMasters';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import type { ProjectFormData, Project } from '@/types/masters';
+import type { ProjectFormData } from '@/types/masters';
+
+const STATUS_OPTIONS = [
+  { value: 'PLANNED', label: 'Planned' },
+  { value: 'ONGOING', label: 'Ongoing' },
+  { value: 'ON_HOLD', label: 'On Hold' },
+  { value: 'COMPLETED', label: 'Completed' },
+];
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   code: z.string().min(1, 'Code is required').max(20),
-  location: z.string().max(200).optional(),
-  status: z.enum(['ACTIVE', 'COMPLETED', 'ON_HOLD', 'CANCELLED']),
+  addressLine1: z.string().max(200).optional(),
+  addressLine2: z.string().max(200).optional(),
+  city: z.string().max(100).optional(),
+  state: z.string().max(100).optional(),
+  pincode: z.string().max(10).optional(),
+  country: z.string().max(100).optional(),
+  companyId: z.coerce.number().min(1, 'Company is required'),
+  budget: z.coerce.number().min(0).optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
-  budget: z.coerce.number().min(0).optional(),
+  status: z.enum(['PLANNED', 'ONGOING', 'ON_HOLD', 'COMPLETED']),
   description: z.string().max(500).optional(),
-  companyId: z.coerce.number().optional(),
 });
 
 export default function ProjectForm() {
@@ -39,43 +52,56 @@ export default function ProjectForm() {
   const { id } = useParams();
   const isEdit = !!id;
 
-  const { data: projects = [], isLoading: loadingProjects } = useMasterProjects();
+  const { data: project, isLoading } = useMasterProject(Number(id));
   const { data: companies = [] } = useMasterCompanies();
   const createProject = useCreateMasterProject();
   const updateProject = useUpdateMasterProject();
 
-  const existingProject = isEdit ? projects.find((p: Project) => p.id === Number(id)) : null;
+  const companyOptions = companies.map((c) => ({
+    value: c.id.toString(),
+    label: `${c.code} - ${c.name}`,
+  }));
 
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: '',
       code: '',
-      location: '',
-      status: 'ACTIVE',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      state: '',
+      pincode: '',
+      country: 'India',
+      companyId: 0,
+      budget: 0,
       startDate: '',
       endDate: '',
-      budget: undefined,
+      status: 'PLANNED',
       description: '',
-      companyId: undefined,
     },
   });
 
   useEffect(() => {
-    if (existingProject) {
+    if (project) {
       form.reset({
-        name: existingProject.name,
-        code: existingProject.code,
-        location: existingProject.location || '',
-        status: existingProject.status,
-        startDate: existingProject.startDate || '',
-        endDate: existingProject.endDate || '',
-        budget: existingProject.budget,
-        description: existingProject.description || '',
-        companyId: existingProject.companyId,
+        name: project.name,
+        code: project.code,
+        addressLine1: project.addressLine1 || '',
+        addressLine2: project.addressLine2 || '',
+        city: project.city || '',
+        state: project.state || '',
+        pincode: project.pincode || '',
+        country: project.country || 'India',
+        companyId: project.companyId,
+        budget: project.budget || 0,
+        startDate: project.startDate || '',
+        endDate: project.endDate || '',
+        status: project.status,
+        description: project.description || '',
       });
     }
-  }, [existingProject, form]);
+  }, [project, form]);
 
   const onSubmit = (data: ProjectFormData) => {
     if (isEdit) {
@@ -88,7 +114,7 @@ export default function ProjectForm() {
     }
   };
 
-  if (isEdit && loadingProjects) return <LoadingSpinner />;
+  if (isEdit && isLoading) return <LoadingSpinner />;
 
   return (
     <div className="space-y-6">
@@ -115,7 +141,7 @@ export default function ProjectForm() {
                     <FormItem>
                       <FormLabel>Project Code *</FormLabel>
                       <FormControl>
-                        <Input placeholder="PRJ001" {...field} />
+                        <Input placeholder="PRJ001" disabled={isEdit} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -138,12 +164,19 @@ export default function ProjectForm() {
 
                 <FormField
                   control={form.control}
-                  name="location"
+                  name="companyId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Location</FormLabel>
+                      <FormLabel>Company *</FormLabel>
                       <FormControl>
-                        <Input placeholder="City, State" {...field} />
+                        <SearchableSelect
+                          options={companyOptions}
+                          value={field.value?.toString() || ''}
+                          onChange={(v) => field.onChange(Number(v))}
+                          placeholder="Select company"
+                          searchPlaceholder="Search companies..."
+                          emptyMessage="No company found."
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -163,36 +196,9 @@ export default function ProjectForm() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="ACTIVE">Active</SelectItem>
-                          <SelectItem value="COMPLETED">Completed</SelectItem>
-                          <SelectItem value="ON_HOLD">On Hold</SelectItem>
-                          <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="companyId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Company</FormLabel>
-                      <Select
-                        onValueChange={(v) => field.onChange(v ? Number(v) : undefined)}
-                        value={field.value?.toString() || ''}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select company" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {companies.map((c) => (
-                            <SelectItem key={c.id} value={c.id.toString()}>
-                              {c.name}
+                          {STATUS_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -243,6 +249,96 @@ export default function ProjectForm() {
                     </FormItem>
                   )}
                 />
+              </div>
+
+              {/* Address Section */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-muted-foreground">Project Location</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="addressLine1"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Address Line 1</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Street address" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="addressLine2"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Address Line 2</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Apartment, suite, etc." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>City</FormLabel>
+                        <FormControl>
+                          <Input placeholder="City" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="state"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>State</FormLabel>
+                        <FormControl>
+                          <Input placeholder="State" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="pincode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Pincode</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Pincode" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="country"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Country</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Country" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
 
               <FormField
