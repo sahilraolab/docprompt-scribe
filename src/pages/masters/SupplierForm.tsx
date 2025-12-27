@@ -85,11 +85,9 @@ export default function SupplierForm() {
       <PageHeader
         title={isEdit ? 'Edit Supplier' : 'New Supplier'}
         description={isEdit ? 'Update supplier details' : 'Create a new supplier'}
-        actions={
-          <Button variant="outline" onClick={() => navigate('/masters/suppliers')}>
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back
-          </Button>
-        }
+        actions={[
+          { label: 'Back', onClick: () => navigate('/masters/suppliers'), icon: ArrowLeft, variant: 'outline' }
+        ]}
       />
 
       <Card>

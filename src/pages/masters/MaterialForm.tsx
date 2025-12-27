@@ -90,11 +90,9 @@ export default function MaterialForm() {
       <PageHeader
         title={isEdit ? 'Edit Material' : 'New Material'}
         description={isEdit ? 'Update material details' : 'Create a new material'}
-        actions={
-          <Button variant="outline" onClick={() => navigate('/masters/materials')}>
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back
-          </Button>
-        }
+        actions={[
+          { label: 'Back', onClick: () => navigate('/masters/materials'), icon: ArrowLeft, variant: 'outline' }
+        ]}
       />
 
       <Card>

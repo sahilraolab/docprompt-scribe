@@ -50,11 +50,9 @@ export default function ProjectsList() {
       <PageHeader
         title="Projects"
         description="Manage construction projects"
-        actions={
-          <Button onClick={() => navigate('/masters/projects/new')}>
-            <Plus className="h-4 w-4 mr-2" /> Add Project
-          </Button>
-        }
+        actions={[
+          { label: 'Add Project', onClick: () => navigate('/masters/projects/new'), icon: Plus }
+        ]}
       />
 
       <Card>
@@ -77,11 +75,7 @@ export default function ProjectsList() {
               icon={FolderKanban}
               title="No projects found"
               description="Create your first project to get started"
-              action={
-                <Button onClick={() => navigate('/masters/projects/new')}>
-                  <Plus className="h-4 w-4 mr-2" /> Add Project
-                </Button>
-              }
+              action={{ label: 'Add Project', onClick: () => navigate('/masters/projects/new') }}
             />
           ) : (
             <Table>

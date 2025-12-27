@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table';
@@ -11,27 +12,27 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from '@/components/ui/alert-dialog';
-import { Plus, Search, Edit2, Trash2, Truck } from 'lucide-react';
-import { useMasterSuppliers, useDeleteMasterSupplier } from '@/lib/hooks/useMasters';
+import { Plus, Search, Edit2, Trash2, Percent } from 'lucide-react';
+import { useMasterTaxes, useDeleteMasterTax } from '@/lib/hooks/useMasters';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';
-import type { Supplier } from '@/types/masters';
+import type { Tax } from '@/types/masters';
 
-export default function SuppliersList() {
+export default function TaxesList() {
   const navigate = useNavigate();
-  const { data: suppliers = [], isLoading } = useMasterSuppliers();
-  const deleteSupplier = useDeleteMasterSupplier();
+  const { data: taxes = [], isLoading } = useMasterTaxes();
+  const deleteTax = useDeleteMasterTax();
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  const filtered = suppliers.filter((s: Supplier) =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    s.code.toLowerCase().includes(search.toLowerCase())
+  const filtered = taxes.filter((t: Tax) =>
+    t.name.toLowerCase().includes(search.toLowerCase()) ||
+    t.code.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleDelete = () => {
     if (deleteId) {
-      deleteSupplier.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+      deleteTax.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
     }
   };
 
@@ -40,10 +41,10 @@ export default function SuppliersList() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Suppliers"
-        description="Manage supplier/vendor information"
+        title="Taxes"
+        description="Manage tax rates and configurations"
         actions={[
-          { label: 'Add Supplier', onClick: () => navigate('/masters/suppliers/new'), icon: Plus }
+          { label: 'Add Tax', onClick: () => navigate('/masters/taxes/new'), icon: Plus }
         ]}
       />
 
@@ -53,7 +54,7 @@ export default function SuppliersList() {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search suppliers..."
+                placeholder="Search taxes..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -64,10 +65,10 @@ export default function SuppliersList() {
         <CardContent className="p-0">
           {filtered.length === 0 ? (
             <EmptyState
-              icon={Truck}
-              title="No suppliers found"
-              description="Create your first supplier to get started"
-              action={{ label: 'Add Supplier', onClick: () => navigate('/masters/suppliers/new') }}
+              icon={Percent}
+              title="No taxes found"
+              description="Create your first tax configuration"
+              action={{ label: 'Add Tax', onClick: () => navigate('/masters/taxes/new') }}
             />
           ) : (
             <Table>
@@ -75,33 +76,37 @@ export default function SuppliersList() {
                 <TableRow>
                   <TableHead>Code</TableHead>
                   <TableHead>Name</TableHead>
-                  <TableHead>Contact Person</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>GST No.</TableHead>
+                  <TableHead>Rate</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((supplier: Supplier) => (
-                  <TableRow key={supplier.id}>
-                    <TableCell className="font-mono text-sm">{supplier.code}</TableCell>
-                    <TableCell className="font-medium">{supplier.name}</TableCell>
-                    <TableCell>{supplier.contactPerson || '-'}</TableCell>
-                    <TableCell>{supplier.phone || '-'}</TableCell>
-                    <TableCell className="font-mono text-sm">{supplier.gstNo || '-'}</TableCell>
+                {filtered.map((tax: Tax) => (
+                  <TableRow key={tax.id}>
+                    <TableCell className="font-mono text-sm">{tax.code}</TableCell>
+                    <TableCell className="font-medium">{tax.name}</TableCell>
+                    <TableCell>{tax.rate}%</TableCell>
+                    <TableCell>{tax.type || 'GST'}</TableCell>
+                    <TableCell>
+                      <Badge variant={tax.isActive ? 'default' : 'secondary'}>
+                        {tax.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => navigate(`/masters/suppliers/${supplier.id}/edit`)}
+                          onClick={() => navigate(`/masters/taxes/${tax.id}/edit`)}
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setDeleteId(supplier.id)}
+                          onClick={() => setDeleteId(tax.id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -118,7 +123,7 @@ export default function SuppliersList() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Supplier?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Tax?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone.
             </AlertDialogDescription>

@@ -42,11 +42,9 @@ export default function CompaniesList() {
       <PageHeader
         title="Companies"
         description="Manage company information"
-        actions={
-          <Button onClick={() => navigate('/masters/companies/new')}>
-            <Plus className="h-4 w-4 mr-2" /> Add Company
-          </Button>
-        }
+        actions={[
+          { label: 'Add Company', onClick: () => navigate('/masters/companies/new'), icon: Plus }
+        ]}
       />
 
       <Card>
@@ -69,11 +67,7 @@ export default function CompaniesList() {
               icon={Building2}
               title="No companies found"
               description="Create your first company to get started"
-              action={
-                <Button onClick={() => navigate('/masters/companies/new')}>
-                  <Plus className="h-4 w-4 mr-2" /> Add Company
-                </Button>
-              }
+              action={{ label: 'Add Company', onClick: () => navigate('/masters/companies/new') }}
             />
           ) : (
             <Table>

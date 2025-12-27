@@ -82,11 +82,9 @@ export default function CompanyForm() {
       <PageHeader
         title={isEdit ? 'Edit Company' : 'New Company'}
         description={isEdit ? 'Update company details' : 'Create a new company'}
-        actions={
-          <Button variant="outline" onClick={() => navigate('/masters/companies')}>
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back
-          </Button>
-        }
+        actions={[
+          { label: 'Back', onClick: () => navigate('/masters/companies'), icon: ArrowLeft, variant: 'outline' }
+        ]}
       />
 
       <Card>
