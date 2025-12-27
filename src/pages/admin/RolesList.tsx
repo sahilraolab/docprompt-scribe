@@ -587,7 +587,7 @@ export default function RolesList() {
                                                                     <Label className="font-medium cursor-pointer">
                                                                         {permission.action.replace(/_/g, ' ')}
                                                                     </Label>
-                                                                    {permission.description && (
+                                                                    {'description' in permission && typeof permission.description === 'string' && permission.description && (
                                                                         <p className="text-xs text-muted-foreground">
                                                                             {permission.description}
                                                                         </p>
