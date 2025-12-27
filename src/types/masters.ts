@@ -69,6 +69,7 @@ export interface Department {
   id: number;
   name: string;
   code: string;
+  headName?: string;
   description?: string;
   createdAt: string;
   updatedAt: string;
@@ -78,6 +79,7 @@ export interface CostCenter {
   id: number;
   name: string;
   code: string;
+  budget?: number;
   description?: string;
   projectId?: number;
   project?: Project;
@@ -90,7 +92,8 @@ export interface Tax {
   name: string;
   code: string;
   rate: number;
-  type: 'GST' | 'CGST' | 'SGST' | 'IGST' | 'CESS' | 'OTHER';
+  type: 'GST' | 'CGST' | 'SGST' | 'IGST' | 'CESS' | 'TDS' | 'TCS' | 'OTHER';
+  isActive: boolean;
   description?: string;
   createdAt: string;
   updatedAt: string;
@@ -148,12 +151,14 @@ export interface UOMFormData {
 export interface DepartmentFormData {
   name: string;
   code: string;
+  headName?: string;
   description?: string;
 }
 
 export interface CostCenterFormData {
   name: string;
   code: string;
+  budget?: number;
   description?: string;
   projectId?: number;
 }
@@ -162,6 +167,7 @@ export interface TaxFormData {
   name: string;
   code: string;
   rate: number;
-  type: 'GST' | 'CGST' | 'SGST' | 'IGST' | 'CESS' | 'OTHER';
+  type?: string;
+  isActive?: boolean;
   description?: string;
 }

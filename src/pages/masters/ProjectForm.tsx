@@ -95,11 +95,9 @@ export default function ProjectForm() {
       <PageHeader
         title={isEdit ? 'Edit Project' : 'New Project'}
         description={isEdit ? 'Update project details' : 'Create a new project'}
-        actions={
-          <Button variant="outline" onClick={() => navigate('/masters/projects')}>
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back
-          </Button>
-        }
+        actions={[
+          { label: 'Back', onClick: () => navigate('/masters/projects'), icon: ArrowLeft, variant: 'outline' }
+        ]}
       />
 
       <Card>

@@ -11,27 +11,27 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from '@/components/ui/alert-dialog';
-import { Plus, Search, Edit2, Trash2, Truck } from 'lucide-react';
-import { useMasterSuppliers, useDeleteMasterSupplier } from '@/lib/hooks/useMasters';
+import { Plus, Search, Edit2, Trash2, Ruler } from 'lucide-react';
+import { useMasterUOMs, useDeleteMasterUOM } from '@/lib/hooks/useMasters';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';
-import type { Supplier } from '@/types/masters';
+import type { UOM } from '@/types/masters';
 
-export default function SuppliersList() {
+export default function UOMsList() {
   const navigate = useNavigate();
-  const { data: suppliers = [], isLoading } = useMasterSuppliers();
-  const deleteSupplier = useDeleteMasterSupplier();
+  const { data: uoms = [], isLoading } = useMasterUOMs();
+  const deleteUOM = useDeleteMasterUOM();
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  const filtered = suppliers.filter((s: Supplier) =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    s.code.toLowerCase().includes(search.toLowerCase())
+  const filtered = uoms.filter((u: UOM) =>
+    u.name.toLowerCase().includes(search.toLowerCase()) ||
+    u.code.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleDelete = () => {
     if (deleteId) {
-      deleteSupplier.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+      deleteUOM.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
     }
   };
 
@@ -40,10 +40,10 @@ export default function SuppliersList() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Suppliers"
-        description="Manage supplier/vendor information"
+        title="Units of Measure"
+        description="Manage units of measurement"
         actions={[
-          { label: 'Add Supplier', onClick: () => navigate('/masters/suppliers/new'), icon: Plus }
+          { label: 'Add UOM', onClick: () => navigate('/masters/uoms/new'), icon: Plus }
         ]}
       />
 
@@ -53,7 +53,7 @@ export default function SuppliersList() {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search suppliers..."
+                placeholder="Search UOMs..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -64,10 +64,10 @@ export default function SuppliersList() {
         <CardContent className="p-0">
           {filtered.length === 0 ? (
             <EmptyState
-              icon={Truck}
-              title="No suppliers found"
-              description="Create your first supplier to get started"
-              action={{ label: 'Add Supplier', onClick: () => navigate('/masters/suppliers/new') }}
+              icon={Ruler}
+              title="No UOMs found"
+              description="Create your first unit of measure"
+              action={{ label: 'Add UOM', onClick: () => navigate('/masters/uoms/new') }}
             />
           ) : (
             <Table>
@@ -75,33 +75,29 @@ export default function SuppliersList() {
                 <TableRow>
                   <TableHead>Code</TableHead>
                   <TableHead>Name</TableHead>
-                  <TableHead>Contact Person</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>GST No.</TableHead>
+                  <TableHead>Description</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((supplier: Supplier) => (
-                  <TableRow key={supplier.id}>
-                    <TableCell className="font-mono text-sm">{supplier.code}</TableCell>
-                    <TableCell className="font-medium">{supplier.name}</TableCell>
-                    <TableCell>{supplier.contactPerson || '-'}</TableCell>
-                    <TableCell>{supplier.phone || '-'}</TableCell>
-                    <TableCell className="font-mono text-sm">{supplier.gstNo || '-'}</TableCell>
+                {filtered.map((uom: UOM) => (
+                  <TableRow key={uom.id}>
+                    <TableCell className="font-mono text-sm">{uom.code}</TableCell>
+                    <TableCell className="font-medium">{uom.name}</TableCell>
+                    <TableCell>{uom.description || '-'}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => navigate(`/masters/suppliers/${supplier.id}/edit`)}
+                          onClick={() => navigate(`/masters/uoms/${uom.id}/edit`)}
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setDeleteId(supplier.id)}
+                          onClick={() => setDeleteId(uom.id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -118,7 +114,7 @@ export default function SuppliersList() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Supplier?</AlertDialogTitle>
+            <AlertDialogTitle>Delete UOM?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone.
             </AlertDialogDescription>

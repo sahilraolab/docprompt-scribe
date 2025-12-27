@@ -127,6 +127,25 @@ import UsersList from "./pages/admin/UsersList";
 import RolesList from "./pages/admin/RolesList";
 import AuditTrailList from "./pages/admin/AuditTrailList";
 
+// Masters
+import MastersIndex from "./pages/masters/index";
+import MasterProjectsList from "./pages/masters/ProjectsList";
+import MasterProjectForm from "./pages/masters/ProjectForm";
+import MasterMaterialsList from "./pages/masters/MaterialsList";
+import MasterMaterialForm from "./pages/masters/MaterialForm";
+import MasterCompaniesList from "./pages/masters/CompaniesList";
+import MasterCompanyForm from "./pages/masters/CompanyForm";
+import MasterSuppliersList from "./pages/masters/SuppliersList";
+import MasterSupplierForm from "./pages/masters/SupplierForm";
+import UOMsList from "./pages/masters/UOMsList";
+import UOMForm from "./pages/masters/UOMForm";
+import DepartmentsList from "./pages/masters/DepartmentsList";
+import DepartmentForm from "./pages/masters/DepartmentForm";
+import CostCentersList from "./pages/masters/CostCentersList";
+import CostCenterForm from "./pages/masters/CostCenterForm";
+import TaxesList from "./pages/masters/TaxesList";
+import TaxForm from "./pages/masters/TaxForm";
+
 const queryClient = new QueryClient();
 
 /* ---------------------------------------------
@@ -327,6 +346,35 @@ const App = () => (
             <Route path="/admin/users" element={<ProtectedRoute><AppLayout><UsersList /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/roles" element={<ProtectedRoute><AppLayout><RolesList /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/audit" element={<ProtectedRoute><AppLayout><AuditTrailList /></AppLayout></ProtectedRoute>} />
+
+            {/* -----------------------------
+             * Masters
+             * ----------------------------- */}
+            <Route path="/masters" element={<ProtectedRoute><AppLayout><MastersIndex /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/projects" element={<ProtectedRoute><AppLayout><MasterProjectsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/projects/new" element={<ProtectedRoute><AppLayout><MasterProjectForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/projects/:id/edit" element={<ProtectedRoute><AppLayout><MasterProjectForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/materials" element={<ProtectedRoute><AppLayout><MasterMaterialsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/materials/new" element={<ProtectedRoute><AppLayout><MasterMaterialForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/materials/:id/edit" element={<ProtectedRoute><AppLayout><MasterMaterialForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/companies" element={<ProtectedRoute><AppLayout><MasterCompaniesList /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/companies/new" element={<ProtectedRoute><AppLayout><MasterCompanyForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/companies/:id/edit" element={<ProtectedRoute><AppLayout><MasterCompanyForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/suppliers" element={<ProtectedRoute><AppLayout><MasterSuppliersList /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/suppliers/new" element={<ProtectedRoute><AppLayout><MasterSupplierForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/suppliers/:id/edit" element={<ProtectedRoute><AppLayout><MasterSupplierForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/uoms" element={<ProtectedRoute><AppLayout><UOMsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/uoms/new" element={<ProtectedRoute><AppLayout><UOMForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/uoms/:id/edit" element={<ProtectedRoute><AppLayout><UOMForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/departments" element={<ProtectedRoute><AppLayout><DepartmentsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/departments/new" element={<ProtectedRoute><AppLayout><DepartmentForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/departments/:id/edit" element={<ProtectedRoute><AppLayout><DepartmentForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/cost-centers" element={<ProtectedRoute><AppLayout><CostCentersList /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/cost-centers/new" element={<ProtectedRoute><AppLayout><CostCenterForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/cost-centers/:id/edit" element={<ProtectedRoute><AppLayout><CostCenterForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/taxes" element={<ProtectedRoute><AppLayout><TaxesList /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/taxes/new" element={<ProtectedRoute><AppLayout><TaxForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/masters/taxes/:id/edit" element={<ProtectedRoute><AppLayout><TaxForm /></AppLayout></ProtectedRoute>} />
 
             {/* -----------------------------
              * Settings

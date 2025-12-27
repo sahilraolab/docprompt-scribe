@@ -43,11 +43,9 @@ export default function MaterialsList() {
       <PageHeader
         title="Materials"
         description="Manage material master data"
-        actions={
-          <Button onClick={() => navigate('/masters/materials/new')}>
-            <Plus className="h-4 w-4 mr-2" /> Add Material
-          </Button>
-        }
+        actions={[
+          { label: 'Add Material', onClick: () => navigate('/masters/materials/new'), icon: Plus }
+        ]}
       />
 
       <Card>
@@ -70,11 +68,7 @@ export default function MaterialsList() {
               icon={Package}
               title="No materials found"
               description="Create your first material to get started"
-              action={
-                <Button onClick={() => navigate('/masters/materials/new')}>
-                  <Plus className="h-4 w-4 mr-2" /> Add Material
-                </Button>
-              }
+              action={{ label: 'Add Material', onClick: () => navigate('/masters/materials/new') }}
             />
           ) : (
             <Table>
