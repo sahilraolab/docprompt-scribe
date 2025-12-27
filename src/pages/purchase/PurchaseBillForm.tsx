@@ -20,25 +20,19 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { SearchableSelect } from '@/components/SearchableSelect';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Lock, Calculator } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/lib/utils/format';
 
-// ✅ Validation Schema
+// Validation Schema
 const billSchema = z.object({
   poId: z.string().min(1, 'Purchase Order is required'),
   invoiceNo: z.string().min(1, 'Invoice Number is required'),
   invoiceDate: z.string().min(1, 'Invoice Date is required'),
-  amount: z.string().min(1, 'Amount is required'),
-  taxPct: z.string().min(1, 'Tax percentage is required'),
-  status: z.enum(['Draft', 'Pending', 'Approved', 'Paid']),
+  basicAmount: z.string().min(1, 'Basic Amount is required'),
+  taxAmount: z.string().min(1, 'Tax Amount is required'),
   remarks: z.string().optional(),
 });
 
@@ -49,60 +43,62 @@ export default function PurchaseBillForm() {
   const navigate = useNavigate();
   const isEdit = !!id;
 
-  // 🔹 Hooks
+  // Hooks
   const { data: pos, isLoading: posLoading } = usePOs();
   const { data: billData } = usePurchaseBill(id || '');
   const createBill = useCreatePurchaseBill();
   const updateBill = useUpdatePurchaseBill();
 
-  // 🔹 Default form values
+  // Default form values
   const form = useForm<BillFormData>({
     resolver: zodResolver(billSchema),
     defaultValues: {
       poId: '',
       invoiceNo: '',
       invoiceDate: new Date().toISOString().split('T')[0],
-      amount: '',
-      taxPct: '18',
-      status: 'Draft',
+      basicAmount: '',
+      taxAmount: '',
       remarks: '',
     },
   });
 
-  // 🔹 Fill form when editing
+  // Check if bill is locked (POSTED status)
+  const isLocked = useMemo(() => {
+    if (!billData) return false;
+    return billData.status === 'POSTED' || billData.postedToAccounts === true;
+  }, [billData]);
+
+  // Fill form when editing
   useEffect(() => {
     if (billData && isEdit) {
       form.reset({
-        poId: billData.poId?._id || billData.poId || '',
-        invoiceNo: billData.invoiceNo || '',
-        invoiceDate: billData.invoiceDate
-          ? billData.invoiceDate.split('T')[0]
-          : '',
-        amount: String(billData.amount || ''),
-        taxPct: '18',
-        status: billData.status || 'Draft',
+        poId: billData.poId?._id || String(billData.poId) || '',
+        invoiceNo: billData.billNo || billData.invoiceNo || '',
+        invoiceDate: billData.billDate
+          ? billData.billDate.split('T')[0]
+          : billData.invoiceDate?.split('T')[0] || '',
+        basicAmount: String(billData.basicAmount || ''),
+        taxAmount: String(billData.taxAmount || ''),
         remarks: billData.remarks || '',
       });
     }
   }, [billData, isEdit, form]);
 
-  // 🔹 Computed Values
-  const amount = parseFloat(form.watch('amount') || '0');
-  const taxPct = parseFloat(form.watch('taxPct') || '0');
-  const tax = useMemo(() => (amount * taxPct) / 100, [amount, taxPct]);
-  const total = useMemo(() => amount + tax, [amount, tax]);
+  // Auto-calculated Total
+  const basicAmount = parseFloat(form.watch('basicAmount') || '0');
+  const taxAmount = parseFloat(form.watch('taxAmount') || '0');
+  const totalAmount = useMemo(() => basicAmount + taxAmount, [basicAmount, taxAmount]);
 
-  // 🔹 Submit Handler
+  // Submit Handler
   const onSubmit = async (data: BillFormData) => {
     try {
       const payload = {
         poId: data.poId,
         invoiceNo: data.invoiceNo,
         invoiceDate: data.invoiceDate,
-        amount: parseFloat(data.amount),
-        tax,
-        total,
-        status: data.status,
+        basicAmount: parseFloat(data.basicAmount),
+        taxAmount: parseFloat(data.taxAmount),
+        totalAmount,
         remarks: data.remarks,
       };
 
@@ -121,11 +117,14 @@ export default function PurchaseBillForm() {
     }
   };
 
-  // 🔹 Purchase Orders Dropdown
-  const poOptions = (pos || []).map((po: any) => ({
-    value: po._id,
-    label: `${po.code} - ${po.supplierName || 'Supplier'}`,
-  }));
+  // Purchase Orders Dropdown - only approved POs
+  const poList = Array.isArray(pos) ? pos : [];
+  const poOptions = poList
+    .filter((po: any) => po.status === 'APPROVED')
+    .map((po: any) => ({
+      value: po._id || String(po.id),
+      label: `${po.poNo || po.code} - ${po.supplierName || 'Supplier'} (₹${Number(po.totalAmount || 0).toLocaleString('en-IN')})`,
+    }));
 
   return (
     <div className="space-y-6">
@@ -139,9 +138,15 @@ export default function PurchaseBillForm() {
             {isEdit ? 'Edit Purchase Bill' : 'New Purchase Bill'}
           </h1>
           <p className="text-muted-foreground">
-            Record supplier invoice against a Purchase Order
+            Record supplier invoice against an approved Purchase Order
           </p>
         </div>
+        {isLocked && (
+          <div className="ml-auto flex items-center gap-2 text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 rounded-md">
+            <Lock className="h-4 w-4" />
+            <span className="text-sm font-medium">Locked (Posted to Accounts)</span>
+          </div>
+        )}
       </div>
 
       {/* Form */}
@@ -159,14 +164,15 @@ export default function PurchaseBillForm() {
                 name="poId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Purchase Order *</FormLabel>
+                    <FormLabel>Purchase Order (Approved) *</FormLabel>
                     <FormControl>
                       <SearchableSelect
                         options={poOptions}
                         value={field.value}
                         onChange={field.onChange}
-                        placeholder="Select Purchase Order"
-                        disabled={posLoading}
+                        placeholder="Select Approved Purchase Order"
+                        disabled={posLoading || isLocked}
+                        emptyMessage="No approved PO available"
                       />
                     </FormControl>
                     <FormMessage />
@@ -183,7 +189,7 @@ export default function PurchaseBillForm() {
                     <FormItem>
                       <FormLabel>Invoice Number *</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="INV-001" />
+                        <Input {...field} placeholder="INV-001" disabled={isLocked} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -196,7 +202,7 @@ export default function PurchaseBillForm() {
                     <FormItem>
                       <FormLabel>Invoice Date *</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <Input type="date" {...field} disabled={isLocked} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -208,16 +214,17 @@ export default function PurchaseBillForm() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="amount"
+                  name="basicAmount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Amount (₹) *</FormLabel>
+                      <FormLabel>Basic Amount (₹) *</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           step="0.01"
                           {...field}
                           placeholder="0.00"
+                          disabled={isLocked}
                         />
                       </FormControl>
                       <FormMessage />
@@ -226,16 +233,17 @@ export default function PurchaseBillForm() {
                 />
                 <FormField
                   control={form.control}
-                  name="taxPct"
+                  name="taxAmount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tax Percentage (%) *</FormLabel>
+                      <FormLabel>Tax Amount (₹) *</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           step="0.01"
                           {...field}
-                          placeholder="18"
+                          placeholder="0.00"
+                          disabled={isLocked}
                         />
                       </FormControl>
                       <FormMessage />
@@ -244,43 +252,16 @@ export default function PurchaseBillForm() {
                 />
               </div>
 
-              {/* Totals Display */}
-              <div className="grid grid-cols-3 gap-4 bg-muted p-4 rounded-lg">
-                <div>
-                  <div className="text-sm text-muted-foreground">Tax Amount</div>
-                  <div className="text-lg font-semibold">
-                    ₹{tax.toLocaleString('en-IN')}
-                  </div>
+              {/* Auto-calculated Total Display */}
+              <div className="bg-muted/50 border rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Calculator className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-muted-foreground">Auto-Calculated</span>
                 </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Total Amount</div>
-                  <div className="text-lg font-semibold">
-                    ₹{total.toLocaleString('en-IN')}
-                  </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Total Amount (Basic + Tax)</span>
+                  <span className="text-xl font-bold">{formatCurrency(totalAmount)}</span>
                 </div>
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select Status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Draft">Draft</SelectItem>
-                          <SelectItem value="Pending">Pending</SelectItem>
-                          <SelectItem value="Approved">Approved</SelectItem>
-                          <SelectItem value="Paid">Paid</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
               {/* Remarks */}
@@ -291,7 +272,7 @@ export default function PurchaseBillForm() {
                   <FormItem>
                     <FormLabel>Remarks</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Enter remarks (optional)" />
+                      <Textarea {...field} placeholder="Enter remarks (optional)" disabled={isLocked} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -302,11 +283,13 @@ export default function PurchaseBillForm() {
 
           {/* Actions */}
           <div className="flex gap-4">
-            <Button type="submit" disabled={createBill.isPending || updateBill.isPending}>
-              {isEdit ? 'Update Bill' : 'Create Bill'}
-            </Button>
+            {!isLocked && (
+              <Button type="submit" disabled={createBill.isPending || updateBill.isPending}>
+                {isEdit ? 'Update Bill' : 'Create Bill'}
+              </Button>
+            )}
             <Button type="button" variant="outline" onClick={() => navigate('/purchase/bills')}>
-              Cancel
+              {isLocked ? 'Back' : 'Cancel'}
             </Button>
           </div>
         </form>

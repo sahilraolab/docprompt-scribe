@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,13 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { SearchableSelect } from '@/components/SearchableSelect';
 import {
   useSuppliers,
   useMRs,
@@ -22,7 +16,7 @@ import {
   useUpdateQuotation,
   useQuotation,
 } from '@/lib/hooks/usePurchaseBackend';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Lock, Calculator } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils/format';
 
@@ -47,6 +41,17 @@ const quotationSchema = z.object({
 });
 
 type QuotationFormData = z.infer<typeof quotationSchema>;
+
+const uomOptions = [
+  { value: 'Nos', label: 'Nos' },
+  { value: 'KG', label: 'KG' },
+  { value: 'MT', label: 'MT' },
+  { value: 'Ltr', label: 'Ltr' },
+  { value: 'Sqm', label: 'Sqm' },
+  { value: 'Cum', label: 'Cum' },
+  { value: 'Bag', label: 'Bag' },
+  { value: 'Box', label: 'Box' },
+];
 
 export default function QuotationForm() {
   const { id } = useParams();
@@ -75,11 +80,18 @@ export default function QuotationForm() {
     },
   });
 
+  // Check if quotation is locked (APPROVED or REJECTED)
+  const isLocked = useMemo(() => {
+    if (!quotationData) return false;
+    const q = quotationData.data || quotationData;
+    return ['APPROVED', 'REJECTED'].includes(q.status);
+  }, [quotationData]);
+
   useEffect(() => {
     if (quotationData && id) {
       const q = quotationData.data || quotationData;
-      setValue('mrId', q.mrId?._id || '');
-      setValue('supplierId', q.supplierId?._id || '');
+      setValue('mrId', q.mrId?._id || q.mrId || '');
+      setValue('supplierId', q.supplierId?._id || q.supplierId || '');
       setValue('quotationNo', q.quotationNo || '');
       setValue('quotationDate', q.quotationDate?.split('T')[0]);
       setValue('validUntil', q.validUntil?.split('T')[0] || '');
@@ -96,11 +108,11 @@ export default function QuotationForm() {
     }
   }, [quotationItems, setValue]);
 
-
   const mrId = watch('mrId');
   const supplierId = watch('supplierId');
 
   const addItem = () => {
+    if (isLocked) return;
     setQuotationItems([
       ...quotationItems,
       { description: '', qty: 1, uom: '', rate: 0, taxPercent: 18 },
@@ -108,12 +120,14 @@ export default function QuotationForm() {
   };
 
   const removeItem = (index: number) => {
+    if (isLocked) return;
     if (quotationItems.length > 1) {
       setQuotationItems(quotationItems.filter((_, i) => i !== index));
     }
   };
 
   const updateItem = (index: number, field: string, value: any) => {
+    if (isLocked) return;
     const updated = [...quotationItems];
     updated[index] = { ...updated[index], [field]: value };
     setQuotationItems(updated);
@@ -121,31 +135,23 @@ export default function QuotationForm() {
   };
 
   const calculateItemAmount = (item: any) => item.qty * item.rate;
-  const calculateTotals = () => {
-    const subtotal = quotationItems.reduce(
-      (sum, item) => sum + calculateItemAmount(item),
-      0
-    );
-    const taxTotal = quotationItems.reduce(
-      (sum, item) =>
-        sum + (calculateItemAmount(item) * (item.taxPercent || 0)) / 100,
-      0
-    );
-    return {
-      subtotal,
-      taxTotal,
-      grandTotal: subtotal + taxTotal,
-    };
-  };
-  const { subtotal, taxTotal, grandTotal } = calculateTotals();
+  const calculateItemTax = (item: any) => (calculateItemAmount(item) * (item.taxPercent || 0)) / 100;
+
+  const { subtotal, taxTotal, grandTotal } = useMemo(() => {
+    const subtotal = quotationItems.reduce((sum, item) => sum + calculateItemAmount(item), 0);
+    const taxTotal = quotationItems.reduce((sum, item) => sum + calculateItemTax(item), 0);
+    return { subtotal, taxTotal, grandTotal: subtotal + taxTotal };
+  }, [quotationItems]);
 
   const onSubmit = (data: QuotationFormData) => {
     const itemsWithAmount = quotationItems.map((item) => ({
       ...item,
       amount: calculateItemAmount(item),
+      taxAmount: calculateItemTax(item),
+      totalAmount: calculateItemAmount(item) + calculateItemTax(item),
     }));
 
-    const payload = { ...data, items: itemsWithAmount };
+    const payload = { ...data, items: itemsWithAmount, totalAmount: grandTotal };
 
     if (id) {
       updateQuotation.mutate(
@@ -179,10 +185,10 @@ export default function QuotationForm() {
       : [];
 
   const mrOptions = mrList
-    .filter((mr: any) => mr.status === 'Approved')
+    .filter((mr: any) => mr.status === 'SUBMITTED' || mr.status === 'APPROVED')
     .map((mr: any) => ({
-      value: mr._id,
-      label: `${mr.code} (${mr.projectId?.name || '-'})`,
+      value: mr._id || String(mr.id),
+      label: `${mr.code || mr.reqNo} (${mr.projectId?.name || 'Project'})`,
     }));
 
   const supplierList = Array.isArray(suppliersData?.data)
@@ -192,7 +198,7 @@ export default function QuotationForm() {
       : [];
 
   const supplierOptions = supplierList.map((s: any) => ({
-    value: s._id,
+    value: s._id || String(s.id),
     label: `${s.name} (${s.code})`,
   }));
 
@@ -211,9 +217,15 @@ export default function QuotationForm() {
             {id ? 'Edit' : 'New'} Quotation
           </h1>
           <p className="text-muted-foreground">
-            Supplier quotation for approved material requisition
+            Supplier quotation for material requisition
           </p>
         </div>
+        {isLocked && (
+          <div className="ml-auto flex items-center gap-2 text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 rounded-md">
+            <Lock className="h-4 w-4" />
+            <span className="text-sm font-medium">Locked</span>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -225,88 +237,66 @@ export default function QuotationForm() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Material Requisition *</Label>
-              <Select
+              <SearchableSelect
+                options={mrOptions}
                 value={mrId}
-                onValueChange={(value) => setValue('mrId', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select MR" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mrOptions?.map((mr) => (
-                    <SelectItem key={mr.value} value={mr.value}>
-                      {mr.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(value) => setValue('mrId', value)}
+                placeholder="Select MR"
+                disabled={isLocked}
+              />
               {errors.mrId && (
-                <p className="text-sm text-destructive">
-                  {errors.mrId.message}
-                </p>
+                <p className="text-sm text-destructive">{errors.mrId.message}</p>
               )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Supplier *</Label>
-                <Select
+                <SearchableSelect
+                  options={supplierOptions}
                   value={supplierId}
-                  onValueChange={(value) => setValue('supplierId', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select supplier" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {supplierOptions?.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => setValue('supplierId', value)}
+                  placeholder="Select supplier"
+                  disabled={isLocked}
+                />
                 {errors.supplierId && (
-                  <p className="text-sm text-destructive">
-                    {errors.supplierId.message}
-                  </p>
+                  <p className="text-sm text-destructive">{errors.supplierId.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <Label>Quotation Number *</Label>
-                <Input {...register('quotationNo')} placeholder="QT-001" />
+                <Input {...register('quotationNo')} placeholder="QT-001" disabled={isLocked} />
                 {errors.quotationNo && (
-                  <p className="text-sm text-destructive">
-                    {errors.quotationNo.message}
-                  </p>
+                  <p className="text-sm text-destructive">{errors.quotationNo.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <Label>Quotation Date *</Label>
-                <Input type="date" {...register('quotationDate')} />
+                <Input type="date" {...register('quotationDate')} disabled={isLocked} />
               </div>
 
               <div className="space-y-2">
                 <Label>Valid Until</Label>
-                <Input type="date" {...register('validUntil')} />
+                <Input type="date" {...register('validUntil')} disabled={isLocked} />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Payment Terms</Label>
-                <Input {...register('paymentTerms')} placeholder="30 days net" />
+                <Input {...register('paymentTerms')} placeholder="30 days net" disabled={isLocked} />
               </div>
               <div className="space-y-2">
                 <Label>Delivery Terms</Label>
-                <Input {...register('deliveryTerms')} placeholder="FOB / CIF" />
+                <Input {...register('deliveryTerms')} placeholder="FOB / CIF" disabled={isLocked} />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label>Remarks</Label>
-              <Textarea {...register('remarks')} placeholder="Additional notes" />
+              <Textarea {...register('remarks')} placeholder="Additional notes" disabled={isLocked} />
             </div>
           </CardContent>
         </Card>
@@ -316,14 +306,11 @@ export default function QuotationForm() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Quoted Items</CardTitle>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addItem}
-              >
-                <Plus className="h-4 w-4 mr-2" /> Add Item
-              </Button>
+              {!isLocked && (
+                <Button type="button" variant="outline" size="sm" onClick={addItem}>
+                  <Plus className="h-4 w-4 mr-2" /> Add Item
+                </Button>
+              )}
             </div>
           </CardHeader>
 
@@ -332,13 +319,8 @@ export default function QuotationForm() {
               <div key={index} className="border rounded-lg p-4 space-y-4">
                 <div className="flex justify-between items-center">
                   <h4 className="font-medium">Item {index + 1}</h4>
-                  {quotationItems.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeItem(index)}
-                    >
+                  {quotationItems.length > 1 && !isLocked && (
+                    <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(index)}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   )}
@@ -349,10 +331,9 @@ export default function QuotationForm() {
                     <Label>Description *</Label>
                     <Input
                       value={item.description}
-                      onChange={(e) =>
-                        updateItem(index, 'description', e.target.value)
-                      }
+                      onChange={(e) => updateItem(index, 'description', e.target.value)}
                       placeholder="Item description"
+                      disabled={isLocked}
                     />
                   </div>
 
@@ -361,28 +342,29 @@ export default function QuotationForm() {
                     <Input
                       type="number"
                       value={item.qty}
-                      onChange={(e) =>
-                        updateItem(index, 'qty', Number(e.target.value))
-                      }
+                      onChange={(e) => updateItem(index, 'qty', Number(e.target.value))}
+                      disabled={isLocked}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label>UOM *</Label>
-                    <Input
+                    <SearchableSelect
+                      options={uomOptions}
                       value={item.uom}
-                      onChange={(e) => updateItem(index, 'uom', e.target.value)}
+                      onChange={(val) => updateItem(index, 'uom', val)}
+                      placeholder="Select UOM"
+                      disabled={isLocked}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Rate *</Label>
+                    <Label>Rate (₹) *</Label>
                     <Input
                       type="number"
                       value={item.rate}
-                      onChange={(e) =>
-                        updateItem(index, 'rate', Number(e.target.value))
-                      }
+                      onChange={(e) => updateItem(index, 'rate', Number(e.target.value))}
+                      disabled={isLocked}
                     />
                   </div>
 
@@ -391,39 +373,38 @@ export default function QuotationForm() {
                     <Input
                       type="number"
                       value={item.taxPercent}
-                      onChange={(e) =>
-                        updateItem(index, 'taxPercent', Number(e.target.value))
-                      }
+                      onChange={(e) => updateItem(index, 'taxPercent', Number(e.target.value))}
+                      disabled={isLocked}
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Amount</Label>
-                    <Input
-                      disabled
-                      value={formatCurrency(calculateItemAmount(item))}
-                      className="bg-muted"
-                    />
+                  {/* Auto-calculated Amount */}
+                  <div className="col-span-2 bg-muted/50 rounded-lg p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Calculator className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Amount</span>
+                    </div>
+                    <span className="font-medium">{formatCurrency(calculateItemAmount(item))}</span>
                   </div>
                 </div>
               </div>
             ))}
 
-            {/* Totals */}
-            <div className="border-t pt-4 space-y-2">
+            {/* Totals - Auto-calculated */}
+            <div className="border-t pt-4 space-y-2 bg-muted/30 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Calculator className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">Auto-Calculated Totals</span>
+              </div>
               <div className="flex justify-between text-sm">
                 <span>Subtotal:</span>
-                <span className="font-medium">
-                  {formatCurrency(subtotal)}
-                </span>
+                <span className="font-medium">{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>Tax Total:</span>
-                <span className="font-medium">
-                  {formatCurrency(taxTotal)}
-                </span>
+                <span className="font-medium">{formatCurrency(taxTotal)}</span>
               </div>
-              <div className="flex justify-between text-lg font-bold">
+              <div className="flex justify-between text-lg font-bold border-t pt-2">
                 <span>Grand Total:</span>
                 <span>{formatCurrency(grandTotal)}</span>
               </div>
@@ -438,9 +419,11 @@ export default function QuotationForm() {
             variant="outline"
             onClick={() => navigate('/purchase/quotations')}
           >
-            Cancel
+            {isLocked ? 'Back' : 'Cancel'}
           </Button>
-          <Button type="submit">{id ? 'Update' : 'Create'} Quotation</Button>
+          {!isLocked && (
+            <Button type="submit">{id ? 'Update' : 'Create'} Quotation</Button>
+          )}
         </div>
       </form>
     </div>

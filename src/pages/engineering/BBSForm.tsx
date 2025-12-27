@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,7 +13,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { SearchableSelect } from '@/components/SearchableSelect';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Lock, Calculator } from 'lucide-react';
 
 const bbsSchema = z.object({
   projectId: z.string().min(1, 'Project is required'),
@@ -52,6 +52,17 @@ export default function BBSForm() {
   const projectsArray = Array.isArray(projects) ? projects : [];
   const uomsArray = Array.isArray(uoms) ? uoms : [];
 
+  // Check if BBS is locked (APPROVED status)
+  const isLocked = useMemo(() => {
+    if (!bbsData) return false;
+    return bbsData.status === 'APPROVED';
+  }, [bbsData]);
+
+  // Auto-calculate amount
+  const quantity = parseFloat(form.watch('quantity') || '0');
+  const rate = parseFloat(form.watch('rate') || '0');
+  const calculatedAmount = useMemo(() => quantity * rate, [quantity, rate]);
+
   useEffect(() => {
     if (isEdit && bbsData) {
       form.reset({
@@ -72,6 +83,7 @@ export default function BBSForm() {
       uomId: Number(data.uomId),
       quantity: Number(data.quantity),
       rate: Number(data.rate),
+      // Amount is auto-calculated on backend
     };
 
     if (isEdit && id) {
@@ -102,6 +114,12 @@ export default function BBSForm() {
           <h1 className="text-3xl font-bold">{isEdit ? 'Edit' : 'New'} BBS</h1>
           <p className="text-muted-foreground">Bar Bending Schedule entry</p>
         </div>
+        {isLocked && (
+          <div className="ml-auto flex items-center gap-2 text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 rounded-md">
+            <Lock className="h-4 w-4" />
+            <span className="text-sm font-medium">Locked (Approved)</span>
+          </div>
+        )}
       </div>
 
       <Form {...form}>
@@ -123,6 +141,7 @@ export default function BBSForm() {
                         value={field.value}
                         onChange={field.onChange}
                         placeholder="Select project"
+                        disabled={isLocked}
                       />
                     </FormControl>
                     <FormMessage />
@@ -136,7 +155,7 @@ export default function BBSForm() {
                   <FormItem>
                     <FormLabel>Code *</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="BBS-001" />
+                      <Input {...field} placeholder="BBS-001" disabled={isLocked} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -149,7 +168,7 @@ export default function BBSForm() {
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea {...field} rows={3} placeholder="Description..." />
+                      <Textarea {...field} rows={3} placeholder="Description..." disabled={isLocked} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -163,7 +182,7 @@ export default function BBSForm() {
                     <FormItem>
                       <FormLabel>Quantity *</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.001" {...field} />
+                        <Input type="number" step="0.001" {...field} disabled={isLocked} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -181,6 +200,7 @@ export default function BBSForm() {
                           value={field.value}
                           onChange={field.onChange}
                           placeholder="Select UOM"
+                          disabled={isLocked}
                         />
                       </FormControl>
                       <FormMessage />
@@ -195,24 +215,40 @@ export default function BBSForm() {
                   <FormItem>
                     <FormLabel>Rate (₹) *</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} />
+                      <Input type="number" step="0.01" {...field} disabled={isLocked} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {/* Auto-calculated Amount (Disabled) */}
+              <div className="bg-muted/50 border rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Calculator className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-muted-foreground">Auto-Calculated</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Amount (Quantity × Rate)</span>
+                  <span className="text-lg font-bold">
+                    ₹{calculatedAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
           <div className="flex gap-4">
-            <Button type="submit" disabled={createBBS.isPending || updateBBS.isPending}>
-              {(createBBS.isPending || updateBBS.isPending) && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              )}
-              {isEdit ? 'Update BBS' : 'Create BBS'}
-            </Button>
+            {!isLocked && (
+              <Button type="submit" disabled={createBBS.isPending || updateBBS.isPending}>
+                {(createBBS.isPending || updateBBS.isPending) && (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                )}
+                {isEdit ? 'Update BBS' : 'Create BBS'}
+              </Button>
+            )}
             <Button type="button" variant="outline" onClick={() => navigate('/engineering/bbs')}>
-              Cancel
+              {isLocked ? 'Back' : 'Cancel'}
             </Button>
           </div>
         </form>

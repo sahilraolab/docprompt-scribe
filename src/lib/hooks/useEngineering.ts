@@ -314,3 +314,34 @@ export function useDeleteCompliance() {
     },
   });
 }
+
+// ==================== APPROVED BUDGETS (for Purchase) ====================
+export function useApprovedBudgets(projectId?: string) {
+  return useQuery({
+    queryKey: ['budgets', 'approved', projectId].filter(Boolean),
+    queryFn: async () => {
+      const response = await budgetApi.getByProject(projectId || '');
+      const budget = response.data;
+      // Return only if approved
+      if (budget && budget.status === 'APPROVED') {
+        return [budget];
+      }
+      return [];
+    },
+    enabled: !!projectId,
+  });
+}
+
+// ==================== FINAL ESTIMATES (for Purchase) ====================
+export function useFinalEstimates(projectId?: string) {
+  return useQuery({
+    queryKey: ['estimates', 'final', projectId].filter(Boolean),
+    queryFn: async () => {
+      const response = await estimatesApi.getByProject(projectId || '');
+      const estimates = Array.isArray(response.data) ? response.data : [];
+      // Return only FINAL estimates
+      return estimates.filter((e: any) => e.status === 'FINAL');
+    },
+    enabled: !!projectId,
+  });
+}
