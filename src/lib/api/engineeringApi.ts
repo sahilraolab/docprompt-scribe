@@ -11,15 +11,6 @@ async function apiCall(endpoint: string, options?: RequestInit) {
   return result; // { success, data, message }
 }
 
-// Projects API
-export const projectsApi = {
-  getAll: () => apiCall('/engineering/projects'),
-  getById: (id: string) => apiCall(`/engineering/projects/${id}`),
-  create: (data: any) => apiCall('/engineering/projects', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: any) => apiCall(`/engineering/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: string) => apiCall(`/engineering/projects/${id}`, { method: 'DELETE' }),
-};
-
 // Budget API (matches backend routes)
 export const budgetApi = {
   getByProject: (projectId: string) => apiCall(`/engineering/budget/${projectId}`),
@@ -62,43 +53,4 @@ export const complianceApi = {
   create: (data: any) => apiCall('/engineering/compliance', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: any) => apiCall(`/engineering/compliance/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: string) => apiCall(`/engineering/compliance/${id}`, { method: 'DELETE' }),
-};
-
-// Documents API (existing)
-export const documentsApi = {
-  getAll: () => apiCall('/engineering/documents'),
-  getById: (id: string) => apiCall(`/engineering/documents/${id}`),
-  getByProject: (projectId: string) => apiCall(`/engineering/documents?projectId=${projectId}`),
-  create: async (data: FormData) => {
-    const result = await apiClient.request('/engineering/documents', {
-      method: 'POST',
-      body: data,
-    });
-    if (!result?.success) {
-      throw new Error(result?.message || 'Upload failed');
-    }
-    return result;
-  },
-  update: (id: string, data: any) => apiCall(`/engineering/documents/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: string) => apiCall(`/engineering/documents/${id}`, { method: 'DELETE' }),
-};
-
-// Plans API (existing)
-export const plansApi = {
-  getAll: () => apiCall('/engineering/plans'),
-  getById: (id: string) => apiCall(`/engineering/plans/${id}`),
-  getByProject: (projectId: string) => apiCall(`/engineering/plans?projectId=${projectId}`),
-  create: (data: any) => apiCall('/engineering/plans', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: any) => apiCall(`/engineering/plans/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: string) => apiCall(`/engineering/plans/${id}`, { method: 'DELETE' }),
-};
-
-// BOQ API (existing)
-export const boqApi = {
-  getAll: () => apiCall('/engineering/boq'),
-  getById: (id: string) => apiCall(`/engineering/boq/${id}`),
-  getByProject: (projectId: string) => apiCall(`/engineering/boq?projectId=${projectId}`),
-  create: (data: any) => apiCall('/engineering/boq', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: any) => apiCall(`/engineering/boq/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: string) => apiCall(`/engineering/boq/${id}`, { method: 'DELETE' }),
 };

@@ -2,7 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useProjects, useCreateBudget } from '@/lib/hooks/useEngineering';
+import { useMasterProjects } from '@/lib/hooks/useMasters';
+import { useCreateBudget } from '@/lib/hooks/useEngineering';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -21,7 +22,7 @@ type BudgetFormData = z.infer<typeof budgetSchema>;
 
 export default function BudgetForm() {
   const navigate = useNavigate();
-  const { data: projects = [] } = useProjects();
+  const { data: projects = [] } = useMasterProjects();
   const createBudget = useCreateBudget();
 
   const form = useForm<BudgetFormData>({

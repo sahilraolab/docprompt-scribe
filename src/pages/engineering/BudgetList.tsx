@@ -9,7 +9,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table';
 import { Plus, Search, DollarSign, CheckCircle } from 'lucide-react';
-import { useProjects, useBudget, useApproveBudget } from '@/lib/hooks/useEngineering';
+import { useMasterProjects } from '@/lib/hooks/useMasters';
+import { useApproveBudget } from '@/lib/hooks/useEngineering';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';
 import { formatCurrency } from '@/lib/utils/format';
@@ -21,7 +22,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function BudgetList() {
   const navigate = useNavigate();
-  const { data: projects = [], isLoading } = useProjects();
+  const { data: projects = [], isLoading } = useMasterProjects();
   const approveBudget = useApproveBudget();
   const [search, setSearch] = useState('');
 
@@ -73,7 +74,6 @@ export default function BudgetList() {
                   <TableHead>Project Code</TableHead>
                   <TableHead>Project Name</TableHead>
                   <TableHead className="text-right">Budget</TableHead>
-                  <TableHead className="text-right">Spent</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
@@ -85,10 +85,9 @@ export default function BudgetList() {
                     <TableCell className="font-mono text-sm">{project.code}</TableCell>
                     <TableCell className="font-medium">{project.name}</TableCell>
                     <TableCell className="text-right">{formatCurrency(project.budget || 0)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(project.spent || 0)}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={STATUS_COLORS[project.budgetStatus] || STATUS_COLORS.DRAFT}>
-                        {project.budgetStatus || 'DRAFT'}
+                      <Badge variant="outline" className={STATUS_COLORS[project.status] || STATUS_COLORS.DRAFT}>
+                        {project.status || 'PLANNED'}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -99,7 +98,7 @@ export default function BudgetList() {
                           e.stopPropagation();
                           approveBudget.mutate(String(project.id));
                         }}
-                        disabled={project.budgetStatus === 'APPROVED'}
+                        disabled={project.status === 'APPROVED'}
                       >
                         <CheckCircle className="h-4 w-4 text-green-600" />
                       </Button>

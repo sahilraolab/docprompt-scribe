@@ -15,21 +15,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 // Engineering
 import EngineeringIndex from "./pages/engineering/index";
-import ProjectsList from "./pages/engineering/ProjectsList";
-import ProjectDetails from "./pages/engineering/ProjectDetails";
-import ProjectForm from "./pages/engineering/ProjectForm";
-import MaterialMasterList from "./pages/engineering/MaterialMasterList";
-import MaterialMasterForm from "./pages/engineering/MaterialMasterForm";
-import BOQList from "./pages/engineering/BOQList";
-import BOQDetails from "./pages/engineering/BOQDetails";
-import BOQForm from "./pages/engineering/BOQForm";
 import EstimatesList from "./pages/engineering/EstimatesList";
 import EstimateForm from "./pages/engineering/EstimateForm";
-import DocumentsList from "./pages/engineering/DocumentsList";
-import DocumentUpload from "./pages/engineering/DocumentUpload";
-import PlansList from "./pages/engineering/PlansList";
-import PlanForm from "./pages/engineering/PlanForm";
-import PlanDetails from "./pages/engineering/PlanDetails";
 import BBSList from "./pages/engineering/BBSList";
 import BBSForm from "./pages/engineering/BBSForm";
 import BudgetList from "./pages/engineering/BudgetList";

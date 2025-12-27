@@ -9,7 +9,7 @@ export { profileApi } from './profileApi';
 export { dashboardApi } from './dashboardApi';
 export { workflowApi } from './workflowApi';
 export { accountsApi } from './accountsApi';
-export { projectsApi, estimatesApi, documentsApi, plansApi, boqApi } from './engineeringApi';
+export { estimatesApi, bbsApi, budgetApi, drawingsApi, complianceApi } from './engineeringApi';
 export { contractorsApi, labourRatesApi, workOrdersApi, raBillsApi } from './contractsApi';
 export { siteApi } from './siteApi';
 export { inventoryApi } from './inventoryApi';
@@ -28,3 +28,4 @@ export {
   itemApi,
   purchaseDashboardApi 
 } from './purchaseApi';
+export { projectsApi, materialsApi, companiesApi, suppliersApi, uomsApi, departmentsApi, costCentersApi, taxesApi } from './mastersApi';
