@@ -1,17 +1,43 @@
-// Masters Module Types
+// Masters Module Types - Aligned with Backend Models
+
+export interface Company {
+  id: number;
+  name: string;
+  code: string;
+  phone?: string;
+  email?: string;
+  gstin?: string;
+  pan?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
+  currency?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface Project {
   id: number;
   name: string;
   code: string;
-  location?: string;
-  status: 'ACTIVE' | 'COMPLETED' | 'ON_HOLD' | 'CANCELLED';
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
+  companyId: number;
+  company?: Company;
+  budget?: number;
   startDate?: string;
   endDate?: string;
-  budget?: number;
+  status: 'PLANNED' | 'ONGOING' | 'ON_HOLD' | 'COMPLETED';
   description?: string;
-  companyId?: number;
-  company?: Company;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -21,23 +47,14 @@ export interface Material {
   name: string;
   code: string;
   category: string;
-  uomId?: number;
+  uomId: number;
   uom?: UOM;
+  sizeValue?: number;
+  sizeUnit?: string;
+  specification?: string;
   hsnCode?: string;
   description?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Company {
-  id: number;
-  name: string;
-  code: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  gstNo?: string;
-  panNo?: string;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -46,128 +63,154 @@ export interface Supplier {
   id: number;
   name: string;
   code: string;
-  address?: string;
+  contactPerson?: string;
   phone?: string;
   email?: string;
-  gstNo?: string;
-  panNo?: string;
-  contactPerson?: string;
+  gstin?: string;
+  pan?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface UOM {
   id: number;
-  name: string;
   code: string;
+  name: string;
   description?: string;
-  createdAt: string;
-  updatedAt: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Department {
   id: number;
-  name: string;
   code: string;
-  headName?: string;
+  name: string;
+  departmentHead?: string;
   description?: string;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CostCenter {
   id: number;
-  name: string;
   code: string;
-  budget?: number;
+  name: string;
+  budget: number;
   description?: string;
-  projectId?: number;
-  project?: Project;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface Tax {
   id: number;
-  name: string;
   code: string;
+  name: string;
   rate: number;
-  type: 'GST' | 'CGST' | 'SGST' | 'IGST' | 'CESS' | 'TDS' | 'TCS' | 'OTHER';
-  isActive: boolean;
+  type: 'GST' | 'CGST' | 'SGST' | 'IGST' | 'VAT' | 'CESS' | 'OTHER';
+  accountId?: number;
   description?: string;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 // Form Types
+export interface CompanyFormData {
+  name: string;
+  code: string;
+  phone?: string;
+  email?: string;
+  gstin?: string;
+  pan?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
+  currency?: string;
+}
+
 export interface ProjectFormData {
   name: string;
   code: string;
-  location?: string;
-  status: 'ACTIVE' | 'COMPLETED' | 'ON_HOLD' | 'CANCELLED';
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
+  companyId: number;
+  budget?: number;
   startDate?: string;
   endDate?: string;
-  budget?: number;
+  status: 'PLANNED' | 'ONGOING' | 'ON_HOLD' | 'COMPLETED';
   description?: string;
-  companyId?: number;
 }
 
 export interface MaterialFormData {
   name: string;
   code: string;
   category: string;
-  uomId?: number;
+  uomId: number;
+  sizeValue?: number;
+  sizeUnit?: string;
+  specification?: string;
   hsnCode?: string;
   description?: string;
-}
-
-export interface CompanyFormData {
-  name: string;
-  code: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  gstNo?: string;
-  panNo?: string;
 }
 
 export interface SupplierFormData {
   name: string;
   code: string;
-  address?: string;
+  contactPerson?: string;
   phone?: string;
   email?: string;
-  gstNo?: string;
-  panNo?: string;
-  contactPerson?: string;
+  gstin?: string;
+  pan?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
 }
 
 export interface UOMFormData {
-  name: string;
   code: string;
+  name: string;
   description?: string;
 }
 
 export interface DepartmentFormData {
-  name: string;
   code: string;
-  headName?: string;
+  name: string;
+  departmentHead?: string;
   description?: string;
 }
 
 export interface CostCenterFormData {
-  name: string;
   code: string;
-  budget?: number;
+  name: string;
+  budget: number;
   description?: string;
-  projectId?: number;
 }
 
 export interface TaxFormData {
-  name: string;
   code: string;
+  name: string;
   rate: number;
-  type?: string;
-  isActive?: boolean;
+  type: 'GST' | 'CGST' | 'SGST' | 'IGST' | 'VAT' | 'CESS' | 'OTHER';
+  accountId?: number;
   description?: string;
 }

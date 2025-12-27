@@ -12,14 +12,14 @@ import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from '@/components/ui/form';
 import { ArrowLeft, Save } from 'lucide-react';
-import { useMasterDepartments, useCreateMasterDepartment, useUpdateMasterDepartment } from '@/lib/hooks/useMasters';
+import { useMasterDepartment, useCreateMasterDepartment, useUpdateMasterDepartment } from '@/lib/hooks/useMasters';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import type { DepartmentFormData, Department } from '@/types/masters';
+import type { DepartmentFormData } from '@/types/masters';
 
 const schema = z.object({
-  name: z.string().min(1, 'Name is required').max(100),
   code: z.string().min(1, 'Code is required').max(20),
-  headName: z.string().max(100).optional(),
+  name: z.string().min(1, 'Name is required').max(100),
+  departmentHead: z.string().max(100).optional(),
   description: z.string().max(500).optional(),
 });
 
@@ -28,32 +28,30 @@ export default function DepartmentForm() {
   const { id } = useParams();
   const isEdit = !!id;
 
-  const { data: departments = [], isLoading } = useMasterDepartments();
+  const { data: department, isLoading } = useMasterDepartment(Number(id));
   const createDepartment = useCreateMasterDepartment();
   const updateDepartment = useUpdateMasterDepartment();
-
-  const existingDepartment = isEdit ? departments.find((d: Department) => d.id === Number(id)) : null;
 
   const form = useForm<DepartmentFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: '',
       code: '',
-      headName: '',
+      name: '',
+      departmentHead: '',
       description: '',
     },
   });
 
   useEffect(() => {
-    if (existingDepartment) {
+    if (department) {
       form.reset({
-        name: existingDepartment.name,
-        code: existingDepartment.code,
-        headName: existingDepartment.headName || '',
-        description: existingDepartment.description || '',
+        code: department.code,
+        name: department.name,
+        departmentHead: department.departmentHead || '',
+        description: department.description || '',
       });
     }
-  }, [existingDepartment, form]);
+  }, [department, form]);
 
   const onSubmit = (data: DepartmentFormData) => {
     if (isEdit) {
@@ -93,7 +91,7 @@ export default function DepartmentForm() {
                     <FormItem>
                       <FormLabel>Department Code *</FormLabel>
                       <FormControl>
-                        <Input placeholder="HR" {...field} />
+                        <Input placeholder="HR" disabled={isEdit} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -116,7 +114,7 @@ export default function DepartmentForm() {
 
                 <FormField
                   control={form.control}
-                  name="headName"
+                  name="departmentHead"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Department Head</FormLabel>

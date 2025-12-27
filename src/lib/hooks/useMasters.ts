@@ -9,11 +9,72 @@ import type {
   UOMFormData, DepartmentFormData, CostCenterFormData, TaxFormData
 } from '@/types/masters';
 
+// ==================== COMPANIES ====================
+export function useMasterCompanies() {
+  return useQuery({
+    queryKey: ['masters', 'companies'],
+    queryFn: companiesApi.getAll,
+  });
+}
+
+export function useMasterCompany(id: number) {
+  return useQuery({
+    queryKey: ['masters', 'companies', id],
+    queryFn: () => companiesApi.getById(id),
+    enabled: !!id,
+  });
+}
+
+export function useCreateMasterCompany() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CompanyFormData) => companiesApi.create(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['masters', 'companies'] });
+      toast.success('Company created successfully');
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to create company'),
+  });
+}
+
+export function useUpdateMasterCompany() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<CompanyFormData> }) =>
+      companiesApi.update(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['masters', 'companies'] });
+      toast.success('Company updated successfully');
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to update company'),
+  });
+}
+
+export function useDeleteMasterCompany() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => companiesApi.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['masters', 'companies'] });
+      toast.success('Company deleted successfully');
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to delete company'),
+  });
+}
+
 // ==================== PROJECTS ====================
 export function useMasterProjects() {
   return useQuery({
     queryKey: ['masters', 'projects'],
     queryFn: projectsApi.getAll,
+  });
+}
+
+export function useMasterProject(id: number) {
+  return useQuery({
+    queryKey: ['masters', 'projects', id],
+    queryFn: () => projectsApi.getById(id),
+    enabled: !!id,
   });
 }
 
@@ -62,6 +123,14 @@ export function useMasterMaterials() {
   });
 }
 
+export function useMasterMaterial(id: number) {
+  return useQuery({
+    queryKey: ['masters', 'materials', id],
+    queryFn: () => materialsApi.getById(id),
+    enabled: !!id,
+  });
+}
+
 export function useCreateMasterMaterial() {
   const qc = useQueryClient();
   return useMutation({
@@ -99,56 +168,19 @@ export function useDeleteMasterMaterial() {
   });
 }
 
-// ==================== COMPANIES ====================
-export function useMasterCompanies() {
-  return useQuery({
-    queryKey: ['masters', 'companies'],
-    queryFn: companiesApi.getAll,
-  });
-}
-
-export function useCreateMasterCompany() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CompanyFormData) => companiesApi.create(data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['masters', 'companies'] });
-      toast.success('Company created successfully');
-    },
-    onError: (err: Error) => toast.error(err.message || 'Failed to create company'),
-  });
-}
-
-export function useUpdateMasterCompany() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<CompanyFormData> }) =>
-      companiesApi.update(id, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['masters', 'companies'] });
-      toast.success('Company updated successfully');
-    },
-    onError: (err: Error) => toast.error(err.message || 'Failed to update company'),
-  });
-}
-
-export function useDeleteMasterCompany() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => companiesApi.delete(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['masters', 'companies'] });
-      toast.success('Company deleted successfully');
-    },
-    onError: (err: Error) => toast.error(err.message || 'Failed to delete company'),
-  });
-}
-
 // ==================== SUPPLIERS ====================
 export function useMasterSuppliers() {
   return useQuery({
     queryKey: ['masters', 'suppliers'],
     queryFn: suppliersApi.getAll,
+  });
+}
+
+export function useMasterSupplier(id: number) {
+  return useQuery({
+    queryKey: ['masters', 'suppliers', id],
+    queryFn: () => suppliersApi.getById(id),
+    enabled: !!id,
   });
 }
 
@@ -197,6 +229,14 @@ export function useMasterUOMs() {
   });
 }
 
+export function useMasterUOM(id: number) {
+  return useQuery({
+    queryKey: ['masters', 'uoms', id],
+    queryFn: () => uomsApi.getById(id),
+    enabled: !!id,
+  });
+}
+
 export function useCreateMasterUOM() {
   const qc = useQueryClient();
   return useMutation({
@@ -239,6 +279,14 @@ export function useMasterDepartments() {
   return useQuery({
     queryKey: ['masters', 'departments'],
     queryFn: departmentsApi.getAll,
+  });
+}
+
+export function useMasterDepartment(id: number) {
+  return useQuery({
+    queryKey: ['masters', 'departments', id],
+    queryFn: () => departmentsApi.getById(id),
+    enabled: !!id,
   });
 }
 
@@ -287,6 +335,14 @@ export function useMasterCostCenters() {
   });
 }
 
+export function useMasterCostCenter(id: number) {
+  return useQuery({
+    queryKey: ['masters', 'cost-centers', id],
+    queryFn: () => costCentersApi.getById(id),
+    enabled: !!id,
+  });
+}
+
 export function useCreateMasterCostCenter() {
   const qc = useQueryClient();
   return useMutation({
@@ -329,6 +385,14 @@ export function useMasterTaxes() {
   return useQuery({
     queryKey: ['masters', 'taxes'],
     queryFn: taxesApi.getAll,
+  });
+}
+
+export function useMasterTax(id: number) {
+  return useQuery({
+    queryKey: ['masters', 'taxes', id],
+    queryFn: () => taxesApi.getById(id),
+    enabled: !!id,
   });
 }
 

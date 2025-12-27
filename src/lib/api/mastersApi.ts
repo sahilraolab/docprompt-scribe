@@ -7,6 +7,18 @@ import type {
 
 const BASE = '/masters';
 
+// Companies API
+export const companiesApi = {
+  getAll: (): Promise<Company[]> => apiClient.request(`${BASE}/companies`),
+  getById: (id: number): Promise<Company> => apiClient.request(`${BASE}/companies/${id}`),
+  create: (data: CompanyFormData): Promise<Company> => 
+    apiClient.request(`${BASE}/companies`, { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: number, data: Partial<CompanyFormData>): Promise<Company> => 
+    apiClient.request(`${BASE}/companies/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: number): Promise<void> => 
+    apiClient.request(`${BASE}/companies/${id}`, { method: 'DELETE' }),
+};
+
 // Projects API
 export const projectsApi = {
   getAll: (): Promise<Project[]> => apiClient.request(`${BASE}/projects`),
@@ -29,18 +41,6 @@ export const materialsApi = {
     apiClient.request(`${BASE}/materials/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: number): Promise<void> => 
     apiClient.request(`${BASE}/materials/${id}`, { method: 'DELETE' }),
-};
-
-// Companies API
-export const companiesApi = {
-  getAll: (): Promise<Company[]> => apiClient.request(`${BASE}/companies`),
-  getById: (id: number): Promise<Company> => apiClient.request(`${BASE}/companies/${id}`),
-  create: (data: CompanyFormData): Promise<Company> => 
-    apiClient.request(`${BASE}/companies`, { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: number, data: Partial<CompanyFormData>): Promise<Company> => 
-    apiClient.request(`${BASE}/companies/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: number): Promise<void> => 
-    apiClient.request(`${BASE}/companies/${id}`, { method: 'DELETE' }),
 };
 
 // Suppliers API

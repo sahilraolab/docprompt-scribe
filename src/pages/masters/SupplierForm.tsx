@@ -6,25 +6,29 @@ import { z } from 'zod';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from '@/components/ui/form';
 import { ArrowLeft, Save } from 'lucide-react';
-import { useMasterSuppliers, useCreateMasterSupplier, useUpdateMasterSupplier } from '@/lib/hooks/useMasters';
+import { useMasterSupplier, useCreateMasterSupplier, useUpdateMasterSupplier } from '@/lib/hooks/useMasters';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import type { SupplierFormData, Supplier } from '@/types/masters';
+import type { SupplierFormData } from '@/types/masters';
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   code: z.string().min(1, 'Code is required').max(20),
-  address: z.string().max(500).optional(),
+  contactPerson: z.string().max(100).optional(),
   phone: z.string().max(20).optional(),
   email: z.string().email().max(100).optional().or(z.literal('')),
-  gstNo: z.string().max(20).optional(),
-  panNo: z.string().max(20).optional(),
-  contactPerson: z.string().max(100).optional(),
+  gstin: z.string().max(20).optional(),
+  pan: z.string().max(20).optional(),
+  addressLine1: z.string().max(200).optional(),
+  addressLine2: z.string().max(200).optional(),
+  city: z.string().max(100).optional(),
+  state: z.string().max(100).optional(),
+  pincode: z.string().max(10).optional(),
+  country: z.string().max(100).optional(),
 });
 
 export default function SupplierForm() {
@@ -32,40 +36,48 @@ export default function SupplierForm() {
   const { id } = useParams();
   const isEdit = !!id;
 
-  const { data: suppliers = [], isLoading } = useMasterSuppliers();
+  const { data: supplier, isLoading } = useMasterSupplier(Number(id));
   const createSupplier = useCreateMasterSupplier();
   const updateSupplier = useUpdateMasterSupplier();
-
-  const existingSupplier = isEdit ? suppliers.find((s: Supplier) => s.id === Number(id)) : null;
 
   const form = useForm<SupplierFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: '',
       code: '',
-      address: '',
+      contactPerson: '',
       phone: '',
       email: '',
-      gstNo: '',
-      panNo: '',
-      contactPerson: '',
+      gstin: '',
+      pan: '',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      state: '',
+      pincode: '',
+      country: 'India',
     },
   });
 
   useEffect(() => {
-    if (existingSupplier) {
+    if (supplier) {
       form.reset({
-        name: existingSupplier.name,
-        code: existingSupplier.code,
-        address: existingSupplier.address || '',
-        phone: existingSupplier.phone || '',
-        email: existingSupplier.email || '',
-        gstNo: existingSupplier.gstNo || '',
-        panNo: existingSupplier.panNo || '',
-        contactPerson: existingSupplier.contactPerson || '',
+        name: supplier.name,
+        code: supplier.code,
+        contactPerson: supplier.contactPerson || '',
+        phone: supplier.phone || '',
+        email: supplier.email || '',
+        gstin: supplier.gstin || '',
+        pan: supplier.pan || '',
+        addressLine1: supplier.addressLine1 || '',
+        addressLine2: supplier.addressLine2 || '',
+        city: supplier.city || '',
+        state: supplier.state || '',
+        pincode: supplier.pincode || '',
+        country: supplier.country || 'India',
       });
     }
-  }, [existingSupplier, form]);
+  }, [supplier, form]);
 
   const onSubmit = (data: SupplierFormData) => {
     if (isEdit) {
@@ -105,7 +117,7 @@ export default function SupplierForm() {
                     <FormItem>
                       <FormLabel>Supplier Code *</FormLabel>
                       <FormControl>
-                        <Input placeholder="SUP001" {...field} />
+                        <Input placeholder="SUP001" disabled={isEdit} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -170,10 +182,10 @@ export default function SupplierForm() {
 
                 <FormField
                   control={form.control}
-                  name="gstNo"
+                  name="gstin"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>GST No.</FormLabel>
+                      <FormLabel>GSTIN</FormLabel>
                       <FormControl>
                         <Input placeholder="GST number" {...field} />
                       </FormControl>
@@ -184,10 +196,10 @@ export default function SupplierForm() {
 
                 <FormField
                   control={form.control}
-                  name="panNo"
+                  name="pan"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>PAN No.</FormLabel>
+                      <FormLabel>PAN</FormLabel>
                       <FormControl>
                         <Input placeholder="PAN number" {...field} />
                       </FormControl>
@@ -197,19 +209,95 @@ export default function SupplierForm() {
                 />
               </div>
 
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Address</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Supplier address..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Address Section */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-muted-foreground">Address</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="addressLine1"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Address Line 1</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Street address" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="addressLine2"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Address Line 2</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Apartment, suite, etc." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>City</FormLabel>
+                        <FormControl>
+                          <Input placeholder="City" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="state"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>State</FormLabel>
+                        <FormControl>
+                          <Input placeholder="State" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="pincode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Pincode</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Pincode" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="country"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Country</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Country" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
 
               <div className="flex justify-end gap-2">
                 <Button

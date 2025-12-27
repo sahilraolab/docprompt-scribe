@@ -14,12 +14,13 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/SearchableSelect';
 import { ArrowLeft, Save } from 'lucide-react';
 import {
-  useMasterMaterials, useCreateMasterMaterial, useUpdateMasterMaterial, useMasterUOMs
+  useMasterMaterial, useCreateMasterMaterial, useUpdateMasterMaterial, useMasterUOMs
 } from '@/lib/hooks/useMasters';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import type { MaterialFormData, Material } from '@/types/masters';
+import type { MaterialFormData } from '@/types/masters';
 
 const CATEGORIES = [
   'Cement', 'Steel', 'Sand', 'Aggregate', 'Brick', 'Tile', 'Paint',
@@ -30,7 +31,10 @@ const schema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   code: z.string().min(1, 'Code is required').max(20),
   category: z.string().min(1, 'Category is required'),
-  uomId: z.coerce.number().optional(),
+  uomId: z.coerce.number().min(1, 'UOM is required'),
+  sizeValue: z.coerce.number().optional(),
+  sizeUnit: z.string().max(20).optional(),
+  specification: z.string().max(200).optional(),
   hsnCode: z.string().max(20).optional(),
   description: z.string().max(500).optional(),
 });
@@ -40,12 +44,15 @@ export default function MaterialForm() {
   const { id } = useParams();
   const isEdit = !!id;
 
-  const { data: materials = [], isLoading } = useMasterMaterials();
+  const { data: material, isLoading } = useMasterMaterial(Number(id));
   const { data: uoms = [] } = useMasterUOMs();
   const createMaterial = useCreateMasterMaterial();
   const updateMaterial = useUpdateMasterMaterial();
 
-  const existingMaterial = isEdit ? materials.find((m: Material) => m.id === Number(id)) : null;
+  const uomOptions = uoms.map((u) => ({
+    value: u.id.toString(),
+    label: `${u.code} - ${u.name}`,
+  }));
 
   const form = useForm<MaterialFormData>({
     resolver: zodResolver(schema),
@@ -53,24 +60,30 @@ export default function MaterialForm() {
       name: '',
       code: '',
       category: '',
-      uomId: undefined,
+      uomId: 0,
+      sizeValue: undefined,
+      sizeUnit: '',
+      specification: '',
       hsnCode: '',
       description: '',
     },
   });
 
   useEffect(() => {
-    if (existingMaterial) {
+    if (material) {
       form.reset({
-        name: existingMaterial.name,
-        code: existingMaterial.code,
-        category: existingMaterial.category,
-        uomId: existingMaterial.uomId,
-        hsnCode: existingMaterial.hsnCode || '',
-        description: existingMaterial.description || '',
+        name: material.name,
+        code: material.code,
+        category: material.category,
+        uomId: material.uomId,
+        sizeValue: material.sizeValue,
+        sizeUnit: material.sizeUnit || '',
+        specification: material.specification || '',
+        hsnCode: material.hsnCode || '',
+        description: material.description || '',
       });
     }
-  }, [existingMaterial, form]);
+  }, [material, form]);
 
   const onSubmit = (data: MaterialFormData) => {
     if (isEdit) {
@@ -110,7 +123,7 @@ export default function MaterialForm() {
                     <FormItem>
                       <FormLabel>Material Code *</FormLabel>
                       <FormControl>
-                        <Input placeholder="MAT001" {...field} />
+                        <Input placeholder="MAT001" disabled={isEdit} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -161,24 +174,59 @@ export default function MaterialForm() {
                   name="uomId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Unit of Measure</FormLabel>
-                      <Select
-                        onValueChange={(v) => field.onChange(v ? Number(v) : undefined)}
-                        value={field.value?.toString() || ''}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select UOM" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {uoms.map((uom) => (
-                            <SelectItem key={uom.id} value={uom.id.toString()}>
-                              {uom.name} ({uom.code})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormLabel>Unit of Measure *</FormLabel>
+                      <FormControl>
+                        <SearchableSelect
+                          options={uomOptions}
+                          value={field.value?.toString() || ''}
+                          onChange={(v) => field.onChange(Number(v))}
+                          placeholder="Select UOM"
+                          searchPlaceholder="Search UOMs..."
+                          emptyMessage="No UOM found."
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="sizeValue"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Size Value</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.001" placeholder="0" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="sizeUnit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Size Unit</FormLabel>
+                      <FormControl>
+                        <Input placeholder="mm, cm, m" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="specification"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Specification</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Material specification" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
