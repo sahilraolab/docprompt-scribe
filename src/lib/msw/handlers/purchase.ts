@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw';
-import { materialRequisitions, quotations, purchaseOrders, purchaseBills, comparativeStatements } from '../data/purchase';
+import { materialRequisitions, quotations, purchaseOrders, purchaseBills } from '../data/purchase';
 
 const API_URL = 'http://88.222.244.251:5005/api';
 
@@ -20,7 +20,6 @@ let mrs = [...materialRequisitions];
 let quots = [...quotations];
 let pos = [...purchaseOrders];
 let bills = [...purchaseBills];
-let cs = [...comparativeStatements];
 let rfqs: any[] = [];
 let suppliers: any[] = [
   { id: 'sup-1', name: 'ACC Cement Ltd', code: 'ACC', contactPerson: 'Raj Kumar', email: 'raj@acc.com', phone: '9876543210', address: 'Mumbai', status: 'Active' },
@@ -243,14 +242,14 @@ export const purchaseHandlers = [
     });
   }),
 
-  // ============= COMPARATIVE STATEMENTS =============
+  // ============= COMPARATIVE STATEMENTS (removed - not in API contract) =============
   http.get(`${API_URL}/purchase/comparative-statements`, ({ request }) => {
     const authError = checkAuth(request);
     if (authError) return authError;
 
     return HttpResponse.json({
       success: true,
-      data: cs,
+      data: [],
       message: 'Comparative statements fetched successfully'
     });
   }),
@@ -259,11 +258,7 @@ export const purchaseHandlers = [
     const authError = checkAuth(request);
     if (authError) return authError;
 
-    const statement = cs.find(c => c.id === params.id);
-    if (!statement) {
-      return HttpResponse.json({ success: false, message: 'Comparative statement not found' }, { status: 404 });
-    }
-    return HttpResponse.json({ success: true, data: statement });
+    return HttpResponse.json({ success: false, message: 'Comparative statement not found' }, { status: 404 });
   }),
 
   http.post(`${API_URL}/purchase/comparative-statements`, async ({ request }) => {
@@ -276,7 +271,6 @@ export const purchaseHandlers = [
       ...body,
       createdAt: new Date().toISOString()
     };
-    cs.push(newCS as any);
 
     return HttpResponse.json({
       success: true,
