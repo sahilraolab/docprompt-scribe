@@ -167,12 +167,12 @@ export default function JournalForm() {
   }
 
   const accountOptions = accounts?.map(acc => ({
-    value: acc.id,
+    value: String(acc.id),
     label: `${acc.code} - ${acc.name}`,
   })) || [];
 
   const projectOptions = projects?.map(proj => ({
-    value: proj.id,
+    value: String(proj.id),
     label: proj.name,
   })) || [];
 

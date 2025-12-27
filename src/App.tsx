@@ -199,26 +199,9 @@ const App = () => (
              * Engineering
              * ----------------------------- */}
             <Route path="/engineering" element={<ProtectedRoute><AppLayout><EngineeringIndex /></AppLayout></ProtectedRoute>} />
-            <Route path="/engineering/projects" element={<ProtectedRoute><AppLayout><ProjectsList /></AppLayout></ProtectedRoute>} />
-            <Route path="/engineering/projects/new" element={<ProtectedRoute><AppLayout><ProjectForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/engineering/projects/:id/edit" element={<ProtectedRoute><AppLayout><ProjectForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/engineering/projects/:id" element={<ProtectedRoute><AppLayout><ProjectDetails /></AppLayout></ProtectedRoute>} />
-            <Route path="/engineering/materials" element={<ProtectedRoute><AppLayout><MaterialMasterList /></AppLayout></ProtectedRoute>} />
-            <Route path="/engineering/materials/new" element={<ProtectedRoute><AppLayout><MaterialMasterForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/engineering/materials/:id" element={<ProtectedRoute><AppLayout><MaterialMasterForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/engineering/boq" element={<ProtectedRoute><AppLayout><BOQList /></AppLayout></ProtectedRoute>} />
-            <Route path="/engineering/boq/new" element={<ProtectedRoute><AppLayout><BOQForm /></AppLayout></ProtectedRoute>} />
-            {/* <Route path="/engineering/boq/:id/edit" element={<ProtectedRoute><AppLayout><BOQForm /></AppLayout></ProtectedRoute>} /> */}
-            <Route path="/engineering/boq/:id" element={<ProtectedRoute><AppLayout><BOQDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/estimates" element={<ProtectedRoute><AppLayout><EstimatesList /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/estimates/new" element={<ProtectedRoute><AppLayout><EstimateForm /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/estimates/:id" element={<ProtectedRoute><AppLayout><EstimateForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/engineering/documents" element={<ProtectedRoute><AppLayout><DocumentsList /></AppLayout></ProtectedRoute>} />
-            <Route path="/engineering/documents/upload" element={<ProtectedRoute><AppLayout><DocumentUpload /></AppLayout></ProtectedRoute>} />
-            <Route path="/engineering/plans" element={<ProtectedRoute><AppLayout><PlansList /></AppLayout></ProtectedRoute>} />
-            <Route path="/engineering/plans/new" element={<ProtectedRoute><AppLayout><PlanForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/engineering/plans/:id/edit" element={<ProtectedRoute><AppLayout><PlanForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/engineering/plans/:id" element={<ProtectedRoute><AppLayout><PlanDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/bbs" element={<ProtectedRoute><AppLayout><BBSList /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/bbs/new" element={<ProtectedRoute><AppLayout><BBSForm /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/bbs/:id/edit" element={<ProtectedRoute><AppLayout><BBSForm /></AppLayout></ProtectedRoute>} />

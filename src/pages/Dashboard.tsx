@@ -84,7 +84,7 @@ export default function Dashboard() {
   // Calculate KPIs
   const kpis = useMemo(() => {
     const totalBudget = projectList.reduce((sum, p) => sum + (p.budget || 0), 0);
-    const budgetUtilized = projectList.reduce((sum, p) => sum + (p.spent || 0), 0);
+    const budgetUtilized = 0; // Not tracked in current Project type
     const totalPOValue = poList.reduce((sum, p) => sum + (p.totalAmount || 0), 0);
     const totalWOValue = woList.reduce((sum, w) => sum + (w.amount || 0), 0);
     const totalRAValue = raBillList.reduce((sum, r) => sum + (r.total || 0), 0);
@@ -102,8 +102,8 @@ export default function Dashboard() {
       totalStockValue,
       totalInvestments,
       totalProjects: projectList.length,
-      activeProjects: projectList.filter(p => p.status === 'Active').length,
-      completedProjects: projectList.filter(p => p.status === 'Completed').length,
+      activeProjects: projectList.filter(p => p.status === 'ONGOING').length,
+      completedProjects: projectList.filter(p => p.status === 'COMPLETED').length,
       totalMRs: mrList.length,
       pendingMRs: mrList.filter(m => m.status === 'Pending' || m.status === 'Draft').length,
       totalPOs: poList.length,
@@ -121,9 +121,9 @@ export default function Dashboard() {
 
   // Chart data
   const projectStatusData = [
-    { name: 'Planning', value: projectList.filter(p => p.status === 'Planning').length, color: '#3b82f6' },
-    { name: 'Active', value: kpis.activeProjects, color: '#10b981' },
-    { name: 'On Hold', value: projectList.filter(p => p.status === 'On Hold').length, color: '#f59e0b' },
+    { name: 'Planned', value: projectList.filter(p => p.status === 'PLANNED').length, color: '#3b82f6' },
+    { name: 'Ongoing', value: kpis.activeProjects, color: '#10b981' },
+    { name: 'On Hold', value: projectList.filter(p => p.status === 'ON_HOLD').length, color: '#f59e0b' },
     { name: 'Completed', value: kpis.completedProjects, color: '#6366f1' },
   ].filter(d => d.value > 0);
 
@@ -161,7 +161,7 @@ export default function Dashboard() {
   };
 
   const quickActions = [
-    { label: 'New Project', icon: Building2, path: '/engineering/projects/new', color: 'text-blue-600' },
+    { label: 'New Project', icon: Building2, path: '/masters/projects/new', color: 'text-blue-600' },
     { label: 'Create MR', icon: Package, path: '/purchase/mrs/new', color: 'text-green-600' },
     { label: 'New PO', icon: ShoppingCart, path: '/purchase/pos/new', color: 'text-purple-600' },
     { label: 'Add Contractor', icon: Users, path: '/contracts/contractors/new', color: 'text-orange-600' },
@@ -456,7 +456,7 @@ export default function Dashboard() {
                       <p className="font-medium text-sm truncate">{project.name}</p>
                       <p className="text-xs text-muted-foreground">{project.code}</p>
                     </div>
-                    <Badge variant={project.status === 'Active' ? 'default' : 'secondary'}>
+                    <Badge variant={project.status === 'ONGOING' ? 'default' : 'secondary'}>
                       {project.status}
                     </Badge>
                   </div>
