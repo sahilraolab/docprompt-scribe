@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,15 +9,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { SearchableSelect } from '@/components/SearchableSelect';
-import { useProjects } from '@/lib/hooks/useProjects';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useMasterProjects } from '@/lib/hooks/useMasters';
 import { useItems } from '@/lib/hooks/useSite';
+import { useApprovedBudgets, useFinalEstimates } from '@/lib/hooks/useEngineering';
 import {
   useCreateMR,
   useUpdateMR,
   useSubmitMR,
   useMR,
 } from '@/lib/hooks/usePurchaseBackend';
-import { ArrowLeft, Plus, Trash2, Send } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Send, AlertTriangle, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
 const mrItemSchema = z.object({
@@ -30,6 +32,8 @@ const mrItemSchema = z.object({
 
 const mrSchema = z.object({
   projectId: z.string().min(1, 'Project is required'),
+  budgetId: z.string().min(1, 'Approved Budget is required'),
+  estimateId: z.string().min(1, 'Final Estimate is required'),
   items: z.array(mrItemSchema).min(1, 'At least one item is required'),
   remarks: z.string().optional(),
 });
@@ -41,9 +45,10 @@ export default function MRForm() {
   const navigate = useNavigate();
 
   // API Hooks
-  const { data: projects } = useProjects();
+  const { data: projects } = useMasterProjects();
   const { data: items } = useItems();
   const { data: mrData } = useMR(id || '');
+
   const createMR = useCreateMR();
   const updateMR = useUpdateMR();
   const submitMR = useSubmitMR();
@@ -61,15 +66,30 @@ export default function MRForm() {
     register,
   } = useForm<MRFormData>({
     resolver: zodResolver(mrSchema),
-    defaultValues: { projectId: '', items: mrItems, remarks: '' },
+    defaultValues: { projectId: '', budgetId: '', estimateId: '', items: mrItems, remarks: '' },
   });
+
+  const selectedProjectId = watch('projectId');
+  
+  // Fetch approved budgets and final estimates for selected project
+  const { data: approvedBudgets = [] } = useApprovedBudgets(selectedProjectId);
+  const { data: finalEstimates = [] } = useFinalEstimates(selectedProjectId);
+
+  // Check if MR is locked (SUBMITTED or beyond)
+  const isLocked = useMemo(() => {
+    if (!mrData) return false;
+    const data = mrData.data || mrData;
+    return ['SUBMITTED', 'APPROVED', 'REJECTED'].includes(data.status);
+  }, [mrData]);
 
   // Prefill data in edit mode
   useEffect(() => {
     if (mrData && id) {
       const data = mrData.data || mrData;
-      const projectId = data.projectId?._id || data.projectId || '';
+      const projectId = String(data.projectId?._id || data.projectId || '');
       setValue('projectId', projectId);
+      setValue('budgetId', String(data.budgetId || ''));
+      setValue('estimateId', String(data.estimateId || ''));
       setValue('remarks', data.remarks || '');
 
       const formattedItems = (data.items || []).map((item: any) => ({
@@ -87,6 +107,7 @@ export default function MRForm() {
 
   // Helpers
   const updateItem = (index: number, field: string, value: any) => {
+    if (isLocked) return;
     const updated = [...mrItems];
     updated[index] = { ...updated[index], [field]: value };
     setMRItems(updated);
@@ -94,6 +115,7 @@ export default function MRForm() {
   };
 
   const addItem = () => {
+    if (isLocked) return;
     const newItems = [
       ...mrItems,
       { itemId: '', description: '', qty: 1, uom: '', requiredBy: '' },
@@ -103,6 +125,7 @@ export default function MRForm() {
   };
 
   const removeItem = (index: number) => {
+    if (isLocked) return;
     if (mrItems.length > 1) {
       const newItems = mrItems.filter((_, i) => i !== index);
       setMRItems(newItems);
@@ -111,20 +134,42 @@ export default function MRForm() {
   };
 
   // Dropdowns
-  const projectOptions = (Array.isArray(projects) ? projects : []).map((p) => ({
+  const projectOptions = (Array.isArray(projects) ? projects : []).map((p: any) => ({
     value: String(p.id),
     label: `${p.name} (${p.code})`,
   }));
 
-  const itemOptions = (Array.isArray(items) ? items : []).map((i) => ({
+  const budgetOptions = (Array.isArray(approvedBudgets) ? approvedBudgets : []).map((b: any) => ({
+    value: String(b.id),
+    label: `Budget ₹${Number(b.totalBudget).toLocaleString('en-IN')} (APPROVED)`,
+  }));
+
+  const estimateOptions = (Array.isArray(finalEstimates) ? finalEstimates : []).map((e: any) => ({
+    value: String(e.id),
+    label: `${e.name} - ₹${Number(e.baseAmount).toLocaleString('en-IN')} (FINAL)`,
+  }));
+
+  const itemOptions = (Array.isArray(items) ? items : []).map((i: any) => ({
     value: i._id || i.id,
     label: `${i.name} (${i.code})`,
   }));
+
+  const uomOptions = [
+    { value: 'Nos', label: 'Nos' },
+    { value: 'KG', label: 'KG' },
+    { value: 'MT', label: 'MT' },
+    { value: 'Ltr', label: 'Ltr' },
+    { value: 'Sqm', label: 'Sqm' },
+    { value: 'Cum', label: 'Cum' },
+  ];
 
   // Submit handler
   const onSubmit = (data: MRFormData, submitType: 'save' | 'submit') => {
     const payload = {
       ...data,
+      budgetId: Number(data.budgetId),
+      estimateId: Number(data.estimateId),
+      projectId: Number(data.projectId),
       items: data.items.map((i) => ({ ...i, qty: Number(i.qty) })),
     };
 
@@ -165,6 +210,9 @@ export default function MRForm() {
     });
   };
 
+  const hasNoBudget = selectedProjectId && approvedBudgets.length === 0;
+  const hasNoEstimate = selectedProjectId && finalEstimates.length === 0;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -185,16 +233,22 @@ export default function MRForm() {
               : 'Create a new material requisition'}
           </p>
         </div>
+        {isLocked && (
+          <div className="ml-auto flex items-center gap-2 text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 rounded-md">
+            <Lock className="h-4 w-4" />
+            <span className="text-sm font-medium">Locked (Submitted)</span>
+          </div>
+        )}
       </div>
 
       <form
         onSubmit={handleSubmit((data) => onSubmit(data, 'save'))}
         className="space-y-6"
       >
-        {/* Project Info */}
+        {/* Project & Engineering Info */}
         <Card>
           <CardHeader>
-            <CardTitle>Project Information</CardTitle>
+            <CardTitle>Project & Engineering Data</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -202,20 +256,81 @@ export default function MRForm() {
               <SearchableSelect
                 options={projectOptions}
                 value={watch('projectId')}
-                onChange={(val) => setValue('projectId', val)}
+                onChange={(val) => {
+                  setValue('projectId', val);
+                  setValue('budgetId', '');
+                  setValue('estimateId', '');
+                }}
                 placeholder="Select project"
+                disabled={isLocked}
               />
               {errors.projectId && (
-                <p className="text-sm text-destructive">
+                <p className="text-sm text-destructive mt-1">
                   {errors.projectId.message}
                 </p>
               )}
             </div>
+
+            {hasNoBudget && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  No approved budget found for this project. Budget must be APPROVED before creating MR.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {hasNoEstimate && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  No final estimate found for this project. Estimate must be FINAL before creating MR.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Approved Budget *</Label>
+                <SearchableSelect
+                  options={budgetOptions}
+                  value={watch('budgetId')}
+                  onChange={(val) => setValue('budgetId', val)}
+                  placeholder="Select approved budget"
+                  disabled={isLocked || !selectedProjectId || hasNoBudget}
+                  emptyMessage="No approved budget available"
+                />
+                {errors.budgetId && (
+                  <p className="text-sm text-destructive mt-1">
+                    {errors.budgetId.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label>Final Estimate *</Label>
+                <SearchableSelect
+                  options={estimateOptions}
+                  value={watch('estimateId')}
+                  onChange={(val) => setValue('estimateId', val)}
+                  placeholder="Select final estimate"
+                  disabled={isLocked || !selectedProjectId || hasNoEstimate}
+                  emptyMessage="No final estimate available"
+                />
+                {errors.estimateId && (
+                  <p className="text-sm text-destructive mt-1">
+                    {errors.estimateId.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
             <div>
               <Label>Remarks / Purpose</Label>
               <Textarea
                 {...register('remarks')}
                 placeholder="Add remarks about this requisition"
+                disabled={isLocked}
               />
             </div>
           </CardContent>
@@ -226,7 +341,13 @@ export default function MRForm() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Items</CardTitle>
-              <Button type="button" variant="outline" size="sm" onClick={addItem}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={addItem}
+                disabled={isLocked}
+              >
                 <Plus className="h-4 w-4 mr-2" /> Add Item
               </Button>
             </div>
@@ -236,7 +357,7 @@ export default function MRForm() {
               <div key={index} className="border p-4 rounded-lg space-y-4">
                 <div className="flex justify-between items-center">
                   <h4 className="font-medium">Item {index + 1}</h4>
-                  {mrItems.length > 1 && (
+                  {mrItems.length > 1 && !isLocked && (
                     <Button
                       type="button"
                       variant="ghost"
@@ -256,6 +377,7 @@ export default function MRForm() {
                       value={item.itemId}
                       onChange={(val) => updateItem(index, 'itemId', val)}
                       placeholder="Select Item"
+                      disabled={isLocked}
                     />
                   </div>
 
@@ -267,6 +389,7 @@ export default function MRForm() {
                         updateItem(index, 'description', e.target.value)
                       }
                       placeholder="Description"
+                      disabled={isLocked}
                     />
                   </div>
 
@@ -279,21 +402,18 @@ export default function MRForm() {
                         updateItem(index, 'qty', Number(e.target.value))
                       }
                       placeholder="Quantity"
+                      disabled={isLocked}
                     />
                   </div>
 
                   <div>
                     <Label>UOM *</Label>
                     <SearchableSelect
-                      options={[
-                        { value: 'Nos', label: 'Nos' },
-                        { value: 'KG', label: 'KG' },
-                        { value: 'MT', label: 'MT' },
-                        { value: 'Ltr', label: 'Ltr' },
-                      ]}
+                      options={uomOptions}
                       value={item.uom}
                       onChange={(val) => updateItem(index, 'uom', val)}
                       placeholder="Select UOM"
+                      disabled={isLocked}
                     />
                   </div>
 
@@ -305,6 +425,7 @@ export default function MRForm() {
                       onChange={(e) =>
                         updateItem(index, 'requiredBy', e.target.value)
                       }
+                      disabled={isLocked}
                     />
                   </div>
                 </div>
@@ -322,15 +443,20 @@ export default function MRForm() {
           >
             Cancel
           </Button>
-          <Button type="submit" variant="secondary">
-            Save as Draft
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSubmit((data) => onSubmit(data, 'submit'))}
-          >
-            <Send className="h-4 w-4 mr-2" /> Submit for Approval
-          </Button>
+          {!isLocked && (
+            <>
+              <Button type="submit" variant="secondary">
+                Save as Draft
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSubmit((data) => onSubmit(data, 'submit'))}
+                disabled={hasNoBudget || hasNoEstimate}
+              >
+                <Send className="h-4 w-4 mr-2" /> Submit for Approval
+              </Button>
+            </>
+          )}
         </div>
       </form>
     </div>

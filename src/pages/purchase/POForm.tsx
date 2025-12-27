@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,9 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { SearchableSelect } from '@/components/SearchableSelect';
-import { useProjects } from '@/lib/hooks/useProjects';
+import { useMasterProjects } from '@/lib/hooks/useMasters';
 import { useSuppliers, useCreatePO, useUpdatePO, usePO } from '@/lib/hooks/usePurchaseBackend';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Lock, Calculator } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils/format';
 
@@ -33,21 +33,31 @@ const poSchema = z.object({
 
 type POFormData = z.infer<typeof poSchema>;
 
+const uomOptions = [
+  { value: 'Nos', label: 'Nos' },
+  { value: 'Kgs', label: 'Kgs' },
+  { value: 'MT', label: 'MT' },
+  { value: 'Ltr', label: 'Ltr' },
+  { value: 'Sqm', label: 'Sqm' },
+  { value: 'Cum', label: 'Cum' },
+  { value: 'Bag', label: 'Bag' },
+  { value: 'Box', label: 'Box' },
+  { value: 'Bundle', label: 'Bundle' },
+  { value: 'Roll', label: 'Roll' },
+  { value: 'Feet', label: 'Feet' },
+  { value: 'Meter', label: 'Meter' },
+];
+
 export default function POForm() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const { data: projects, isLoading: projectsLoading } = useProjects();
+  const { data: projects, isLoading: projectsLoading } = useMasterProjects();
   const { data: suppliers, isLoading: suppliersLoading } = useSuppliers();
   const { data: poData } = usePO(id || '');
 
   const createPO = useCreatePO();
   const updatePO = useUpdatePO();
-
-  const uoms = [
-    'Nos', 'Kgs', 'MT', 'Ltr', 'Sqm', 'Cum', 'Bag', 'Box',
-    'Bundle', 'Roll', 'Feet', 'Meter', 'Hour', 'Day',
-  ];
 
   const [poItems, setPoItems] = useState<POFormData['items']>([
     { description: '', qty: 1, uom: '', rate: 0, taxPct: 18 },
@@ -59,7 +69,6 @@ export default function POForm() {
     handleSubmit,
     formState: { errors },
     setValue,
-    watch,
     reset,
   } = useForm<POFormData>({
     resolver: zodResolver(poSchema),
@@ -72,7 +81,13 @@ export default function POForm() {
     },
   });
 
-  // ✅ Load existing PO (Edit mode)
+  // Check if PO is locked (APPROVED or CANCELLED)
+  const isLocked = useMemo(() => {
+    if (!poData) return false;
+    return ['APPROVED', 'CANCELLED'].includes(poData.status);
+  }, [poData]);
+
+  // Load existing PO (Edit mode)
   useEffect(() => {
     if (poData && id) {
       const formattedItems =
@@ -86,70 +101,71 @@ export default function POForm() {
 
       setPoItems(formattedItems);
       reset({
-        projectId: poData.projectId?._id || poData.projectId || '',
-        supplierId: poData.supplierId?._id || poData.supplierId || '',
-        deliveryDate: poData.deliveryDate
-          ? poData.deliveryDate.split('T')[0]
-          : '',
+        projectId: String(poData.projectId?._id || poData.projectId || ''),
+        supplierId: String(poData.supplierId?._id || poData.supplierId || ''),
+        deliveryDate: poData.deliveryDate ? poData.deliveryDate.split('T')[0] : '',
         terms: poData.terms || '',
         items: formattedItems,
       });
     }
   }, [poData, id, reset]);
 
-  // ✅ Item operations
+  // Item operations
   const addItem = () => {
+    if (isLocked) return;
     const newItems = [...poItems, { description: '', qty: 1, uom: '', rate: 0, taxPct: 18 }];
     setPoItems(newItems);
     setValue('items', newItems);
   };
 
   const removeItem = (index: number) => {
+    if (isLocked) return;
     const newItems = poItems.filter((_, i) => i !== index);
     setPoItems(newItems);
     setValue('items', newItems);
   };
 
   const updateItem = (index: number, field: string, value: any) => {
+    if (isLocked) return;
     const updated = [...poItems];
     updated[index] = { ...updated[index], [field]: value };
     setPoItems(updated);
     setValue('items', updated);
   };
 
-  // ✅ Totals
+  // Auto-calculated totals
   const calcAmount = (item: any) => (item.qty * item.rate) || 0;
-  const subtotal = poItems.reduce((s, i) => s + calcAmount(i), 0);
-  const taxAmount = poItems.reduce((s, i) => s + (calcAmount(i) * i.taxPct) / 100, 0);
-  const grandTotal = subtotal + taxAmount;
+  const { subtotal, taxAmount, grandTotal } = useMemo(() => {
+    const subtotal = poItems.reduce((s, i) => s + calcAmount(i), 0);
+    const taxAmount = poItems.reduce((s, i) => s + (calcAmount(i) * i.taxPct) / 100, 0);
+    return { subtotal, taxAmount, grandTotal: subtotal + taxAmount };
+  }, [poItems]);
 
-  // ✅ Select options
+  // Select options
   const projectOptions = (Array.isArray(projects) ? projects : []).map((p: any) => ({
-    value: p._id,
+    value: String(p.id),
     label: `${p.name} (${p.code})`,
   }));
 
   const supplierOptions = (Array.isArray(suppliers) ? suppliers : []).map((s: any) => ({
-    value: s._id,
+    value: s._id || String(s.id),
     label: `${s.name} (${s.code})`,
   }));
 
-  const uomOptions = uoms.map((u) => ({ value: u, label: u }));
-
-  // ✅ inside onSubmit (replace your existing function)
   const onSubmit = (data: POFormData) => {
     const itemsWithAmounts = poItems.map((item) => ({
       description: item.description,
       qty: item.qty,
       uom: item.uom,
       rate: item.rate,
-      taxPercent: item.taxPct, // ✅ renamed for backend
-      amount: item.qty * item.rate, // ✅ required by backend
+      taxPercent: item.taxPct,
+      amount: item.qty * item.rate,
     }));
 
     const poPayload = {
       ...data,
-      poDate: new Date(), // ✅ required by backend
+      projectId: Number(data.projectId),
+      poDate: new Date(),
       items: itemsWithAmounts,
       subtotal,
       taxAmount,
@@ -168,7 +184,6 @@ export default function POForm() {
     );
   };
 
-
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -181,10 +196,16 @@ export default function POForm() {
             {id ? 'Update purchase order details' : 'Create a new purchase order'}
           </p>
         </div>
+        {isLocked && (
+          <div className="ml-auto flex items-center gap-2 text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 rounded-md">
+            <Lock className="h-4 w-4" />
+            <span className="text-sm font-medium">Locked ({poData?.status})</span>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* ✅ Basic Info */}
+        {/* Basic Info */}
         <Card>
           <CardHeader>
             <CardTitle>Basic Information</CardTitle>
@@ -203,11 +224,11 @@ export default function POForm() {
                       onChange={(v) => field.onChange(v)}
                       placeholder="Select project"
                       searchPlaceholder="Search projects..."
-                      disabled={projectsLoading}
+                      disabled={projectsLoading || isLocked}
                     />
                   )}
                 />
-                {errors.projectId && <p className="text-sm text-destructive">{errors.projectId.message}</p>}
+                {errors.projectId && <p className="text-sm text-destructive mt-1">{errors.projectId.message}</p>}
               </div>
 
               <div>
@@ -222,33 +243,35 @@ export default function POForm() {
                       onChange={(v) => field.onChange(v)}
                       placeholder="Select supplier"
                       searchPlaceholder="Search suppliers..."
-                      disabled={suppliersLoading}
+                      disabled={suppliersLoading || isLocked}
                     />
                   )}
                 />
-                {errors.supplierId && <p className="text-sm text-destructive">{errors.supplierId.message}</p>}
+                {errors.supplierId && <p className="text-sm text-destructive mt-1">{errors.supplierId.message}</p>}
               </div>
 
               <div>
                 <Label>Delivery Date</Label>
-                <Input type="date" {...register('deliveryDate')} />
+                <Input type="date" {...register('deliveryDate')} disabled={isLocked} />
               </div>
             </div>
 
             <div>
               <Label>Terms & Conditions</Label>
-              <Textarea {...register('terms')} rows={3} placeholder="Enter payment and delivery terms" />
+              <Textarea {...register('terms')} rows={3} placeholder="Enter payment and delivery terms" disabled={isLocked} />
             </div>
           </CardContent>
         </Card>
 
-        {/* ✅ Items Section */}
+        {/* Items Section */}
         <Card>
-          <CardHeader className="flex justify-between items-center">
+          <CardHeader className="flex flex-row justify-between items-center">
             <CardTitle>PO Items</CardTitle>
-            <Button type="button" variant="outline" size="sm" onClick={addItem}>
-              <Plus className="mr-2 h-4 w-4" /> Add Item
-            </Button>
+            {!isLocked && (
+              <Button type="button" variant="outline" size="sm" onClick={addItem}>
+                <Plus className="mr-2 h-4 w-4" /> Add Item
+              </Button>
+            )}
           </CardHeader>
 
           <CardContent className="space-y-4">
@@ -256,7 +279,7 @@ export default function POForm() {
               <div key={i} className="border rounded-lg p-4 space-y-4">
                 <div className="flex justify-between items-center">
                   <h4 className="font-medium">Item {i + 1}</h4>
-                  {poItems.length > 1 && (
+                  {poItems.length > 1 && !isLocked && (
                     <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(i)}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -270,6 +293,7 @@ export default function POForm() {
                       value={item.description}
                       onChange={(e) => updateItem(i, 'description', e.target.value)}
                       placeholder="Item description"
+                      disabled={isLocked}
                     />
                   </div>
 
@@ -280,6 +304,7 @@ export default function POForm() {
                       value={item.qty}
                       onChange={(e) => updateItem(i, 'qty', parseFloat(e.target.value) || 0)}
                       min="1"
+                      disabled={isLocked}
                     />
                   </div>
 
@@ -291,6 +316,7 @@ export default function POForm() {
                       onChange={(v) => updateItem(i, 'uom', v)}
                       placeholder="Select UOM"
                       searchPlaceholder="Search UOM..."
+                      disabled={isLocked}
                     />
                   </div>
 
@@ -301,6 +327,7 @@ export default function POForm() {
                       step="0.01"
                       value={item.rate}
                       onChange={(e) => updateItem(i, 'rate', parseFloat(e.target.value) || 0)}
+                      disabled={isLocked}
                     />
                   </div>
 
@@ -313,11 +340,16 @@ export default function POForm() {
                       onChange={(e) => updateItem(i, 'taxPct', parseFloat(e.target.value) || 0)}
                       min="0"
                       max="100"
+                      disabled={isLocked}
                     />
                   </div>
 
-                  <div className="col-span-2 bg-muted rounded-lg p-3 flex justify-between text-sm">
-                    <span>Item Amount:</span>
+                  {/* Auto-calculated Item Amount */}
+                  <div className="col-span-2 bg-muted/50 rounded-lg p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Calculator className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Item Amount</span>
+                    </div>
                     <span className="font-medium">{formatCurrency(calcAmount(item))}</span>
                   </div>
                 </div>
@@ -326,23 +358,39 @@ export default function POForm() {
           </CardContent>
         </Card>
 
-        {/* ✅ Summary */}
+        {/* Summary - Auto-calculated */}
         <Card>
           <CardHeader>
-            <CardTitle>Summary</CardTitle>
+            <div className="flex items-center gap-2">
+              <Calculator className="h-5 w-5 text-muted-foreground" />
+              <CardTitle>Summary (Auto-Calculated)</CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span>Subtotal:</span><span>₹{subtotal.toLocaleString('en-IN')}</span></div>
-              <div className="flex justify-between"><span>Tax:</span><span>₹{taxAmount.toLocaleString('en-IN')}</span></div>
-              <div className="flex justify-between font-bold border-t pt-2 text-lg"><span>Grand Total:</span><span>₹{grandTotal.toLocaleString('en-IN')}</span></div>
+              <div className="flex justify-between">
+                <span>Subtotal:</span>
+                <span className="font-medium">{formatCurrency(subtotal)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Tax:</span>
+                <span className="font-medium">{formatCurrency(taxAmount)}</span>
+              </div>
+              <div className="flex justify-between font-bold border-t pt-2 text-lg">
+                <span>Grand Total:</span>
+                <span>{formatCurrency(grandTotal)}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         <div className="flex justify-end gap-4">
-          <Button variant="outline" type="button" onClick={() => navigate('/purchase/pos')}>Cancel</Button>
-          <Button type="submit">{id ? 'Update' : 'Create'} PO</Button>
+          <Button variant="outline" type="button" onClick={() => navigate('/purchase/pos')}>
+            {isLocked ? 'Back' : 'Cancel'}
+          </Button>
+          {!isLocked && (
+            <Button type="submit">{id ? 'Update' : 'Create'} PO</Button>
+          )}
         </div>
       </form>
     </div>
