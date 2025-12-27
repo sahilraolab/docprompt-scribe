@@ -1,4 +1,35 @@
-import { BOQ } from '@/types/engineering';
+// BOQ mock data (type defined locally as it's deprecated from backend)
+interface BOQ {
+  id: string;
+  projectId: string;
+  projectName?: string;
+  estimateId?: string;
+  version: number;
+  items: BOQItem[];
+  status: 'Draft' | 'Approved' | 'Active' | 'Completed';
+  totalCost: number;
+  createdBy?: string;
+  createdAt?: string;
+}
+
+interface BOQItem {
+  id: string;
+  itemId: string;
+  itemName?: string;
+  itemCode?: string;
+  category: string;
+  description: string;
+  qty: number;
+  uom: string;
+  estimatedRate: number;
+  actualRate?: number;
+  estimatedAmount: number;
+  actualAmount?: number;
+  consumedQty?: number;
+  balanceQty?: number;
+  activityCode?: string;
+  activityName?: string;
+}
 
 export const boqs: BOQ[] = [
   {

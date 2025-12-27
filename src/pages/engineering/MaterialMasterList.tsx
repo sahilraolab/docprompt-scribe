@@ -11,7 +11,27 @@ import { DataTable } from '@/components/DataTable';
 import { EmptyState } from '@/components/EmptyState';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useMaterialMaster, useDeleteMaterial } from '@/lib/hooks/useMaterialMaster';
-import { MaterialMaster } from '@/types/engineering';
+// MaterialMaster type
+interface MaterialMaster {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  category: string;
+  subCategory?: string;
+  uom: string;
+  specification?: string;
+  make?: string;
+  brand?: string;
+  hsnCode?: string;
+  taxRate?: number;
+  minStockLevel?: number;
+  maxStockLevel?: number;
+  reorderLevel?: number;
+  standardRate?: number;
+  lastPurchaseRate?: number;
+  active: boolean;
+}
 import { exportToCSV } from '@/lib/utils/export';
 
 const MaterialMasterList = () => {

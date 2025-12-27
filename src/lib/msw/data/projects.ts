@@ -1,4 +1,33 @@
-import { Project, Document, Plan } from '@/types';
+import { Project } from '@/types';
+
+// Define local types for deprecated models
+interface Document {
+  id: string;
+  projectId: string;
+  projectName?: string;
+  name: string;
+  type: 'Plan' | 'Permit' | 'Report' | 'Drawing' | 'Other';
+  version: number;
+  url: string;
+  size?: number;
+  createdBy?: string;
+  createdAt?: string;
+}
+
+interface Plan {
+  id: string;
+  projectId: string;
+  projectName?: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  progress: number;
+  status: string;
+  assignedTo: string;
+  assignedToName?: string;
+  createdBy?: string;
+  createdAt?: string;
+}
 
 // Local estimate type for mock data (different from backend Estimate model)
 interface MockEstimate {

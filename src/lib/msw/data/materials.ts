@@ -1,4 +1,26 @@
-import { MaterialMaster } from '@/types/engineering';
+// MaterialMaster type defined locally (available from masters module)
+interface MaterialMaster {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  category: string;
+  subCategory?: string;
+  uom: string;
+  specification?: string;
+  make?: string;
+  brand?: string;
+  hsnCode?: string;
+  taxRate?: number;
+  minStockLevel?: number;
+  maxStockLevel?: number;
+  reorderLevel?: number;
+  standardRate?: number;
+  lastPurchaseRate?: number;
+  active: boolean;
+  createdBy?: string;
+  createdAt?: string;
+}
 
 export const materials: MaterialMaster[] = [
   {
