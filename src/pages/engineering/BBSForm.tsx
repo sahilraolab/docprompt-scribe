@@ -3,8 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useProjects, useBBS, useCreateBBS, useUpdateBBS } from '@/lib/hooks/useEngineering';
-import { useMasterUOMs } from '@/lib/hooks/useMasters';
+import { useMasterProjects, useMasterUOMs } from '@/lib/hooks/useMasters';
+import { useBBS, useCreateBBS, useUpdateBBS } from '@/lib/hooks/useEngineering';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -31,7 +31,7 @@ export default function BBSForm() {
   const navigate = useNavigate();
   const isEdit = !!id && id !== 'new';
 
-  const { data: projects = [] } = useProjects();
+  const { data: projects = [] } = useMasterProjects();
   const { data: uoms = [] } = useMasterUOMs();
   const { data: bbsData } = useBBS(isEdit ? id : '');
   const createBBS = useCreateBBS();

@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useProjects, useCompliance, useCreateCompliance, useUpdateCompliance } from '@/lib/hooks/useEngineering';
+import { useMasterProjects } from '@/lib/hooks/useMasters';
+import { useCompliance, useCreateCompliance, useUpdateCompliance } from '@/lib/hooks/useEngineering';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -27,7 +28,7 @@ export default function ComplianceForm() {
   const navigate = useNavigate();
   const isEdit = !!id && id !== 'new';
 
-  const { data: projects = [] } = useProjects();
+  const { data: projects = [] } = useMasterProjects();
   const { data: complianceData } = useCompliance(isEdit ? id : '');
   const createCompliance = useCreateCompliance();
   const updateCompliance = useUpdateCompliance();

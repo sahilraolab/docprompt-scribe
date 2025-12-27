@@ -2,149 +2,96 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building, FileText, FolderOpen, Calendar, Package, ListChecks, DollarSign, Download, TrendingUp } from 'lucide-react';
+import { FileText, ListChecks, DollarSign, Download, TrendingUp, FolderOpen, Shield, Building } from 'lucide-react';
 import { KPICard } from '@/components/KPICard';
 import { formatCurrency } from '@/lib/utils/format';
-import { projectsApi, estimatesApi, boqApi } from '@/lib/api/engineeringApi';
-import { materialMasterApi } from '@/lib/api/materialMasterApi';
+import { estimatesApi, bbsApi, drawingsApi, complianceApi } from '@/lib/api/engineeringApi';
+import { projectsApi } from '@/lib/api/mastersApi';
 import { exportToCSV, exportToExcel, printElement } from '@/lib/utils/export';
 
 export default function EngineeringIndex() {
   const navigate = useNavigate();
 
-  // Basic SEO
   useEffect(() => {
     document.title = 'Engineering Dashboard | ERP';
-    const desc = 'Engineering module overview, KPIs, and data exports (CSV, Excel, PDF, MSP, P6).';
-    const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute('content', desc);
-    else {
-      const m = document.createElement('meta');
-      m.name = 'description';
-      m.content = desc;
-      document.head.appendChild(m);
-    }
   }, []);
 
-  // Data state
   const [projectsData, setProjectsData] = useState<any[]>([]);
   const [estimatesData, setEstimatesData] = useState<any[]>([]);
-  const [boqData, setBOQData] = useState<any[]>([]);
-  const [materialsData, setMaterialsData] = useState<any[]>([]);
+  const [bbsData, setBBSData] = useState<any[]>([]);
+  const [drawingsData, setDrawingsData] = useState<any[]>([]);
   
-  // Stats state
   const [stats, setStats] = useState({
     totalProjects: 0,
-    activeProjects: 0,
     totalBudget: 0,
-    totalSpent: 0,
-    pendingEstimates: 0,
-    totalMaterials: 0,
+    totalEstimates: 0,
+    totalBBS: 0,
+    totalDrawings: 0,
+    draftEstimates: 0,
   });
 
   useEffect(() => {
     (async () => {
       try {
-        const [proj, est, boq, materials] = await Promise.all([
+        const [projRes, estRes, bbsRes, drawRes] = await Promise.all([
           projectsApi.getAll(),
           estimatesApi.getAll(),
-          boqApi.getAll(),
-          materialMasterApi.getAll(),
+          bbsApi.getAll(),
+          drawingsApi.getAll(),
         ]);
         
-        const projects = proj.data || [];
-        const estimates = est.data || [];
-        const boqArr = boq.data || [];
-        const materialsArr = materials.data || [];
+        // Masters API returns data directly, engineering API returns { success, data }
+        const projects = Array.isArray(projRes) ? projRes : (projRes?.data || []);
+        const estimates = estRes?.data || [];
+        const bbs = bbsRes?.data || [];
+        const drawings = drawRes?.data || [];
         
         setProjectsData(projects);
         setEstimatesData(estimates);
-        setBOQData(boqArr);
-        setMaterialsData(materialsArr);
+        setBBSData(bbs);
+        setDrawingsData(drawings);
         
-        calculateStats(projects, estimates, materialsArr);
+        const totalBudget = projects.reduce((sum: number, p: any) => sum + (p.budget || 0), 0);
+        const draftEstimates = estimates.filter((e: any) => e.status === 'DRAFT').length;
+
+        setStats({
+          totalProjects: projects.length,
+          totalBudget,
+          totalEstimates: estimates.length,
+          totalBBS: bbs.length,
+          totalDrawings: drawings.length,
+          draftEstimates,
+        });
       } catch (e) {
         console.error('Failed to load engineering stats', e);
       }
     })();
   }, []);
 
-  const calculateStats = (projects: any[], estimates: any[], materials: any[]) => {
-    const totalBudget = projects.reduce((sum, p) => sum + (p.budget || 0), 0);
-    const totalSpent = projects.reduce((sum, p) => sum + (p.spent || 0), 0);
-    const activeProjects = projects.filter(p => p.status === 'Active').length;
-    const pendingEstimates = estimates.filter(e => e.status === 'Pending').length;
-
-    setStats({
-      totalProjects: projects.length,
-      activeProjects,
-      totalBudget,
-      totalSpent,
-      pendingEstimates,
-      totalMaterials: materials.length,
-    });
-  };
-
-  // Export helpers
   const getCombinedRows = () => {
     return [
-      ...projectsData.map((p: any) => ({
-        type: 'Project',
-        id: p.id,
-        code: p.code,
-        name: p.name,
-        city: p.city,
-        status: p.status,
-        budget: p.budget,
-        spent: p.spent,
-        progress: p.progress,
-        startDate: p.startDate,
-        endDate: p.endDate,
-      })),
       ...estimatesData.map((e: any) => ({
         type: 'Estimate',
         id: e.id,
         projectId: e.projectId,
-        version: e.version,
+        name: e.name,
         status: e.status,
-        total: e.total,
+        baseAmount: e.baseAmount,
       })),
-      ...boqData.map((b: any) => ({
-        type: 'BOQ',
+      ...bbsData.map((b: any) => ({
+        type: 'BBS',
         id: b.id,
-        projectId: b.projectId,
-        version: b.version,
+        code: b.code,
+        description: b.description,
+        quantity: b.quantity,
+        rate: b.rate,
+        amount: b.amount,
         status: b.status,
-        totalCost: b.totalCost,
       })),
     ];
   };
 
   const modules = [
-    {
-      title: 'Projects',
-      description: 'Manage construction projects',
-      icon: Building,
-      path: '/engineering/projects',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-    },
-    {
-      title: 'Material Master',
-      description: 'Master database for all materials',
-      icon: Package,
-      path: '/engineering/materials',
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
-    },
-    {
-      title: 'BOQ',
-      description: 'Bill of Quantities management',
-      icon: ListChecks,
-      path: '/engineering/boq',
-      color: 'text-violet-600',
-      bgColor: 'bg-violet-50',
-    },
     {
       title: 'Estimates',
       description: 'Project cost estimates with versioning',
@@ -180,26 +127,10 @@ export default function EngineeringIndex() {
     {
       title: 'Compliance',
       description: 'Regulatory compliance tracking',
-      icon: Download,
+      icon: Shield,
       path: '/engineering/compliance',
       color: 'text-red-600',
       bgColor: 'bg-red-50',
-    },
-    {
-      title: 'Documents',
-      description: 'Drawings, reports, and files',
-      icon: FolderOpen,
-      path: '/engineering/documents',
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
-    },
-    {
-      title: 'Plans & Tasks',
-      description: 'Project planning and task management',
-      icon: Calendar,
-      path: '/engineering/plans',
-      color: 'text-teal-600',
-      bgColor: 'bg-teal-50',
     },
   ];
 
@@ -207,17 +138,16 @@ export default function EngineeringIndex() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Engineering Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Comprehensive project management and analytics</p>
+        <p className="text-muted-foreground mt-1">Engineering module overview</p>
       </div>
 
       {/* KPI Cards */}
       <div id="engineering-dashboard" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
-          title="Total Projects"
+          title="Projects"
           value={stats.totalProjects}
-          description={`${stats.activeProjects} active`}
+          description="From Masters"
           icon={Building}
-          trend={{ value: stats.activeProjects, isPositive: true }}
         />
         <KPICard
           title="Total Budget"
@@ -226,56 +156,21 @@ export default function EngineeringIndex() {
           icon={DollarSign}
         />
         <KPICard
-          title="Total Spent"
-          value={formatCurrency(stats.totalSpent, 'short')}
-          description="Across projects"
-          icon={TrendingUp}
-        />
-        <KPICard
-          title="Pending Estimates"
-          value={stats.pendingEstimates}
-          description="Awaiting approval"
+          title="Estimates"
+          value={stats.totalEstimates}
+          description={`${stats.draftEstimates} draft`}
           icon={FileText}
         />
         <KPICard
-          title="Materials"
-          value={stats.totalMaterials}
-          description="Master database"
-          icon={Package}
+          title="BBS Records"
+          value={stats.totalBBS}
+          description="Bar bending schedules"
+          icon={TrendingUp}
         />
       </div>
 
       {/* Recent Activity */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Projects</CardTitle>
-            <CardDescription>Latest projects</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {projectsData.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No projects available</p>
-            ) : (
-              <div className="space-y-3">
-                {projectsData.slice(0, 5).map((project: any) => (
-                  <div key={project.id} className="flex items-center justify-between border-b pb-2 last:border-0">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <Building className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">{project.name}</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {project.code} • {project.status}
-                      </div>
-                    </div>
-                    <span className="text-sm font-semibold">{formatCurrency(project.budget || 0)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         <Card>
           <CardHeader>
             <CardTitle>Recent Estimates</CardTitle>
@@ -291,13 +186,41 @@ export default function EngineeringIndex() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Version {estimate.version}</span>
+                        <span className="text-sm font-medium">{estimate.name}</span>
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
                         {estimate.status}
                       </div>
                     </div>
-                    <span className="text-sm font-semibold">{formatCurrency(estimate.total || 0)}</span>
+                    <span className="text-sm font-semibold">{formatCurrency(estimate.baseAmount || 0)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Drawings</CardTitle>
+            <CardDescription>Latest engineering drawings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {drawingsData.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No drawings available</p>
+            ) : (
+              <div className="space-y-3">
+                {drawingsData.slice(0, 5).map((drawing: any) => (
+                  <div key={drawing.id} className="flex items-center justify-between border-b pb-2 last:border-0">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{drawing.title}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {drawing.drawingNo} • {drawing.status}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>

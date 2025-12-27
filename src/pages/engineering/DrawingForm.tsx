@@ -2,7 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useProjects, useCreateDrawing } from '@/lib/hooks/useEngineering';
+import { useMasterProjects } from '@/lib/hooks/useMasters';
+import { useCreateDrawing } from '@/lib/hooks/useEngineering';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -23,7 +24,7 @@ type DrawingFormData = z.infer<typeof drawingSchema>;
 
 export default function DrawingForm() {
   const navigate = useNavigate();
-  const { data: projects = [] } = useProjects();
+  const { data: projects = [] } = useMasterProjects();
   const createDrawing = useCreateDrawing();
 
   const form = useForm<DrawingFormData>({
