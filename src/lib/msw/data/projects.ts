@@ -1,5 +1,22 @@
-import { Project, Estimate, Document, Plan } from '@/types';
+import { Project, Document, Plan } from '@/types';
 
+// Local estimate type for mock data (different from backend Estimate model)
+interface MockEstimate {
+  id: string;
+  projectId: string;
+  projectName?: string;
+  version: number;
+  items: any[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  status: string;
+  approvalStatus?: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  createdBy: string;
+  createdAt: string;
+}
 export const projects: Project[] = [
   {
     id: 'proj-1',
@@ -189,7 +206,7 @@ export const projects: Project[] = [
   },
 ];
 
-export const estimates: Estimate[] = [
+export const estimates: MockEstimate[] = [
   {
     id: 'est-1',
     projectId: 'proj-1',

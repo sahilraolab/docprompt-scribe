@@ -93,7 +93,7 @@ export default function ProjectsList() {
                   <TableRow key={project.id}>
                     <TableCell className="font-mono text-sm">{project.code}</TableCell>
                     <TableCell className="font-medium">{project.name}</TableCell>
-                    <TableCell>{project.location || '-'}</TableCell>
+                    <TableCell>{project.city || '-'}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={STATUS_COLORS[project.status] || ''}>
                         {project.status}

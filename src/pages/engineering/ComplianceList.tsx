@@ -11,27 +11,28 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from '@/components/ui/alert-dialog';
-import { Plus, Search, Edit2, Trash2, Building2 } from 'lucide-react';
-import { useMasterCompanies, useDeleteMasterCompany } from '@/lib/hooks/useMasters';
+import { Plus, Search, Edit2, Trash2, Shield } from 'lucide-react';
+import { useCompliances, useDeleteCompliance } from '@/lib/hooks/useEngineering';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';
-import type { Company } from '@/types/masters';
+import { format } from 'date-fns';
+import type { Compliance } from '@/types/engineering';
 
-export default function CompaniesList() {
+export default function ComplianceList() {
   const navigate = useNavigate();
-  const { data: companies = [], isLoading } = useMasterCompanies();
-  const deleteCompany = useDeleteMasterCompany();
+  const { data: compliances = [], isLoading } = useCompliances();
+  const deleteCompliance = useDeleteCompliance();
   const [search, setSearch] = useState('');
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const filtered = companies.filter((c: Company) =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.code.toLowerCase().includes(search.toLowerCase())
+  const filtered = (compliances as Compliance[]).filter((c) =>
+    c.type?.toLowerCase().includes(search.toLowerCase()) ||
+    c.documentRef?.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleDelete = () => {
     if (deleteId) {
-      deleteCompany.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+      deleteCompliance.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
     }
   };
 
@@ -40,10 +41,10 @@ export default function CompaniesList() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Companies"
-        description="Manage company information"
+        title="Compliance"
+        description="Manage regulatory compliance documents"
         actions={[
-          { label: 'Add Company', onClick: () => navigate('/masters/companies/new'), icon: Plus }
+          { label: 'Add Compliance', onClick: () => navigate('/engineering/compliance/new'), icon: Plus }
         ]}
       />
 
@@ -53,7 +54,7 @@ export default function CompaniesList() {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search companies..."
+                placeholder="Search compliance..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -64,44 +65,44 @@ export default function CompaniesList() {
         <CardContent className="p-0">
           {filtered.length === 0 ? (
             <EmptyState
-              icon={Building2}
-              title="No companies found"
-              description="Create your first company to get started"
-              action={{ label: 'Add Company', onClick: () => navigate('/masters/companies/new') }}
+              icon={Shield}
+              title="No compliance records found"
+              description="Add your first compliance record"
+              action={{ label: 'Add Compliance', onClick: () => navigate('/engineering/compliance/new') }}
             />
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>GST No.</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Document Ref</TableHead>
+                  <TableHead>Valid Till</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((company: Company) => (
-                  <TableRow key={company.id}>
-                    <TableCell className="font-mono text-sm">{company.code}</TableCell>
-                    <TableCell className="font-medium">{company.name}</TableCell>
-                    <TableCell>{company.phone || '-'}</TableCell>
-                    <TableCell>{company.email || '-'}</TableCell>
-                    <TableCell className="font-mono text-sm">{company.gstin || '-'}</TableCell>
+                {filtered.map((compliance) => (
+                  <TableRow key={compliance.id}>
+                    <TableCell className="font-medium">{compliance.type}</TableCell>
+                    <TableCell>{compliance.documentRef || '-'}</TableCell>
+                    <TableCell>
+                      {compliance.validTill 
+                        ? format(new Date(compliance.validTill), 'dd MMM yyyy')
+                        : '-'}
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => navigate(`/masters/companies/${company.id}/edit`)}
+                          onClick={() => navigate(`/engineering/compliance/${compliance.id}/edit`)}
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setDeleteId(company.id)}
+                          onClick={() => setDeleteId(String(compliance.id))}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -118,7 +119,7 @@ export default function CompaniesList() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Company?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Compliance Record?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone.
             </AlertDialogDescription>

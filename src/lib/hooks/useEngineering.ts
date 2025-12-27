@@ -1,8 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { projectsApi, estimatesApi, documentsApi, plansApi } from '@/lib/api/engineeringApi';
+import { 
+  projectsApi, 
+  estimatesApi, 
+  documentsApi, 
+  plansApi,
+  budgetApi,
+  bbsApi,
+  drawingsApi,
+  complianceApi
+} from '@/lib/api/engineeringApi';
 import { toast } from 'sonner';
 
-// Projects hooks
+// ==================== PROJECTS ====================
 export function useProjects() {
   return useQuery({
     queryKey: ['projects'],
@@ -66,12 +75,52 @@ export function useDeleteProject() {
   });
 }
 
-// Estimates hooks
-export function useEstimates() {
+// ==================== BUDGET ====================
+export function useBudget(projectId: string) {
   return useQuery({
-    queryKey: ['estimates'],
+    queryKey: ['budgets', projectId],
     queryFn: async () => {
-      const response = await estimatesApi.getAll();
+      const response = await budgetApi.getByProject(projectId);
+      return response.data;
+    },
+    enabled: !!projectId,
+  });
+}
+
+export function useCreateBudget() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: budgetApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      toast.success('Budget created successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create budget');
+    },
+  });
+}
+
+export function useApproveBudget() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: budgetApi.approve,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      toast.success('Budget approved successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to approve budget');
+    },
+  });
+}
+
+// ==================== ESTIMATES ====================
+export function useEstimates(projectId?: string) {
+  return useQuery({
+    queryKey: ['estimates', projectId].filter(Boolean),
+    queryFn: async () => {
+      const response = await estimatesApi.getAll(projectId);
       return response.data;
     },
   });
@@ -113,44 +162,16 @@ export function useCreateEstimate() {
   });
 }
 
-export function useUpdateEstimate() {
+export function useAddEstimateVersion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => estimatesApi.update(id, data),
+    mutationFn: estimatesApi.addVersion,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
-      toast.success('Estimate updated successfully');
+      toast.success('Estimate version added');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update estimate');
-    },
-  });
-}
-
-export function useDeleteEstimate() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: estimatesApi.delete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['estimates'] });
-      toast.success('Estimate deleted successfully');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete estimate');
-    },
-  });
-}
-
-export function useSubmitEstimate() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: estimatesApi.submit,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['estimates'] });
-      toast.success('Estimate submitted for approval');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to submit estimate');
+      toast.error(error.message || 'Failed to add version');
     },
   });
 }
@@ -158,7 +179,7 @@ export function useSubmitEstimate() {
 export function useApproveEstimate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data?: any }) => estimatesApi.approve(id, data),
+    mutationFn: estimatesApi.approve,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
       toast.success('Estimate approved successfully');
@@ -169,21 +190,199 @@ export function useApproveEstimate() {
   });
 }
 
-export function useRejectEstimate() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data?: any }) => estimatesApi.reject(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['estimates'] });
-      toast.success('Estimate rejected');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to reject estimate');
+// ==================== BBS ====================
+export function useBBSList(projectId?: string) {
+  return useQuery({
+    queryKey: ['bbs', projectId].filter(Boolean),
+    queryFn: async () => {
+      const response = await bbsApi.getAll(projectId);
+      return response.data;
     },
   });
 }
 
-// Documents hooks
+export function useBBS(id: string) {
+  return useQuery({
+    queryKey: ['bbs', id],
+    queryFn: async () => {
+      const response = await bbsApi.getById(id);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useCreateBBS() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: bbsApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bbs'] });
+      toast.success('BBS created successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create BBS');
+    },
+  });
+}
+
+export function useUpdateBBS() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => bbsApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bbs'] });
+      toast.success('BBS updated successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update BBS');
+    },
+  });
+}
+
+export function useDeleteBBS() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: bbsApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bbs'] });
+      toast.success('BBS deleted successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete BBS');
+    },
+  });
+}
+
+// ==================== DRAWINGS ====================
+export function useDrawings(projectId?: string) {
+  return useQuery({
+    queryKey: ['drawings', projectId].filter(Boolean),
+    queryFn: async () => {
+      const response = await drawingsApi.getAll(projectId);
+      return response.data;
+    },
+  });
+}
+
+export function useDrawing(id: string) {
+  return useQuery({
+    queryKey: ['drawings', id],
+    queryFn: async () => {
+      const response = await drawingsApi.getById(id);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useCreateDrawing() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: drawingsApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drawings'] });
+      toast.success('Drawing created successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create drawing');
+    },
+  });
+}
+
+export function useReviseDrawing() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: drawingsApi.revise,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drawings'] });
+      toast.success('Drawing revision added');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to revise drawing');
+    },
+  });
+}
+
+export function useApproveDrawing() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: drawingsApi.approve,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drawings'] });
+      toast.success('Drawing approved');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to approve drawing');
+    },
+  });
+}
+
+// ==================== COMPLIANCE ====================
+export function useCompliances(projectId?: string) {
+  return useQuery({
+    queryKey: ['compliances', projectId].filter(Boolean),
+    queryFn: async () => {
+      const response = await complianceApi.getAll(projectId);
+      return response.data;
+    },
+  });
+}
+
+export function useCompliance(id: string) {
+  return useQuery({
+    queryKey: ['compliances', id],
+    queryFn: async () => {
+      const response = await complianceApi.getById(id);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useCreateCompliance() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: complianceApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['compliances'] });
+      toast.success('Compliance record created');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create compliance');
+    },
+  });
+}
+
+export function useUpdateCompliance() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => complianceApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['compliances'] });
+      toast.success('Compliance updated');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update compliance');
+    },
+  });
+}
+
+export function useDeleteCompliance() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: complianceApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['compliances'] });
+      toast.success('Compliance deleted');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete compliance');
+    },
+  });
+}
+
+// ==================== DOCUMENTS ====================
 export function useDocuments() {
   return useQuery({
     queryKey: ['documents'],
@@ -258,7 +457,7 @@ export function useDeleteDocument() {
   });
 }
 
-// Plans hooks
+// ==================== PLANS ====================
 export function usePlans() {
   return useQuery({
     queryKey: ['plans'],

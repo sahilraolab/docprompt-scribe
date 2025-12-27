@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table';
@@ -11,27 +12,33 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from '@/components/ui/alert-dialog';
-import { Plus, Search, Edit2, Trash2, Building2 } from 'lucide-react';
-import { useMasterCompanies, useDeleteMasterCompany } from '@/lib/hooks/useMasters';
+import { Plus, Search, Edit2, Trash2, BarChart3 } from 'lucide-react';
+import { useBBSList, useDeleteBBS } from '@/lib/hooks/useEngineering';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';
-import type { Company } from '@/types/masters';
+import { formatCurrency } from '@/lib/utils/format';
+import type { BBS } from '@/types/engineering';
 
-export default function CompaniesList() {
+const STATUS_COLORS: Record<string, string> = {
+  DRAFT: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
+  APPROVED: 'bg-green-500/10 text-green-600 border-green-500/20',
+};
+
+export default function BBSList() {
   const navigate = useNavigate();
-  const { data: companies = [], isLoading } = useMasterCompanies();
-  const deleteCompany = useDeleteMasterCompany();
+  const { data: bbsList = [], isLoading } = useBBSList();
+  const deleteBBS = useDeleteBBS();
   const [search, setSearch] = useState('');
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const filtered = companies.filter((c: Company) =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.code.toLowerCase().includes(search.toLowerCase())
+  const filtered = (bbsList as BBS[]).filter((b) =>
+    b.code.toLowerCase().includes(search.toLowerCase()) ||
+    (b.description?.toLowerCase().includes(search.toLowerCase()))
   );
 
   const handleDelete = () => {
     if (deleteId) {
-      deleteCompany.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+      deleteBBS.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
     }
   };
 
@@ -40,10 +47,10 @@ export default function CompaniesList() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Companies"
-        description="Manage company information"
+        title="Bar Bending Schedule (BBS)"
+        description="Manage BBS records for reinforcement"
         actions={[
-          { label: 'Add Company', onClick: () => navigate('/masters/companies/new'), icon: Plus }
+          { label: 'Add BBS', onClick: () => navigate('/engineering/bbs/new'), icon: Plus }
         ]}
       />
 
@@ -53,7 +60,7 @@ export default function CompaniesList() {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search companies..."
+                placeholder="Search BBS..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -64,44 +71,50 @@ export default function CompaniesList() {
         <CardContent className="p-0">
           {filtered.length === 0 ? (
             <EmptyState
-              icon={Building2}
-              title="No companies found"
-              description="Create your first company to get started"
-              action={{ label: 'Add Company', onClick: () => navigate('/masters/companies/new') }}
+              icon={BarChart3}
+              title="No BBS records found"
+              description="Create your first BBS record"
+              action={{ label: 'Add BBS', onClick: () => navigate('/engineering/bbs/new') }}
             />
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Code</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>GST No.</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="text-right">Quantity</TableHead>
+                  <TableHead className="text-right">Rate</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((company: Company) => (
-                  <TableRow key={company.id}>
-                    <TableCell className="font-mono text-sm">{company.code}</TableCell>
-                    <TableCell className="font-medium">{company.name}</TableCell>
-                    <TableCell>{company.phone || '-'}</TableCell>
-                    <TableCell>{company.email || '-'}</TableCell>
-                    <TableCell className="font-mono text-sm">{company.gstin || '-'}</TableCell>
+                {filtered.map((bbs) => (
+                  <TableRow key={bbs.id}>
+                    <TableCell className="font-mono text-sm">{bbs.code}</TableCell>
+                    <TableCell>{bbs.description || '-'}</TableCell>
+                    <TableCell className="text-right">{bbs.quantity}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(bbs.rate)}</TableCell>
+                    <TableCell className="text-right font-semibold">{formatCurrency(bbs.amount)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={STATUS_COLORS[bbs.status] || ''}>
+                        {bbs.status}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => navigate(`/masters/companies/${company.id}/edit`)}
+                          onClick={() => navigate(`/engineering/bbs/${bbs.id}/edit`)}
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setDeleteId(company.id)}
+                          onClick={() => setDeleteId(String(bbs.id))}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -118,7 +131,7 @@ export default function CompaniesList() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Company?</AlertDialogTitle>
+            <AlertDialogTitle>Delete BBS Record?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone.
             </AlertDialogDescription>

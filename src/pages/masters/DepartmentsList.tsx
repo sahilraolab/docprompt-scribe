@@ -85,7 +85,7 @@ export default function DepartmentsList() {
                   <TableRow key={dept.id}>
                     <TableCell className="font-mono text-sm">{dept.code}</TableCell>
                     <TableCell className="font-medium">{dept.name}</TableCell>
-                    <TableCell>{dept.headName || '-'}</TableCell>
+                    <TableCell>{dept.departmentHead || '-'}</TableCell>
                     <TableCell>{dept.description || '-'}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">

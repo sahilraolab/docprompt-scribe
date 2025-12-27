@@ -18,32 +18,79 @@ export interface Project extends AuditMeta {
   description?: string;
 }
 
-export interface Estimate extends AuditMeta, ApprovalMeta {
+// Estimate (matches backend estimate.model.js)
+export interface Estimate extends AuditMeta {
   id: ID;
   projectId: ID;
   projectName?: string;
-  version: number;
-  items: EstimateItem[];
-  subtotal: number;
-  tax: number;
-  total: number;
-  status: 'Draft' | 'Pending' | 'Approved' | 'Rejected';
-  description?: string;
+  name: string;
+  baseAmount: number;
+  status: 'DRAFT' | 'FINAL';
 }
 
-export interface EstimateItem {
+// Estimate Version (matches backend estimateVersion.model.js)
+export interface EstimateVersion extends AuditMeta {
   id: ID;
-  type: 'Material' | 'Labour' | 'Equipment' | 'Overhead';
-  itemId?: ID; // Link to Master Item
-  itemName?: string;
-  description: string;
-  qty: number;
-  uom: string;
-  rate: number;
+  estimateId: ID;
+  versionNo: number;
   amount: number;
 }
 
-// BOQ - Bill of Quantities
+// Budget (matches backend budget.model.js)
+export interface Budget extends AuditMeta {
+  id: ID;
+  projectId: ID;
+  projectName?: string;
+  totalBudget: number;
+  status: 'DRAFT' | 'APPROVED';
+}
+
+// BBS - Bar Bending Schedule (matches backend bbs.model.js)
+export interface BBS extends AuditMeta {
+  id: ID;
+  projectId: ID;
+  projectName?: string;
+  code: string;
+  description?: string;
+  quantity: number;
+  uomId: ID;
+  uomName?: string;
+  rate: number;
+  amount: number;
+  status: 'DRAFT' | 'APPROVED';
+}
+
+// Drawing (matches backend drawing.model.js)
+export interface Drawing extends AuditMeta {
+  id: ID;
+  projectId: ID;
+  projectName?: string;
+  title: string;
+  drawingNo: string;
+  discipline?: string;
+  status: 'DRAFT' | 'APPROVED';
+}
+
+// Drawing Revision (matches backend drawingRevision.model.js)
+export interface DrawingRevision extends AuditMeta {
+  id: ID;
+  drawingId: ID;
+  revisionNo: string;
+  changeNote?: string;
+  status: 'SUBMITTED' | 'APPROVED';
+}
+
+// Compliance (matches backend compliance.model.js)
+export interface Compliance extends AuditMeta {
+  id: ID;
+  projectId: ID;
+  projectName?: string;
+  type: string;
+  documentRef?: string;
+  validTill?: string;
+}
+
+// BOQ - Bill of Quantities (existing)
 export interface BOQ extends AuditMeta {
   id: ID;
   projectId: ID;
