@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useState, useEffect } from 'react';
-import { useProjects, useEstimate, useCreateEstimate, useUpdateEstimate } from '@/lib/hooks/useEngineering';
+import { useProjects, useEstimate, useCreateEstimate, useAddEstimateVersion } from '@/lib/hooks/useEngineering';
 import { useMaterialMaster } from '@/lib/hooks/useMaterialMaster'; // ✅ import material hook
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,7 +44,7 @@ export default function EstimateForm() {
   const { data: materialsData } = useMaterialMaster(); // ✅ materials list
   const { data: estimateData } = useEstimate(isEdit ? (id as string) : '');
   const createEstimate = useCreateEstimate();
-  const updateEstimate = useUpdateEstimate();
+  const addEstimateVersion = useAddEstimateVersion();
 
   // local state
   type UIItem = { itemId: string; description: string; uom: string; qty: string; rate: string };
@@ -133,8 +133,8 @@ export default function EstimateForm() {
       };
 
       if (isEdit && id) {
-        await updateEstimate.mutateAsync({ id, data: payload });
-        toast.success('Estimate updated successfully');
+        await addEstimateVersion.mutateAsync({ estimateId: id, ...payload });
+        toast.success('Estimate version added successfully');
       } else {
         await createEstimate.mutateAsync(payload);
         toast.success('Estimate created successfully');
@@ -334,8 +334,8 @@ export default function EstimateForm() {
           </Card>
 
           <div className="flex gap-4">
-            <Button type="submit" disabled={createEstimate.isPending || updateEstimate.isPending}>
-              {(createEstimate.isPending || updateEstimate.isPending) && (
+            <Button type="submit" disabled={createEstimate.isPending || addEstimateVersion.isPending}>
+              {(createEstimate.isPending || addEstimateVersion.isPending) && (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               )}
               {isEdit ? 'Update Estimate' : 'Create Estimate'}

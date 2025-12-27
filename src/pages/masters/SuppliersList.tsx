@@ -88,7 +88,7 @@ export default function SuppliersList() {
                     <TableCell className="font-medium">{supplier.name}</TableCell>
                     <TableCell>{supplier.contactPerson || '-'}</TableCell>
                     <TableCell>{supplier.phone || '-'}</TableCell>
-                    <TableCell className="font-mono text-sm">{supplier.gstNo || '-'}</TableCell>
+                    <TableCell className="font-mono text-sm">{supplier.gstin || '-'}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Button
