@@ -30,6 +30,14 @@ import DocumentUpload from "./pages/engineering/DocumentUpload";
 import PlansList from "./pages/engineering/PlansList";
 import PlanForm from "./pages/engineering/PlanForm";
 import PlanDetails from "./pages/engineering/PlanDetails";
+import BBSList from "./pages/engineering/BBSList";
+import BBSForm from "./pages/engineering/BBSForm";
+import BudgetList from "./pages/engineering/BudgetList";
+import BudgetForm from "./pages/engineering/BudgetForm";
+import DrawingsList from "./pages/engineering/DrawingsList";
+import DrawingForm from "./pages/engineering/DrawingForm";
+import ComplianceList from "./pages/engineering/ComplianceList";
+import ComplianceForm from "./pages/engineering/ComplianceForm";
 
 // Purchase
 import PurchaseIndex from "./pages/purchase/index";
@@ -224,6 +232,17 @@ const App = () => (
             <Route path="/engineering/plans/new" element={<ProtectedRoute><AppLayout><PlanForm /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/plans/:id/edit" element={<ProtectedRoute><AppLayout><PlanForm /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/plans/:id" element={<ProtectedRoute><AppLayout><PlanDetails /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/bbs" element={<ProtectedRoute><AppLayout><BBSList /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/bbs/new" element={<ProtectedRoute><AppLayout><BBSForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/bbs/:id/edit" element={<ProtectedRoute><AppLayout><BBSForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/budget" element={<ProtectedRoute><AppLayout><BudgetList /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/budget/new" element={<ProtectedRoute><AppLayout><BudgetForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/drawings" element={<ProtectedRoute><AppLayout><DrawingsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/drawings/new" element={<ProtectedRoute><AppLayout><DrawingForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/drawings/:id" element={<ProtectedRoute><AppLayout><DrawingForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/compliance" element={<ProtectedRoute><AppLayout><ComplianceList /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/compliance/new" element={<ProtectedRoute><AppLayout><ComplianceForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/engineering/compliance/:id/edit" element={<ProtectedRoute><AppLayout><ComplianceForm /></AppLayout></ProtectedRoute>} />
 
             {/* -----------------------------
              * Purchase

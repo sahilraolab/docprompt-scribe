@@ -16,6 +16,28 @@ function checkAuth(request: Request) {
   return null;
 }
 
+// Mock data stores
+let bbsRecords: any[] = [
+  { id: 1, projectId: 1, code: 'BBS-001', description: 'Foundation rebar', quantity: 5000, uomId: 1, rate: 65, amount: 325000, status: 'DRAFT' },
+  { id: 2, projectId: 1, code: 'BBS-002', description: 'Column rebar', quantity: 3000, uomId: 1, rate: 68, amount: 204000, status: 'APPROVED' },
+];
+
+let budgets: any[] = [];
+
+let drawings: any[] = [
+  { id: 1, projectId: 1, title: 'Foundation Plan', drawingNo: 'DWG-001', discipline: 'STRUCTURAL', status: 'APPROVED' },
+  { id: 2, projectId: 1, title: 'Column Layout', drawingNo: 'DWG-002', discipline: 'STRUCTURAL', status: 'DRAFT' },
+];
+
+let compliances: any[] = [
+  { id: 1, projectId: 1, type: 'RERA', documentRef: 'RERA/2024/001', validTill: '2025-12-31' },
+  { id: 2, projectId: 1, type: 'ENVIRONMENT', documentRef: 'ENV/2024/001', validTill: '2025-06-30' },
+];
+
+let estimates: any[] = [
+  { id: 1, projectId: 1, name: 'Phase 1 Estimate', baseAmount: 50000000, status: 'DRAFT' },
+];
+
 export const engineeringHandlers = [
   // ============= PROJECTS =============
   http.get(`${API_URL}/engineering/projects`, ({ request }) => {
@@ -121,60 +143,86 @@ export const engineeringHandlers = [
     });
   }),
 
+  // ============= BUDGET =============
+  http.get(`${API_URL}/engineering/budget/:projectId`, ({ request, params }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    const budget = budgets.find(b => String(b.projectId) === String(params.projectId));
+    return HttpResponse.json({
+      success: true,
+      data: budget || null,
+      message: 'Budget fetched successfully'
+    });
+  }),
+
+  http.post(`${API_URL}/engineering/budget`, async ({ request }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    const body = await request.json() as any;
+    const newBudget = {
+      id: Date.now(),
+      ...body,
+      status: 'DRAFT',
+      createdAt: new Date().toISOString()
+    };
+    budgets.push(newBudget);
+
+    return HttpResponse.json({
+      success: true,
+      data: newBudget,
+      message: 'Budget created successfully'
+    }, { status: 201 });
+  }),
+
+  http.put(`${API_URL}/engineering/budget/:id/approve`, ({ request, params }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    const index = budgets.findIndex(b => String(b.id) === String(params.id));
+    if (index !== -1) {
+      budgets[index].status = 'APPROVED';
+    }
+
+    return HttpResponse.json({
+      success: true,
+      message: 'Budget approved successfully'
+    });
+  }),
+
   // ============= ESTIMATES =============
-  http.get(`${API_URL}/engineering/estimates`, ({ request }) => {
+  http.get(`${API_URL}/engineering/estimate`, ({ request }) => {
     const authError = checkAuth(request);
     if (authError) return authError;
 
     const url = new URL(request.url);
     const projectId = url.searchParams.get('projectId');
 
-    let estimates = boqs; // Using BOQ data as estimates
+    let filtered = estimates;
     if (projectId) {
-      estimates = estimates.filter(e => e.projectId === projectId);
+      filtered = estimates.filter(e => String(e.projectId) === projectId);
     }
 
     return HttpResponse.json({
       success: true,
-      data: estimates,
+      data: filtered,
       message: 'Estimates fetched successfully'
     });
   }),
 
-  http.get(`${API_URL}/engineering/estimates/:id`, ({ request, params }) => {
-    const authError = checkAuth(request);
-    if (authError) return authError;
-
-    const estimate = boqs.find(e => e.id === params.id);
-    if (!estimate) {
-      return HttpResponse.json(
-        { success: false, message: 'Estimate not found' },
-        { status: 404 }
-      );
-    }
-
-    return HttpResponse.json({
-      success: true,
-      data: estimate,
-      message: 'Estimate fetched successfully'
-    });
-  }),
-
-  http.post(`${API_URL}/engineering/estimates`, async ({ request }) => {
+  http.post(`${API_URL}/engineering/estimate`, async ({ request }) => {
     const authError = checkAuth(request);
     if (authError) return authError;
 
     const body = await request.json() as any;
     const newEstimate = {
-      id: `EST-${Date.now()}`,
-      code: `EST-${boqs.length + 1}`,
+      id: Date.now(),
       ...body,
-      status: 'Draft',
-      createdAt: new Date().toISOString(),
-      createdBy: 'current-user-id'
+      status: 'DRAFT',
+      createdAt: new Date().toISOString()
     };
-
-    boqs.push(newEstimate);
+    estimates.push(newEstimate);
 
     return HttpResponse.json({
       success: true,
@@ -183,123 +231,296 @@ export const engineeringHandlers = [
     }, { status: 201 });
   }),
 
-  http.put(`${API_URL}/engineering/estimates/:id`, async ({ request, params }) => {
+  http.post(`${API_URL}/engineering/estimate/version`, async ({ request }) => {
     const authError = checkAuth(request);
     if (authError) return authError;
 
-    const index = boqs.findIndex(e => e.id === params.id);
-    if (index === -1) {
-      return HttpResponse.json(
-        { success: false, message: 'Estimate not found' },
-        { status: 404 }
-      );
-    }
-
     const body = await request.json() as any;
-    boqs[index] = {
-      ...boqs[index],
+    const newVersion = {
+      id: Date.now(),
       ...body,
-      updatedAt: new Date().toISOString()
+      createdAt: new Date().toISOString()
     };
 
     return HttpResponse.json({
       success: true,
-      data: boqs[index],
-      message: 'Estimate updated successfully'
-    });
+      data: newVersion,
+      message: 'Estimate version added successfully'
+    }, { status: 201 });
   }),
 
-  http.delete(`${API_URL}/engineering/estimates/:id`, ({ request, params }) => {
+  http.put(`${API_URL}/engineering/estimate/:id/approve`, ({ request, params }) => {
     const authError = checkAuth(request);
     if (authError) return authError;
 
-    const index = boqs.findIndex(e => e.id === params.id);
-    if (index === -1) {
-      return HttpResponse.json(
-        { success: false, message: 'Estimate not found' },
-        { status: 404 }
-      );
+    const index = estimates.findIndex(e => String(e.id) === String(params.id));
+    if (index !== -1) {
+      estimates[index].status = 'FINAL';
     }
-
-    boqs.splice(index, 1);
 
     return HttpResponse.json({
       success: true,
-      message: 'Estimate deleted successfully'
-    });
-  }),
-
-  http.post(`${API_URL}/engineering/estimates/:id/submit`, ({ request, params }) => {
-    const authError = checkAuth(request);
-    if (authError) return authError;
-
-    const index = boqs.findIndex(e => e.id === params.id);
-    if (index === -1) {
-      return HttpResponse.json(
-        { success: false, message: 'Estimate not found' },
-        { status: 404 }
-      );
-    }
-
-    boqs[index] = {
-      ...boqs[index],
-      status: 'Draft'
-    };
-
-    return HttpResponse.json({
-      success: true,
-      data: boqs[index],
-      message: 'Estimate submitted for approval'
-    });
-  }),
-
-  http.post(`${API_URL}/engineering/estimates/:id/approve`, async ({ request, params }) => {
-    const authError = checkAuth(request);
-    if (authError) return authError;
-
-    const index = boqs.findIndex(e => e.id === params.id);
-    if (index === -1) {
-      return HttpResponse.json(
-        { success: false, message: 'Estimate not found' },
-        { status: 404 }
-      );
-    }
-
-    const body = await request.json() as any;
-    boqs[index] = {
-      ...boqs[index],
-      status: 'Approved'
-    };
-
-    return HttpResponse.json({
-      success: true,
-      data: boqs[index],
       message: 'Estimate approved successfully'
     });
   }),
 
-  http.post(`${API_URL}/engineering/estimates/:id/reject`, async ({ request, params }) => {
+  // ============= BBS =============
+  http.get(`${API_URL}/engineering/bbs`, ({ request }) => {
     const authError = checkAuth(request);
     if (authError) return authError;
 
-    const index = boqs.findIndex(e => e.id === params.id);
+    const url = new URL(request.url);
+    const projectId = url.searchParams.get('projectId');
+
+    let filtered = bbsRecords;
+    if (projectId) {
+      filtered = bbsRecords.filter(b => String(b.projectId) === projectId);
+    }
+
+    return HttpResponse.json({
+      success: true,
+      data: filtered,
+      message: 'BBS records fetched successfully'
+    });
+  }),
+
+  http.get(`${API_URL}/engineering/bbs/:id`, ({ request, params }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    const bbs = bbsRecords.find(b => String(b.id) === String(params.id));
+    return HttpResponse.json({
+      success: true,
+      data: bbs || null,
+      message: 'BBS fetched successfully'
+    });
+  }),
+
+  http.post(`${API_URL}/engineering/bbs`, async ({ request }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    const body = await request.json() as any;
+    const amount = (body.quantity || 0) * (body.rate || 0);
+    const newBBS = {
+      id: Date.now(),
+      ...body,
+      amount,
+      status: 'DRAFT',
+      createdAt: new Date().toISOString()
+    };
+    bbsRecords.push(newBBS);
+
+    return HttpResponse.json({
+      success: true,
+      data: newBBS,
+      message: 'BBS created successfully'
+    }, { status: 201 });
+  }),
+
+  http.put(`${API_URL}/engineering/bbs/:id`, async ({ request, params }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    const index = bbsRecords.findIndex(b => String(b.id) === String(params.id));
     if (index === -1) {
       return HttpResponse.json(
-        { success: false, message: 'Estimate not found' },
+        { success: false, message: 'BBS not found' },
         { status: 404 }
       );
     }
 
     const body = await request.json() as any;
-    boqs[index] = {
-      ...boqs[index],
-      status: 'Draft'
+    const amount = (body.quantity || bbsRecords[index].quantity) * (body.rate || bbsRecords[index].rate);
+    bbsRecords[index] = { ...bbsRecords[index], ...body, amount };
+
+    return HttpResponse.json({
+      success: true,
+      data: bbsRecords[index],
+      message: 'BBS updated successfully'
+    });
+  }),
+
+  http.delete(`${API_URL}/engineering/bbs/:id`, ({ request, params }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    bbsRecords = bbsRecords.filter(b => String(b.id) !== String(params.id));
+
+    return HttpResponse.json({
+      success: true,
+      message: 'BBS deleted successfully'
+    });
+  }),
+
+  // ============= DRAWINGS =============
+  http.get(`${API_URL}/engineering/drawings`, ({ request }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    const url = new URL(request.url);
+    const projectId = url.searchParams.get('projectId');
+
+    let filtered = drawings;
+    if (projectId) {
+      filtered = drawings.filter(d => String(d.projectId) === projectId);
+    }
+
+    return HttpResponse.json({
+      success: true,
+      data: filtered,
+      message: 'Drawings fetched successfully'
+    });
+  }),
+
+  http.get(`${API_URL}/engineering/drawings/:id`, ({ request, params }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    const drawing = drawings.find(d => String(d.id) === String(params.id));
+    return HttpResponse.json({
+      success: true,
+      data: drawing || null,
+      message: 'Drawing fetched successfully'
+    });
+  }),
+
+  http.post(`${API_URL}/engineering/drawings`, async ({ request }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    const body = await request.json() as any;
+    const newDrawing = {
+      id: Date.now(),
+      ...body,
+      status: 'DRAFT',
+      createdAt: new Date().toISOString()
+    };
+    drawings.push(newDrawing);
+
+    return HttpResponse.json({
+      success: true,
+      data: newDrawing,
+      message: 'Drawing created successfully'
+    }, { status: 201 });
+  }),
+
+  http.post(`${API_URL}/engineering/drawings/revision`, async ({ request }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    const body = await request.json() as any;
+    const revision = {
+      id: Date.now(),
+      ...body,
+      status: 'SUBMITTED',
+      createdAt: new Date().toISOString()
     };
 
     return HttpResponse.json({
       success: true,
-      data: boqs[index],
-      message: 'Estimate rejected'
+      data: revision,
+      message: 'Drawing revision added successfully'
+    }, { status: 201 });
+  }),
+
+  http.put(`${API_URL}/engineering/drawings/:id/approve`, ({ request, params }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    const index = drawings.findIndex(d => String(d.id) === String(params.id));
+    if (index !== -1) {
+      drawings[index].status = 'APPROVED';
+    }
+
+    return HttpResponse.json({
+      success: true,
+      message: 'Drawing approved successfully'
+    });
+  }),
+
+  // ============= COMPLIANCE =============
+  http.get(`${API_URL}/engineering/compliance`, ({ request }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    const url = new URL(request.url);
+    const projectId = url.searchParams.get('projectId');
+
+    let filtered = compliances;
+    if (projectId) {
+      filtered = compliances.filter(c => String(c.projectId) === projectId);
+    }
+
+    return HttpResponse.json({
+      success: true,
+      data: filtered,
+      message: 'Compliance records fetched successfully'
+    });
+  }),
+
+  http.get(`${API_URL}/engineering/compliance/:id`, ({ request, params }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    const compliance = compliances.find(c => String(c.id) === String(params.id));
+    return HttpResponse.json({
+      success: true,
+      data: compliance || null,
+      message: 'Compliance fetched successfully'
+    });
+  }),
+
+  http.post(`${API_URL}/engineering/compliance`, async ({ request }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    const body = await request.json() as any;
+    const newCompliance = {
+      id: Date.now(),
+      ...body,
+      createdAt: new Date().toISOString()
+    };
+    compliances.push(newCompliance);
+
+    return HttpResponse.json({
+      success: true,
+      data: newCompliance,
+      message: 'Compliance created successfully'
+    }, { status: 201 });
+  }),
+
+  http.put(`${API_URL}/engineering/compliance/:id`, async ({ request, params }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    const index = compliances.findIndex(c => String(c.id) === String(params.id));
+    if (index === -1) {
+      return HttpResponse.json(
+        { success: false, message: 'Compliance not found' },
+        { status: 404 }
+      );
+    }
+
+    const body = await request.json() as any;
+    compliances[index] = { ...compliances[index], ...body };
+
+    return HttpResponse.json({
+      success: true,
+      data: compliances[index],
+      message: 'Compliance updated successfully'
+    });
+  }),
+
+  http.delete(`${API_URL}/engineering/compliance/:id`, ({ request, params }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    compliances = compliances.filter(c => String(c.id) !== String(params.id));
+
+    return HttpResponse.json({
+      success: true,
+      message: 'Compliance deleted successfully'
     });
   }),
 
@@ -340,7 +561,6 @@ export const engineeringHandlers = [
     const authError = checkAuth(request);
     if (authError) return authError;
 
-    // Handle multipart form data
     const formData = await request.formData();
     const file = formData.get('file');
     const projectId = formData.get('projectId');
@@ -414,6 +634,50 @@ export const engineeringHandlers = [
       success: true,
       data: newPlan,
       message: 'Plan created successfully'
+    }, { status: 201 });
+  }),
+
+  // ============= BOQ =============
+  http.get(`${API_URL}/engineering/boq`, ({ request }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({
+      success: true,
+      data: boqs,
+      message: 'BOQ fetched successfully'
+    });
+  }),
+
+  http.get(`${API_URL}/engineering/boq/:id`, ({ request, params }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    const boq = boqs.find(b => b.id === params.id);
+    return HttpResponse.json({
+      success: true,
+      data: boq || null,
+      message: 'BOQ fetched successfully'
+    });
+  }),
+
+  http.post(`${API_URL}/engineering/boq`, async ({ request }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    const body = await request.json() as any;
+    const newBOQ = {
+      id: `BOQ-${Date.now()}`,
+      ...body,
+      status: 'Draft',
+      createdAt: new Date().toISOString()
+    };
+    boqs.push(newBOQ);
+
+    return HttpResponse.json({
+      success: true,
+      data: newBOQ,
+      message: 'BOQ created successfully'
     }, { status: 201 });
   }),
 ];
