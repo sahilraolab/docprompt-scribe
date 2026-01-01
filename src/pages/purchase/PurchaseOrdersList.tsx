@@ -4,11 +4,11 @@ import { usePOs } from '@/lib/hooks/usePurchaseBackend';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { StatusBadge } from '@/components/StatusBadge';
+import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/EmptyState';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
 import { downloadCSV, prepareDataForExport } from '@/lib/utils/export-enhanced';
-import { Plus, Search, FileText, Loader2, Download } from 'lucide-react';
+import { Plus, Search, FileText, Loader2, Download, Lock, Edit2, Eye } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -17,13 +17,25 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+const STATUS_COLORS: Record<string, string> = {
+  CREATED: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
+  SUBMITTED: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  APPROVED: 'bg-green-500/10 text-green-600 border-green-500/20',
+  CANCELLED: 'bg-red-500/10 text-red-600 border-red-500/20',
+};
 
 export default function PurchaseOrdersList() {
   const navigate = useNavigate();
   const { data: pos, isLoading } = usePOs();
   const [searchQuery, setSearchQuery] = useState('');
 
-  // ✅ Normalize data safely
+  // Normalize data safely
   const normalizedPOs = pos?.map((po: any) => ({
     id: po._id,
     code: po.code,
@@ -38,7 +50,7 @@ export default function PurchaseOrdersList() {
       : null,
   })) || [];
 
-  // ✅ Search logic
+  // Search logic
   const filteredPOs = normalizedPOs.filter(
     (po) =>
       po.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -47,7 +59,7 @@ export default function PurchaseOrdersList() {
       po.projectCode.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // ✅ Export logic
+  // Export logic
   const handleExport = () => {
     if (!filteredPOs.length) return;
     const exportData = prepareDataForExport(filteredPOs);
@@ -57,6 +69,9 @@ export default function PurchaseOrdersList() {
       ['code', 'supplierName', 'projectName', 'amount', 'poDate', 'status']
     );
   };
+
+  // Status-based locking: APPROVED or CANCELLED = locked
+  const isLocked = (status: string) => ['APPROVED', 'CANCELLED'].includes(status);
 
   if (isLoading) {
     return (
@@ -115,37 +130,73 @@ export default function PurchaseOrdersList() {
                     <TableHead>PO Code</TableHead>
                     <TableHead>Supplier</TableHead>
                     <TableHead>Project</TableHead>
-                    <TableHead>Amount</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Approval</TableHead>
+                    <TableHead className="w-[100px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
 
                 <TableBody>
-                  {filteredPOs.map((po) => (
-                    <TableRow
-                      key={po.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/purchase/pos/${po.id}`)}
-                    >
-                      <TableCell className="font-medium">{po.code}</TableCell>
-                      <TableCell>{po.supplierName}</TableCell>
-                      <TableCell>{po.projectName}</TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(po.amount)}
-                      </TableCell>
-                      <TableCell>{formatDate(po.poDate)}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={po.status} />
-                      </TableCell>
-                      <TableCell>
-                        {po.approvalStatus && (
-                          <StatusBadge status={po.approvalStatus} />
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredPOs.map((po) => {
+                    const locked = isLocked(po.status);
+                    return (
+                      <TableRow
+                        key={po.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => navigate(`/purchase/pos/${po.id}`)}
+                      >
+                        <TableCell className="font-medium">{po.code}</TableCell>
+                        <TableCell>{po.supplierName}</TableCell>
+                        <TableCell>{po.projectName}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(po.amount)}
+                        </TableCell>
+                        <TableCell>{formatDate(po.poDate)}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={STATUS_COLORS[po.status] || STATUS_COLORS.CREATED}>
+                            {locked && <Lock className="h-3 w-3 mr-1" />}
+                            {po.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/purchase/pos/${po.id}`);
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>View</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!locked) navigate(`/purchase/pos/${po.id}/edit`);
+                                  }}
+                                  disabled={locked}
+                                >
+                                  <Edit2 className={`h-4 w-4 ${locked ? 'text-muted-foreground' : ''}`} />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>{locked ? 'Locked' : 'Edit'}</TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
