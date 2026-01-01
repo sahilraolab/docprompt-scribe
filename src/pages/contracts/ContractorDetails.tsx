@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, ArrowLeft, Loader2 } from 'lucide-react';
+import { Edit, ArrowLeft, Loader2, FileText } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
 import { useContractor, useWorkOrders, useRABills } from '@/lib/hooks/useContracts';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -25,8 +25,8 @@ export default function ContractorDetails() {
     );
   }
 
-  const totalContractValue = workOrders.reduce((sum, wo) => sum + (wo.amount || 0), 0);
-  const completedWOs = workOrders.filter(wo => wo.status === 'Completed').length;
+  const totalContractValue = workOrders.reduce((sum: number, wo: any) => sum + (wo.amount || 0), 0);
+  const completedWOs = workOrders.filter((wo: any) => wo.status === 'Completed').length;
   const completionRate = workOrders.length > 0 ? Math.round((completedWOs / workOrders.length) * 100) : 0;
 
   return (
@@ -41,10 +41,16 @@ export default function ContractorDetails() {
             <p className="text-muted-foreground">{contractor.code} • {contractor.specialization || 'General Contractor'}</p>
           </div>
         </div>
-        <Button onClick={() => navigate(`/contracts/contractors/${id}/edit`)}>
-          <Edit className="h-4 w-4 mr-2" />
-          Edit Contractor
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate(`/contracts/contractors/${id}/statement`)}>
+            <FileText className="h-4 w-4 mr-2" />
+            View Statement
+          </Button>
+          <Button onClick={() => navigate(`/contracts/contractors/${id}`)}>
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Contractor
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">

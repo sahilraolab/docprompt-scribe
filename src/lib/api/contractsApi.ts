@@ -109,4 +109,55 @@ export const raBillsApi = {
   approve: (id: string) => {
     return apiClient.request(`${CONTRACTS_BASE}/ra-bills/${id}/approve`, { method: 'POST' });
   },
+  post: (id: string) => {
+    return apiClient.request(`${CONTRACTS_BASE}/ra-bills/${id}/post`, { method: 'POST' });
+  },
+};
+
+// =============== ADVANCES =====================
+export const advancesApi = {
+  getAll: (params?: Record<string, any>) => {
+    const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
+    return apiClient.request(`${CONTRACTS_BASE}/advances${queryString}`, { method: 'GET' });
+  },
+  getById: (id: string) => {
+    return apiClient.request(`${CONTRACTS_BASE}/advances/${id}`, { method: 'GET' });
+  },
+  create: (payload: any) => {
+    return apiClient.request(`${CONTRACTS_BASE}/advances`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  update: (id: string, payload: any) => {
+    return apiClient.request(`${CONTRACTS_BASE}/advances/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  },
+};
+
+// =============== DEBIT/CREDIT NOTES =====================
+export const dcNotesApi = {
+  getAll: (params?: Record<string, any>) => {
+    const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
+    return apiClient.request(`${CONTRACTS_BASE}/dc-notes${queryString}`, { method: 'GET' });
+  },
+  getById: (id: string) => {
+    return apiClient.request(`${CONTRACTS_BASE}/dc-notes/${id}`, { method: 'GET' });
+  },
+  create: (payload: any) => {
+    return apiClient.request(`${CONTRACTS_BASE}/dc-notes`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+};
+
+// =============== CONTRACTOR STATEMENT =====================
+export const contractorStatementApi = {
+  getStatement: (contractorId: string, params?: Record<string, any>) => {
+    const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
+    return apiClient.request(`${CONTRACTS_BASE}/contractors/${contractorId}/statement${queryString}`, { method: 'GET' });
+  },
 };

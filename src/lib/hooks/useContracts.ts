@@ -347,3 +347,85 @@ export const useApproveRABill = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["raBills"] }),
   });
 };
+
+export const usePostRABill = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiClient.request(
+        `${API_BASE}/ra-bills/${id}/post`,
+        { method: "POST" }
+      );
+      return res.data.data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["raBills"] }),
+  });
+};
+
+// =============== ADVANCES =====================
+export const useAdvances = (params?: Record<string, any>) => {
+  return useQuery({
+    queryKey: ["advances", params ?? {}],
+    queryFn: async () => {
+      const queryString = params && Object.keys(params).length
+        ? "?" + new URLSearchParams(params as any).toString()
+        : "";
+      const res = await apiClient.request(`${API_BASE}/advances${queryString}`, { method: "GET" });
+      return res.data?.data || res.data || [];
+    },
+  });
+};
+
+export const useCreateAdvance = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: any) => {
+      const res = await apiClient.request(`${API_BASE}/advances`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      return res.data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["advances"] }),
+  });
+};
+
+// =============== DC NOTES =====================
+export const useDCNotes = (params?: Record<string, any>) => {
+  return useQuery({
+    queryKey: ["dcNotes", params ?? {}],
+    queryFn: async () => {
+      const queryString = params && Object.keys(params).length
+        ? "?" + new URLSearchParams(params as any).toString()
+        : "";
+      const res = await apiClient.request(`${API_BASE}/dc-notes${queryString}`, { method: "GET" });
+      return res.data?.data || res.data || [];
+    },
+  });
+};
+
+export const useCreateDCNote = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: any) => {
+      const res = await apiClient.request(`${API_BASE}/dc-notes`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      return res.data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["dcNotes"] }),
+  });
+};
+
+// =============== CONTRACTOR STATEMENT =====================
+export const useContractorStatement = (contractorId?: string) => {
+  return useQuery({
+    queryKey: ["contractorStatement", contractorId],
+    queryFn: async () => {
+      const res = await apiClient.request(`${API_BASE}/contractors/${contractorId}/statement`, { method: "GET" });
+      return res.data?.data || res.data;
+    },
+    enabled: !!contractorId,
+  });
+};

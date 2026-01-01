@@ -1,26 +1,32 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Users, Receipt, Briefcase, TrendingUp, DollarSign, Clock, Download } from 'lucide-react';
+import { FileText, Users, Receipt, Briefcase, TrendingUp, DollarSign, Clock, Download, CreditCard, FileEdit } from 'lucide-react';
 import { KPICard } from '@/components/KPICard';
 import { formatCurrency } from '@/lib/utils/format';
-import { useContractors, useWorkOrders } from '@/lib/hooks/useContractors';
+import { useContractors, useWorkOrders, useRABills, useAdvances } from '@/lib/hooks/useContracts';
 import { exportToCSV } from '@/lib/utils/export';
 
 export default function ContractsIndex() {
   const navigate = useNavigate();
   const { data: contractors = [], isLoading: loadingContractors } = useContractors();
   const { data: workOrders = [], isLoading: loadingWOs } = useWorkOrders();
+  const { data: raBills = [], isLoading: loadingBills } = useRABills();
+  const { data: advances = [], isLoading: loadingAdvances } = useAdvances();
 
   const activeContractors = contractors.filter((c: any) => c.active === true).length;
-  const activeWOs = workOrders.filter(wo => wo.status === 'Active').length;
-  const totalWOValue = workOrders.reduce((sum, wo) => sum + (wo.amount || 0), 0);
+  const activeWOs = workOrders.filter((wo: any) => wo.status === 'Active' || wo.status === 'APPROVED').length;
+  const totalWOValue = workOrders.reduce((sum: number, wo: any) => sum + (wo.amount || 0), 0);
+  const pendingBills = raBills.filter((b: any) => b.status !== 'POSTED' && b.status !== 'Posted').length;
+  const totalAdvances = advances.reduce((sum: number, a: any) => sum + (a.amount || 0), 0);
 
   const handleExport = () => {
     const data = [
       { Module: 'Contractors', Total: contractors.length, Active: activeContractors },
       { Module: 'Work Orders', Total: workOrders.length, Active: activeWOs },
-      { Module: 'Total Value', Amount: totalWOValue },
+      { Module: 'RA Bills', Total: raBills.length, Pending: pendingBills },
+      { Module: 'Total WO Value', Amount: totalWOValue },
+      { Module: 'Total Advances', Amount: totalAdvances },
     ];
     exportToCSV(data, `contracts-overview-${new Date().toISOString().split('T')[0]}`);
   };
@@ -49,14 +55,31 @@ export default function ContractsIndex() {
       path: '/contracts/ra-bills',
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
+      badge: pendingBills > 0 ? `${pendingBills} Pending` : undefined,
+    },
+    {
+      title: 'Advances',
+      description: 'Contractor advance payments',
+      icon: CreditCard,
+      path: '/contracts/advances',
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-50',
+    },
+    {
+      title: 'Debit/Credit Notes',
+      description: 'Adjustments and corrections',
+      icon: FileEdit,
+      path: '/contracts/dc-notes',
+      color: 'text-rose-600',
+      bgColor: 'bg-rose-50',
     },
     {
       title: 'Labour Rates',
       description: 'Labour category rates and wages',
       icon: Users,
       path: '/contracts/labour-rates',
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-50',
+      color: 'text-cyan-600',
+      bgColor: 'bg-cyan-50',
     },
   ];
 
