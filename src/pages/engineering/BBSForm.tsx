@@ -78,8 +78,9 @@ export default function BBSForm() {
 
   const onSubmit = async (data: BBSFormData) => {
     const payload = {
-      ...data,
       projectId: Number(data.projectId),
+      code: data.code,
+      description: data.description,
       uomId: Number(data.uomId),
       quantity: Number(data.quantity),
       rate: Number(data.rate),

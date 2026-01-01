@@ -70,7 +70,13 @@ export default function EstimateForm() {
       };
 
       if (isEdit && id) {
-        await addEstimateVersion.mutateAsync({ estimateId: Number(id), amount: payload.baseAmount });
+        // Get next version number from existing estimate
+        const currentVersionNo = estimateData?.versions?.length || 1;
+        await addEstimateVersion.mutateAsync({ 
+          estimateId: Number(id), 
+          versionNo: currentVersionNo + 1, 
+          amount: payload.baseAmount 
+        });
         toast.success('Estimate version added successfully');
       } else {
         await createEstimate.mutateAsync(payload);

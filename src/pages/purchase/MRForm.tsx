@@ -72,8 +72,14 @@ export default function MRForm() {
   const selectedProjectId = watch('projectId');
   
   // Fetch approved budgets and final estimates for selected project
-  const { data: approvedBudgets = [] } = useApprovedBudgets(selectedProjectId);
+  const { data: approvedBudgets = [] } = useApprovedBudgets();
   const { data: finalEstimates = [] } = useFinalEstimates(selectedProjectId);
+  
+  // Filter approved budgets by selected project
+  const filteredBudgets = useMemo(() => {
+    if (!selectedProjectId) return [];
+    return approvedBudgets.filter((b: any) => String(b.projectId) === selectedProjectId);
+  }, [approvedBudgets, selectedProjectId]);
 
   // Check if MR is locked (SUBMITTED or beyond)
   const isLocked = useMemo(() => {
@@ -139,10 +145,12 @@ export default function MRForm() {
     label: `${p.name} (${p.code})`,
   }));
 
-  const budgetOptions = (Array.isArray(approvedBudgets) ? approvedBudgets : []).map((b: any) => ({
+  const budgetOptions = (Array.isArray(filteredBudgets) ? filteredBudgets : []).map((b: any) => ({
     value: String(b.id),
     label: `Budget ₹${Number(b.totalBudget).toLocaleString('en-IN')} (APPROVED)`,
   }));
+
+  const hasNoBudget = selectedProjectId && filteredBudgets.length === 0;
 
   const estimateOptions = (Array.isArray(finalEstimates) ? finalEstimates : []).map((e: any) => ({
     value: String(e.id),
@@ -210,7 +218,6 @@ export default function MRForm() {
     });
   };
 
-  const hasNoBudget = selectedProjectId && approvedBudgets.length === 0;
   const hasNoEstimate = selectedProjectId && finalEstimates.length === 0;
 
   return (
