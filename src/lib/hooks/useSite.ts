@@ -63,10 +63,10 @@ export function useDeleteItem() {
 }
 
 // -------- STOCK --------
-export function useStock() {
+export function useStock(params?: { projectId?: string; location?: string }) {
   return useQuery({
-    queryKey: ["stock"],
-    queryFn: siteApi.getAllStock,
+    queryKey: ["stock", params],
+    queryFn: () => siteApi.getAllStock(params),
   });
 }
 
@@ -86,11 +86,33 @@ export function useStockByProject(projectId: string) {
   });
 }
 
-// -------- GRN (Goods Receipt Notes) --------
-export function useGRNs() {
+export function useStockLedger(params?: { itemId?: string; projectId?: string; fromDate?: string; toDate?: string }) {
   return useQuery({
-    queryKey: ["grns"],
-    queryFn: siteApi.getAllGRN,
+    queryKey: ["stock-ledger", params],
+    queryFn: () => siteApi.getStockLedger(params),
+    enabled: !!params?.itemId || !!params?.projectId,
+  });
+}
+
+export function useAdjustStock() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: siteApi.adjustStock,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["stock"] });
+      toast.success("Stock adjusted successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to adjust stock");
+    },
+  });
+}
+
+// -------- GRN (Goods Receipt Notes) --------
+export function useGRNs(params?: { poId?: string; status?: string }) {
+  return useQuery({
+    queryKey: ["grns", params],
+    queryFn: () => siteApi.getAllGRN(params),
   });
 }
 
@@ -134,11 +156,28 @@ export function useUpdateGRN() {
   });
 }
 
+export function useApproveGRN() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, remarks }: { id: string; remarks?: string }) =>
+      siteApi.approveGRN(id, remarks),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["grns"] });
+      queryClient.invalidateQueries({ queryKey: ["grn"] });
+      queryClient.invalidateQueries({ queryKey: ["stock"] });
+      toast.success("GRN approved successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to approve GRN");
+    },
+  });
+}
+
 // -------- MATERIAL ISSUES --------
-export function useIssues() {
+export function useIssues(params?: { projectId?: string; status?: string }) {
   return useQuery({
-    queryKey: ["issues"],
-    queryFn: siteApi.getAllIssues,
+    queryKey: ["issues", params],
+    queryFn: () => siteApi.getAllIssues(params),
   });
 }
 
@@ -182,11 +221,28 @@ export function useUpdateIssue() {
   });
 }
 
+export function useApproveIssue() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, remarks }: { id: string; remarks?: string }) =>
+      siteApi.approveIssue(id, remarks),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["issues"] });
+      queryClient.invalidateQueries({ queryKey: ["issue"] });
+      queryClient.invalidateQueries({ queryKey: ["stock"] });
+      toast.success("Issue approved successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to approve issue");
+    },
+  });
+}
+
 // -------- STOCK TRANSFERS --------
-export function useTransfers() {
+export function useTransfers(params?: { fromProjectId?: string; toProjectId?: string; status?: string }) {
   return useQuery({
-    queryKey: ["transfers"],
-    queryFn: siteApi.getAllTransfers,
+    queryKey: ["transfers", params],
+    queryFn: () => siteApi.getAllTransfers(params),
   });
 }
 
@@ -226,6 +282,38 @@ export function useUpdateTransfer() {
     },
     onError: (error: any) => {
       toast.error(error?.message || "Failed to update stock transfer");
+    },
+  });
+}
+
+export function useApproveTransfer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, remarks }: { id: string; remarks?: string }) =>
+      siteApi.approveTransfer(id, remarks),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transfers"] });
+      queryClient.invalidateQueries({ queryKey: ["transfer"] });
+      toast.success("Transfer approved successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to approve transfer");
+    },
+  });
+}
+
+export function useReceiveTransfer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => siteApi.receiveTransfer(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transfers"] });
+      queryClient.invalidateQueries({ queryKey: ["transfer"] });
+      queryClient.invalidateQueries({ queryKey: ["stock"] });
+      toast.success("Transfer received successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to receive transfer");
     },
   });
 }

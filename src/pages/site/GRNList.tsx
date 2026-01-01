@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useGRNs } from '@/lib/hooks/useSite';
+import { useGRNs, useApproveGRN } from '@/lib/hooks/useSite';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { EmptyState } from '@/components/EmptyState';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { formatDate } from '@/lib/utils/format';
-import { Plus, Search, Package, Loader2 } from 'lucide-react';
+import { Plus, Search, Package, Loader2, CheckCircle } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -16,11 +17,20 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, Eye, Edit, FileCheck } from 'lucide-react';
 
 export default function GRNList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmApprove, setConfirmApprove] = useState<string | null>(null);
   const { data: grns = [], isLoading } = useGRNs();
+  const { mutateAsync: approveGRN, isPending: isApproving } = useApproveGRN();
 
   const filteredGRNs = grns.filter((grn: any) => {
     const query = searchQuery.toLowerCase();
@@ -31,6 +41,21 @@ export default function GRNList() {
       grn.poId?.projectId?.name?.toLowerCase().includes(query)
     );
   });
+
+  const handleApprove = async () => {
+    if (!confirmApprove) return;
+    try {
+      await approveGRN({ id: confirmApprove });
+      setConfirmApprove(null);
+    } catch (error) {
+      console.error('Failed to approve GRN:', error);
+    }
+  };
+
+  const canApprove = (status: string) => {
+    const s = status?.toLowerCase();
+    return s === 'draft' || s === 'pending' || s === 'created';
+  };
 
   if (isLoading) {
     return (
@@ -45,7 +70,7 @@ export default function GRNList() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Goods Receipt Notes (GRN)</h1>
-          <p className="text-muted-foreground">Track material receipts from suppliers</p>
+          <p className="text-muted-foreground">Track material receipts from approved Purchase Orders</p>
         </div>
         <Button onClick={() => navigate('/site/grn/new')}>
           <Plus className="h-4 w-4 mr-2" />
@@ -76,27 +101,56 @@ export default function GRNList() {
                     <TableHead>Supplier</TableHead>
                     <TableHead>Project</TableHead>
                     <TableHead>Items</TableHead>
-                    <TableHead>Received By</TableHead>
                     <TableHead>Date</TableHead>
+                    <TableHead>QC Status</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="w-[100px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredGRNs.map((grn: any) => (
-                    <TableRow
-                      key={grn._id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/site/grn/${grn._id}`)}
-                    >
+                    <TableRow key={grn._id || grn.id}>
                       <TableCell className="font-medium">{grn.grnNo}</TableCell>
-                      <TableCell>{grn.poId?.code || 'N/A'}</TableCell>
+                      <TableCell>{grn.poId?.code || grn.poId?.poNo || 'N/A'}</TableCell>
                       <TableCell>{grn.poId?.supplierId?.name || 'N/A'}</TableCell>
                       <TableCell>{grn.poId?.projectId?.name || 'N/A'}</TableCell>
                       <TableCell>{grn.items?.length || 0} items</TableCell>
-                      <TableCell>{grn.receivedBy || 'N/A'}</TableCell>
                       <TableCell>{formatDate(grn.grnDate)}</TableCell>
                       <TableCell>
-                        <StatusBadge status={grn.status || 'Pending'} />
+                        <StatusBadge status={grn.qcStatus || 'Pending'} />
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={grn.status || 'Draft'} />
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => navigate(`/site/grn/${grn._id || grn.id}`)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View
+                            </DropdownMenuItem>
+                            {canApprove(grn.status) && (
+                              <>
+                                <DropdownMenuItem onClick={() => navigate(`/site/grn/${grn._id || grn.id}`)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => setConfirmApprove(grn._id || grn.id)}
+                                  className="text-green-600"
+                                >
+                                  <FileCheck className="h-4 w-4 mr-2" />
+                                  Approve & Receive
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -110,7 +164,7 @@ export default function GRNList() {
               description={
                 searchQuery
                   ? "No GRNs match your search criteria"
-                  : "Record goods receipts from purchase orders"
+                  : "Record goods receipts from approved purchase orders"
               }
               action={
                 !searchQuery
@@ -124,6 +178,15 @@ export default function GRNList() {
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={!!confirmApprove}
+        onOpenChange={() => setConfirmApprove(null)}
+        title="Approve & Receive GRN"
+        description="This will approve the GRN, update stock levels, and lock it from further edits. Continue?"
+        confirmText="Approve & Receive"
+        onConfirm={handleApprove}
+      />
     </div>
   );
 }
