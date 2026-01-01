@@ -9,6 +9,16 @@ import {
 import { toast } from 'sonner';
 
 // ==================== BUDGET ====================
+export function useBudgets() {
+  return useQuery({
+    queryKey: ['budgets'],
+    queryFn: async () => {
+      const response = await budgetApi.getAll();
+      return response.data || [];
+    },
+  });
+}
+
 export function useBudget(projectId: string) {
   return useQuery({
     queryKey: ['budgets', projectId],
@@ -54,7 +64,7 @@ export function useEstimates(projectId?: string) {
     queryKey: ['estimates', projectId].filter(Boolean),
     queryFn: async () => {
       const response = await estimatesApi.getAll(projectId);
-      return response.data;
+      return response.data || [];
     },
   });
 }
@@ -75,7 +85,7 @@ export function useEstimatesByProject(projectId: string) {
     queryKey: ['estimates', 'project', projectId],
     queryFn: async () => {
       const response = await estimatesApi.getByProject(projectId);
-      return response.data;
+      return response.data || [];
     },
     enabled: !!projectId,
   });
@@ -115,10 +125,10 @@ export function useApproveEstimate() {
     mutationFn: estimatesApi.approve,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
-      toast.success('Estimate approved successfully');
+      toast.success('Estimate finalized successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to approve estimate');
+      toast.error(error.message || 'Failed to finalize estimate');
     },
   });
 }
@@ -129,7 +139,7 @@ export function useBBSList(projectId?: string) {
     queryKey: ['bbs', projectId].filter(Boolean),
     queryFn: async () => {
       const response = await bbsApi.getAll(projectId);
-      return response.data;
+      return response.data || [];
     },
   });
 }
@@ -187,13 +197,27 @@ export function useDeleteBBS() {
   });
 }
 
+export function useApproveBBS() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: bbsApi.approve,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bbs'] });
+      toast.success('BBS approved successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to approve BBS');
+    },
+  });
+}
+
 // ==================== DRAWINGS ====================
 export function useDrawings(projectId?: string) {
   return useQuery({
     queryKey: ['drawings', projectId].filter(Boolean),
     queryFn: async () => {
       const response = await drawingsApi.getAll(projectId);
-      return response.data;
+      return response.data || [];
     },
   });
 }
@@ -257,7 +281,7 @@ export function useCompliances(projectId?: string) {
     queryKey: ['compliances', projectId].filter(Boolean),
     queryFn: async () => {
       const response = await complianceApi.getAll(projectId);
-      return response.data;
+      return response.data || [];
     },
   });
 }
@@ -315,33 +339,28 @@ export function useDeleteCompliance() {
   });
 }
 
-// ==================== APPROVED BUDGETS (for Purchase) ====================
-export function useApprovedBudgets(projectId?: string) {
+// ==================== HELPER HOOKS FOR PURCHASE MODULE ====================
+// Get only APPROVED budgets for Purchase module
+export function useApprovedBudgets() {
   return useQuery({
-    queryKey: ['budgets', 'approved', projectId].filter(Boolean),
+    queryKey: ['budgets', 'approved'],
     queryFn: async () => {
-      const response = await budgetApi.getByProject(projectId || '');
-      const budget = response.data;
-      // Return only if approved
-      if (budget && budget.status === 'APPROVED') {
-        return [budget];
-      }
-      return [];
+      const response = await budgetApi.getAll();
+      const budgets = Array.isArray(response.data) ? response.data : [];
+      return budgets.filter((b: any) => b.status === 'APPROVED');
     },
-    enabled: !!projectId,
   });
 }
 
-// ==================== FINAL ESTIMATES (for Purchase) ====================
+// Get only FINAL estimates for Purchase module
 export function useFinalEstimates(projectId?: string) {
   return useQuery({
     queryKey: ['estimates', 'final', projectId].filter(Boolean),
     queryFn: async () => {
-      const response = await estimatesApi.getByProject(projectId || '');
+      const response = await estimatesApi.getAll(projectId);
       const estimates = Array.isArray(response.data) ? response.data : [];
-      // Return only FINAL estimates
       return estimates.filter((e: any) => e.status === 'FINAL');
     },
-    enabled: !!projectId,
+    enabled: projectId ? !!projectId : true,
   });
 }

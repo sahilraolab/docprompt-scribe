@@ -144,6 +144,19 @@ export const engineeringHandlers = [
   }),
 
   // ============= BUDGET =============
+  // GET all budgets
+  http.get(`${API_URL}/engineering/budget`, ({ request }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({
+      success: true,
+      data: budgets,
+      message: 'Budgets fetched successfully'
+    });
+  }),
+
+  // GET budget by projectId
   http.get(`${API_URL}/engineering/budget/:projectId`, ({ request, params }) => {
     const authError = checkAuth(request);
     if (authError) return authError;
@@ -350,6 +363,34 @@ export const engineeringHandlers = [
     return HttpResponse.json({
       success: true,
       message: 'BBS deleted successfully'
+    });
+  }),
+
+  // Approve BBS
+  http.put(`${API_URL}/engineering/bbs/:id/approve`, ({ request, params }) => {
+    const authError = checkAuth(request);
+    if (authError) return authError;
+
+    const index = bbsRecords.findIndex(b => String(b.id) === String(params.id));
+    if (index === -1) {
+      return HttpResponse.json(
+        { success: false, message: 'BBS not found' },
+        { status: 404 }
+      );
+    }
+
+    if (bbsRecords[index].status === 'APPROVED') {
+      return HttpResponse.json(
+        { success: false, message: 'BBS already approved' },
+        { status: 400 }
+      );
+    }
+
+    bbsRecords[index].status = 'APPROVED';
+
+    return HttpResponse.json({
+      success: true,
+      message: 'BBS approved successfully'
     });
   }),
 
