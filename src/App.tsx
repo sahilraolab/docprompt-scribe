@@ -63,6 +63,9 @@ import RABillForm from "./pages/contracts/RABillForm";
 import LabourRatesList from "./pages/contracts/LabourRatesList";
 import LabourRatesForm from "./pages/contracts/LabourRatesForm";
 import ContractorDetails from "./pages/contracts/ContractorDetails";
+import ContractorStatement from "./pages/contracts/ContractorStatement";
+import AdvancesList from "./pages/contracts/AdvancesList";
+import DCNotesList from "./pages/contracts/DCNotesList";
 
 // Site
 import SiteIndex from "./pages/site/index";
@@ -269,6 +272,9 @@ const App = () => (
             <Route path="/contracts/labour-rates" element={<ProtectedRoute><AppLayout><LabourRatesList /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/labour-rates/new" element={<ProtectedRoute><AppLayout><LabourRatesForm /></AppLayout></ProtectedRoute>} />
             <Route path="/contracts/labour-rates/:id" element={<ProtectedRoute><AppLayout><LabourRatesForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/contracts/advances" element={<ProtectedRoute><AppLayout><AdvancesList /></AppLayout></ProtectedRoute>} />
+            <Route path="/contracts/dc-notes" element={<ProtectedRoute><AppLayout><DCNotesList /></AppLayout></ProtectedRoute>} />
+            <Route path="/contracts/contractors/:id/statement" element={<ProtectedRoute><AppLayout><ContractorStatement /></AppLayout></ProtectedRoute>} />
 
             {/* -----------------------------
              * Site
