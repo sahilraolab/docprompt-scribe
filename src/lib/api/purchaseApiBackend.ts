@@ -89,6 +89,18 @@ export const purchaseBillsApi = {
   create: (data: any) => apiCall('/purchase/bills', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: any) => apiCall(`/purchase/bills/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: string) => apiCall(`/purchase/bills/${id}`, { method: 'DELETE' }),
+  post: (id: string) => apiCall(`/purchase/bills/${id}/post`, { method: 'POST' }),
+};
+
+// RFQ API
+export const rfqApi = {
+  getAll: () => apiCall('/purchase/rfqs'),
+  getById: (id: string) => apiCall(`/purchase/rfqs/${id}`),
+  getByMR: (mrId: string) => apiCall(`/purchase/rfqs?mrId=${mrId}`),
+  create: (data: any) => apiCall('/purchase/rfqs', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: any) => apiCall(`/purchase/rfqs/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: string) => apiCall(`/purchase/rfqs/${id}`, { method: 'DELETE' }),
+  close: (id: string) => apiCall(`/purchase/rfqs/${id}/close`, { method: 'POST' }),
 };
 
 // Suppliers API

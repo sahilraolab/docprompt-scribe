@@ -36,6 +36,8 @@ import POForm from "./pages/purchase/POForm";
 import MRList from "./pages/purchase/MRList";
 import MRForm from "./pages/purchase/MRForm";
 import MRDetails from "./pages/purchase/MRDetails";
+import RFQList from "./pages/purchase/RFQList";
+import RFQForm from "./pages/purchase/RFQForm";
 import QuotationsList from "./pages/purchase/QuotationsList";
 import QuotationForm from "./pages/purchase/QuotationForm";
 import QuotationDetails from "./pages/purchase/QuotationDetails";
@@ -226,6 +228,9 @@ const App = () => (
             <Route path="/purchase/mrs/new" element={<ProtectedRoute><AppLayout><MRForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/mrs/:id/view" element={<ProtectedRoute><AppLayout><MRDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/mrs/:id" element={<ProtectedRoute><AppLayout><MRForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/rfqs" element={<ProtectedRoute><AppLayout><RFQList /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/rfqs/new" element={<ProtectedRoute><AppLayout><RFQForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/rfqs/:id" element={<ProtectedRoute><AppLayout><RFQForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/quotations" element={<ProtectedRoute><AppLayout><QuotationsList /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/quotations/new" element={<ProtectedRoute><AppLayout><QuotationForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/quotations/:id/view" element={<ProtectedRoute><AppLayout><QuotationDetails /></AppLayout></ProtectedRoute>} />

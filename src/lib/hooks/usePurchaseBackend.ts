@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { mrsApi, quotationsApi, csApi, posApi, purchaseBillsApi, suppliersApi, materialRatesApi } from '@/lib/api/purchaseApiBackend';
+import { mrsApi, quotationsApi, csApi, posApi, purchaseBillsApi, suppliersApi, materialRatesApi, rfqApi } from '@/lib/api/purchaseApiBackend';
 import { toast } from 'sonner';
 
 // Material Requisitions hooks
@@ -164,6 +164,115 @@ export function useDeleteQuotation() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to delete quotation');
+    },
+  });
+}
+
+export function useApproveQuotation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data?: any }) => quotationsApi.approve(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotations'] });
+      queryClient.invalidateQueries({ queryKey: ['rfqs'] });
+      toast.success('Quotation approved successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to approve quotation');
+    },
+  });
+}
+
+export function useRejectQuotation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data?: any }) => quotationsApi.reject(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotations'] });
+      toast.success('Quotation rejected');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to reject quotation');
+    },
+  });
+}
+
+// RFQ hooks
+export function useRFQs() {
+  return useQuery({
+    queryKey: ['rfqs'],
+    queryFn: rfqApi.getAll,
+  });
+}
+
+export function useRFQ(id: string) {
+  return useQuery({
+    queryKey: ['rfqs', id],
+    queryFn: () => rfqApi.getById(id),
+    enabled: !!id,
+  });
+}
+
+export function useRFQsByMR(mrId: string) {
+  return useQuery({
+    queryKey: ['rfqs', 'mr', mrId],
+    queryFn: () => rfqApi.getByMR(mrId),
+    enabled: !!mrId,
+  });
+}
+
+export function useCreateRFQ() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: rfqApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rfqs'] });
+      toast.success('RFQ created successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create RFQ');
+    },
+  });
+}
+
+export function useUpdateRFQ() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => rfqApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rfqs'] });
+      toast.success('RFQ updated successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update RFQ');
+    },
+  });
+}
+
+export function useDeleteRFQ() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: rfqApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rfqs'] });
+      toast.success('RFQ deleted successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete RFQ');
+    },
+  });
+}
+
+export function useCloseRFQ() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: rfqApi.close,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rfqs'] });
+      toast.success('RFQ closed successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to close RFQ');
     },
   });
 }
@@ -525,32 +634,17 @@ export function useDeleteMaterialRate() {
   });
 }
 
-export function useApproveQuotation() {
+// Post Purchase Bill to Accounts
+export function usePostPurchaseBill() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data?: any }) =>
-      quotationsApi.approve(id, data),
+    mutationFn: purchaseBillsApi.post,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['quotations'] });
-      toast.success('Quotation approved successfully');
+      queryClient.invalidateQueries({ queryKey: ['purchase-bills'] });
+      toast.success('Purchase Bill posted to accounts');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to approve quotation');
-    },
-  });
-}
-
-export function useRejectQuotation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data?: any }) =>
-      quotationsApi.reject(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['quotations'] });
-      toast.success('Quotation rejected');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to reject quotation');
+      toast.error(error.message || 'Failed to post purchase bill');
     },
   });
 }

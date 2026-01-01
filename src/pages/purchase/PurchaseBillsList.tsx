@@ -5,11 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { EmptyState } from '@/components/EmptyState';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
 import { exportData } from '@/lib/utils/export-enhanced';
-import { Plus, Search, Receipt, Loader2, Download } from 'lucide-react';
+import { Plus, Search, Receipt, Loader2, Download, Send, Lock } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { usePurchaseBills } from '@/lib/hooks/usePurchaseBackend';
+import { usePurchaseBills, usePostPurchaseBill } from '@/lib/hooks/usePurchaseBackend';
 import {
   Table,
   TableBody,
@@ -18,48 +19,58 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, Eye } from 'lucide-react';
 
 export default function PurchaseBillsList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('date');
+  const [postConfirm, setPostConfirm] = useState<string | null>(null);
 
   const { data: bills, isLoading } = usePurchaseBills();
+  const postBill = usePostPurchaseBill();
 
-  // 🔹 Filter + Sort Logic
   const filteredBills = useMemo(() => {
     if (!bills) return [];
 
     return bills
-      .filter((bill) => {
-        const poCode = bill.poId?.code || '';
-        const invoiceNo = bill.invoiceNo || '';
-
+      .map((bill: any) => ({
+        ...bill,
+        id: bill._id || bill.id,
+        poCode: bill.poId?.code || '',
+        invoiceNo: bill.invoiceNo || bill.billNo || '',
+        invoiceDate: bill.invoiceDate || bill.billDate || bill.createdAt,
+        amount: bill.amount || bill.basicAmount || 0,
+        tax: bill.tax || bill.taxAmount || 0,
+        total: bill.total || bill.totalAmount || 0,
+      }))
+      .filter((bill: any) => {
         const matchesSearch =
-          poCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          invoiceNo.toLowerCase().includes(searchQuery.toLowerCase());
-
-        const matchesStatus =
-          statusFilter === 'all' || bill.status === statusFilter;
-
+          bill.poCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          bill.invoiceNo.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesStatus = statusFilter === 'all' || bill.status === statusFilter;
         return matchesSearch && matchesStatus;
       })
-      .sort((a, b) => {
-        if (sortBy === 'date')
-          return new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime();
+      .sort((a: any, b: any) => {
+        if (sortBy === 'date') return new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime();
         if (sortBy === 'amount') return b.total - a.total;
         if (sortBy === 'invoice') return a.invoiceNo.localeCompare(b.invoiceNo);
         return 0;
       });
   }, [bills, searchQuery, statusFilter, sortBy]);
 
-  // 🔹 Export CSV
   const handleExport = () => {
     if (!filteredBills?.length) return;
-    const data = filteredBills.map((bill) => ({
+    const data = filteredBills.map((bill: any) => ({
       'Invoice No': bill.invoiceNo,
-      'PO Code': bill.poId?.code || '',
+      'PO Code': bill.poCode,
       'Invoice Date': formatDate(bill.invoiceDate),
       'Amount': bill.amount,
       'Tax': bill.tax,
@@ -69,7 +80,14 @@ export default function PurchaseBillsList() {
     exportData(data, { filename: 'purchase-bills', format: 'csv' });
   };
 
-  // 🔹 Loading State
+  const handlePost = (id: string) => {
+    postBill.mutate(id, {
+      onSuccess: () => setPostConfirm(null),
+    });
+  };
+
+  const isPosted = (status: string) => status === 'POSTED' || status === 'Posted';
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -80,13 +98,10 @@ export default function PurchaseBillsList() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Purchase Bills</h1>
-          <p className="text-muted-foreground">
-            Manage supplier invoices and bills
-          </p>
+          <p className="text-muted-foreground">Manage supplier invoices and post to accounts</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={handleExport} variant="outline">
@@ -100,7 +115,6 @@ export default function PurchaseBillsList() {
         </div>
       </div>
 
-      {/* Filter + Search */}
       <Card>
         <CardHeader>
           <div className="flex gap-4">
@@ -113,20 +127,17 @@ export default function PurchaseBillsList() {
                 className="pl-10"
               />
             </div>
-
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Draft">Draft</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
-                <SelectItem value="Approved">Approved</SelectItem>
-                <SelectItem value="Paid">Paid</SelectItem>
+                <SelectItem value="DRAFT">Draft</SelectItem>
+                <SelectItem value="APPROVED">Approved</SelectItem>
+                <SelectItem value="POSTED">Posted</SelectItem>
               </SelectContent>
             </Select>
-
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Sort by" />
@@ -140,7 +151,6 @@ export default function PurchaseBillsList() {
           </div>
         </CardHeader>
 
-        {/* Table */}
         <CardContent>
           {filteredBills.length > 0 ? (
             <div className="rounded-md border">
@@ -154,25 +164,44 @@ export default function PurchaseBillsList() {
                     <TableHead>Tax</TableHead>
                     <TableHead>Total</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredBills.map((bill) => (
-                    <TableRow
-                      key={bill._id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/purchase/bills/${bill._id}/view`)}
-                    >
-                      <TableCell className="font-medium">{bill.invoiceNo}</TableCell>
-                      <TableCell>{bill.poId?.code || '-'}</TableCell>
+                  {filteredBills.map((bill: any) => (
+                    <TableRow key={bill.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {bill.invoiceNo}
+                          {isPosted(bill.status) && <Lock className="h-3 w-3 text-muted-foreground" />}
+                        </div>
+                      </TableCell>
+                      <TableCell>{bill.poCode || '-'}</TableCell>
                       <TableCell>{formatDate(bill.invoiceDate)}</TableCell>
                       <TableCell>{formatCurrency(bill.amount)}</TableCell>
                       <TableCell>{formatCurrency(bill.tax)}</TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(bill.total)}
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={bill.status} />
+                      <TableCell className="font-medium">{formatCurrency(bill.total)}</TableCell>
+                      <TableCell><StatusBadge status={bill.status} /></TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => navigate(`/purchase/bills/${bill.id}/view`)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
+                            {(bill.status === 'APPROVED' || bill.status === 'Approved') && (
+                              <DropdownMenuItem onClick={() => setPostConfirm(bill.id)}>
+                                <Send className="h-4 w-4 mr-2 text-primary" />
+                                Post to Accounts
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -183,23 +212,25 @@ export default function PurchaseBillsList() {
             <EmptyState
               icon={Receipt}
               title="No purchase bills found"
-              description={
-                searchQuery
-                  ? 'No bills match your search criteria'
-                  : 'Record supplier invoices and manage payments'
-              }
-              action={
-                !searchQuery
-                  ? {
-                      label: 'Add Bill',
-                      onClick: () => navigate('/purchase/bills/new'),
-                    }
-                  : undefined
-              }
+              description="Record supplier invoices and manage payments"
+              action={{
+                label: 'Add Bill',
+                onClick: () => navigate('/purchase/bills/new'),
+              }}
             />
           )}
         </CardContent>
       </Card>
+
+      {/* Post Confirmation */}
+      <ConfirmDialog
+        open={!!postConfirm}
+        onOpenChange={() => setPostConfirm(null)}
+        title="Post to Accounts"
+        description="This will post the purchase bill to accounts and create the corresponding journal entry. This action cannot be undone."
+        confirmText="Post to Accounts"
+        onConfirm={() => postConfirm && handlePost(postConfirm)}
+      />
     </div>
   );
 }
