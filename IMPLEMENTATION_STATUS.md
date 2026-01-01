@@ -1,8 +1,39 @@
 # Construction ERP - Frontend Implementation Status
 
 **Generated:** January 2026  
-**Version:** 1.0.0  
-**Status:** Frontend Complete (Mock API)
+**Version:** 2.0.0  
+**Status:** Backend Integration In Progress
+
+---
+
+## ⚠️ IMPORTANT: Backend Integration Status
+
+### Phase 1: MSW Removal & API Infrastructure ✅ COMPLETE
+- ✅ Deleted all MSW mock data files (22 files)
+- ✅ Deleted all MSW handler files (22 files)
+- ✅ Deleted MSW browser.ts and mockApi.ts
+- ✅ All API clients aligned with backend endpoints
+- ✅ Base URL: `https://dreamtonexiv.xyz/api`
+
+### Phase 2: API Alignment ✅ COMPLETE
+- ✅ Engineering API (`/engineering/*`)
+- ✅ Purchase API (`/purchase/*`)
+- ✅ Contracts API (`/contracts/*`)
+- ✅ Site/Inventory API (`/inventory/*`, `/site/*`)
+- ✅ Accounts API (`/accounts/*`)
+- ✅ Masters API (`/masters/*`)
+- ✅ Workflow API (`/workflow/*`)
+- ✅ Dashboard API (`/dashboard/*`)
+
+### Phase 3: UI Status Controls ⏳ IN PROGRESS
+- Status-based button disabling
+- Form field locking based on status
+- Backend validation error handling
+
+### Backend API Contract
+See: `docs/BACKEND_API_MAPPING.md` for complete API documentation
+
+---
 
 ---
 
@@ -40,16 +71,16 @@
 | React Hook Form | 7.61.1 | Form Management |
 | Zod | 3.25.76 | Validation |
 | Recharts | 3.2.1 | Charts & Graphs |
-| MSW | 2.6.8 | Mock API |
 | Lucide React | 0.462.0 | Icons |
 
 ### Current State
-- ✅ All frontend pages implemented
-- ✅ Mock API handlers for all endpoints
+- ✅ All frontend pages implemented (98 pages)
+- ✅ MSW mock API removed - using real backend
+- ✅ All API clients aligned with backend
 - ✅ Role-based access control (frontend)
 - ✅ Responsive design
 - ✅ Dark/Light theme support
-- ⏳ Backend integration pending
+- ⏳ Status-based UI controls in progress
 - ⏳ File upload pending
 - ⏳ Email notifications pending
 
