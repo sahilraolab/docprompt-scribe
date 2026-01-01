@@ -17,8 +17,10 @@ export const accountsApi = {
     apiClient.request(`${ACCOUNTS_BASE}/${id}`, { method: 'DELETE' }),
 
   // Vouchers (Journals)
-  getJournals: () => 
-    apiClient.request(`${ACCOUNTS_BASE}/vouchers`).then(res => res.data),
+  getJournals: (params?: { status?: string; type?: string; fromDate?: string; toDate?: string }) => {
+    const query = params ? `?${new URLSearchParams(params as any).toString()}` : '';
+    return apiClient.request(`${ACCOUNTS_BASE}/vouchers${query}`).then(res => res.data);
+  },
   getJournal: (id: string) => 
     apiClient.request(`${ACCOUNTS_BASE}/vouchers/${id}`),
   createJournal: (data: Partial<Journal>) => 
@@ -27,6 +29,16 @@ export const accountsApi = {
     apiClient.request(`${ACCOUNTS_BASE}/vouchers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteJournal: (id: string) => 
     apiClient.request(`${ACCOUNTS_BASE}/vouchers/${id}`, { method: 'DELETE' }),
+  approveJournal: (id: string, remarks?: string) => 
+    apiClient.request(`${ACCOUNTS_BASE}/vouchers/${id}/approve`, { 
+      method: 'POST', 
+      body: JSON.stringify({ remarks }) 
+    }),
+  rejectJournal: (id: string, remarks?: string) => 
+    apiClient.request(`${ACCOUNTS_BASE}/vouchers/${id}/reject`, { 
+      method: 'POST', 
+      body: JSON.stringify({ remarks }) 
+    }),
   postJournal: (id: string) => 
     apiClient.request(`${ACCOUNTS_BASE}/vouchers/${id}/post`, { method: 'POST' }),
 
@@ -62,7 +74,7 @@ export const accountsApi = {
   deleteTaxConfig: (id: string) => 
     apiClient.request(`/tax/rates/${id}`, { method: 'DELETE' }),
 
-  // Reports
+  // Reports (only POSTED data)
   getFinancialSummary: () => 
     apiClient.request(`${ACCOUNTS_BASE}/reports/summary`),
   getTrialBalance: (params?: { fromDate?: string; toDate?: string }) => {
