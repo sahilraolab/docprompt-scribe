@@ -21,9 +21,10 @@ import { Badge } from '@/components/ui/badge';
 export default function QCList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const { data: qcInspections = [], isLoading } = useQCs();
+  const { data: qcInspections, isLoading } = useQCs();
+  const qcList = Array.isArray(qcInspections) ? qcInspections : (qcInspections as any)?.data || [];
 
-  const filteredInspections = qcInspections.filter((qc: any) => {
+  const filteredInspections = qcList.filter((qc: any) => {
     const query = searchQuery.toLowerCase();
     return (
       qc.inspectionNo?.toLowerCase().includes(query) ||

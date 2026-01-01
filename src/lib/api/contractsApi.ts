@@ -81,7 +81,13 @@ export const workOrdersApi = {
     });
   },
   approve: (id: string) => {
-    return apiClient.request(`${CONTRACTS_BASE}/work-orders/${id}/approve`, { method: 'POST' });
+    return apiClient.request(`${CONTRACTS_BASE}/work-orders/${id}/approve`, { method: 'PUT' });
+  },
+  revise: (payload: any) => {
+    return apiClient.request(`${CONTRACTS_BASE}/work-orders/revise`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   },
 };
 
@@ -107,10 +113,10 @@ export const raBillsApi = {
     });
   },
   approve: (id: string) => {
-    return apiClient.request(`${CONTRACTS_BASE}/ra-bills/${id}/approve`, { method: 'POST' });
+    return apiClient.request(`${CONTRACTS_BASE}/ra-bills/${id}/approve`, { method: 'PUT' });
   },
   post: (id: string) => {
-    return apiClient.request(`${CONTRACTS_BASE}/ra-bills/${id}/post`, { method: 'POST' });
+    return apiClient.request(`${CONTRACTS_BASE}/ra-bills/${id}/post`, { method: 'PUT' });
   },
 };
 
@@ -151,6 +157,9 @@ export const dcNotesApi = {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+  },
+  post: (id: string) => {
+    return apiClient.request(`${CONTRACTS_BASE}/dc-notes/${id}/post`, { method: 'PUT' });
   },
 };
 
