@@ -133,6 +133,40 @@ export const useDeleteJournal = () => {
   });
 };
 
+export const useApproveJournal = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ id, remarks }: { id: string; remarks?: string }) => 
+      accountsApi.approveJournal(id, remarks),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['journals'] });
+      toast({ title: 'Success', description: 'Journal approved successfully' });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to approve journal', variant: 'destructive' });
+    },
+  });
+};
+
+export const useRejectJournal = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ id, remarks }: { id: string; remarks?: string }) => 
+      accountsApi.rejectJournal(id, remarks),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['journals'] });
+      toast({ title: 'Journal rejected', description: 'Journal has been rejected' });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to reject journal', variant: 'destructive' });
+    },
+  });
+};
+
 export const usePostJournal = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -141,7 +175,9 @@ export const usePostJournal = () => {
     mutationFn: accountsApi.postJournal,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['journals'] });
-      toast({ title: 'Success', description: 'Journal posted successfully' });
+      queryClient.invalidateQueries({ queryKey: ['ledgers'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      toast({ title: 'Success', description: 'Journal posted to ledger successfully' });
     },
     onError: () => {
       toast({ title: 'Error', description: 'Failed to post journal', variant: 'destructive' });
@@ -295,10 +331,38 @@ export const useDeleteTaxConfig = () => {
   });
 };
 
-// Reports
+// Reports (only POSTED data)
 export const useFinancialSummary = () => {
   return useQuery({
     queryKey: ['financial-summary'],
     queryFn: () => accountsApi.getFinancialSummary(),
+  });
+};
+
+export const useTrialBalance = (params?: { fromDate?: string; toDate?: string }) => {
+  return useQuery({
+    queryKey: ['trial-balance', params],
+    queryFn: () => accountsApi.getTrialBalance(params),
+  });
+};
+
+export const useProfitLoss = (params?: { fromDate?: string; toDate?: string }) => {
+  return useQuery({
+    queryKey: ['profit-loss', params],
+    queryFn: () => accountsApi.getProfitLoss(params),
+  });
+};
+
+export const useBalanceSheet = (params?: { asOfDate?: string }) => {
+  return useQuery({
+    queryKey: ['balance-sheet', params],
+    queryFn: () => accountsApi.getBalanceSheet(params),
+  });
+};
+
+export const useCashFlow = (params?: { fromDate?: string; toDate?: string }) => {
+  return useQuery({
+    queryKey: ['cash-flow', params],
+    queryFn: () => accountsApi.getCashFlow(params),
   });
 };
