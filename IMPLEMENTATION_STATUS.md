@@ -25,10 +25,18 @@
 - ✅ Workflow API (`/workflow/*`)
 - ✅ Dashboard API (`/dashboard/*`)
 
-### Phase 3: UI Status Controls ⏳ IN PROGRESS
-- Status-based button disabling
-- Form field locking based on status
-- Backend validation error handling
+### Phase 3: UI Status Controls ✅ COMPLETE
+- ✅ Status-based button disabling (Edit/Delete disabled for APPROVED/POSTED records)
+- ✅ Lock icons shown for locked records in all list views
+- ✅ Approve/Finalize confirmation dialogs with status warnings
+- ✅ Consistent status badge colors across all modules
+
+### Updated Pages with Status Controls:
+- ✅ Engineering: EstimatesList, BBSList, BudgetList, DrawingsList
+- ✅ Purchase: PurchaseOrdersList, MRList
+- ✅ Contracts: WorkOrdersList, RABillsList
+- ✅ Site: GRNList (already had controls)
+- ✅ Accounts: JournalsList (already had controls)
 
 ### Backend API Contract
 See: `docs/BACKEND_API_MAPPING.md` for complete API documentation
