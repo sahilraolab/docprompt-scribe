@@ -42,8 +42,9 @@ export const siteApi = {
   },
 
   // ---------------- Stock ----------------
-  getAllStock: async () => {
-    const res = await apiClient.request(`${API_BASE_URL}/stock`, {
+  getAllStock: async (params?: { projectId?: string; location?: string }) => {
+    const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
+    const res = await apiClient.request(`${API_BASE_URL}/stock${query}`, {
       method: 'GET',
     });
     return res.data || res;
@@ -63,9 +64,26 @@ export const siteApi = {
     return res.data || res;
   },
 
+  getStockLedger: async (params?: { itemId?: string; projectId?: string; fromDate?: string; toDate?: string }) => {
+    const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
+    const res = await apiClient.request(`${API_BASE_URL}/stock-ledger${query}`, {
+      method: 'GET',
+    });
+    return res.data || res;
+  },
+
+  adjustStock: async (data: { itemId: string; projectId: string; qty: number; type: 'add' | 'subtract'; reason: string }) => {
+    const res = await apiClient.request(`${API_BASE_URL}/stock/adjust`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res.data || res;
+  },
+
   // ---------------- GRN (Goods Receipt Notes) ----------------
-  getAllGRN: async () => {
-    const res = await apiClient.request(`${API_BASE_URL}/grn`, {
+  getAllGRN: async (params?: { poId?: string; status?: string }) => {
+    const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
+    const res = await apiClient.request(`${API_BASE_URL}/grn${query}`, {
       method: 'GET',
     });
     return res.data || res;
@@ -94,9 +112,18 @@ export const siteApi = {
     return res.data?.data || res.data || res;
   },
 
+  approveGRN: async (id: string, remarks?: string) => {
+    const res = await apiClient.request(`${API_BASE_URL}/grn/${id}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ remarks }),
+    });
+    return res.data?.data || res.data || res;
+  },
+
   // ---------------- Material Issues ----------------
-  getAllIssues: async () => {
-    const res = await apiClient.request(`${API_BASE_URL}/issues`, {
+  getAllIssues: async (params?: { projectId?: string; status?: string }) => {
+    const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
+    const res = await apiClient.request(`${API_BASE_URL}/issues${query}`, {
       method: 'GET',
     });
     return res.data || res;
@@ -125,9 +152,18 @@ export const siteApi = {
     return res.data?.data || res.data || res;
   },
 
+  approveIssue: async (id: string, remarks?: string) => {
+    const res = await apiClient.request(`${API_BASE_URL}/issues/${id}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ remarks }),
+    });
+    return res.data?.data || res.data || res;
+  },
+
   // ---------------- Stock Transfers ----------------
-  getAllTransfers: async () => {
-    const res = await apiClient.request(`${API_BASE_URL}/stock-transfer`, {
+  getAllTransfers: async (params?: { fromProjectId?: string; toProjectId?: string; status?: string }) => {
+    const query = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : '';
+    const res = await apiClient.request(`${API_BASE_URL}/stock-transfer${query}`, {
       method: 'GET',
     });
     return res.data || res;
@@ -152,6 +188,21 @@ export const siteApi = {
     const res = await apiClient.request(`${API_BASE_URL}/stock-transfer/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
+    });
+    return res.data?.data || res.data || res;
+  },
+
+  approveTransfer: async (id: string, remarks?: string) => {
+    const res = await apiClient.request(`${API_BASE_URL}/stock-transfer/${id}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ remarks }),
+    });
+    return res.data?.data || res.data || res;
+  },
+
+  receiveTransfer: async (id: string) => {
+    const res = await apiClient.request(`${API_BASE_URL}/stock-transfer/${id}/receive`, {
+      method: 'POST',
     });
     return res.data?.data || res.data || res;
   },
