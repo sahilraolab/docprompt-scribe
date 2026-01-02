@@ -12,10 +12,11 @@ import { toast } from 'sonner';
    REQUISITION
 ===================================================== */
 
-export function useRequisitions(params?: any) {
+export function useRequisitions(params?: any, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['requisitions', params],
     queryFn: () => requisitionApi.list(params),
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -75,10 +76,11 @@ export function useCreateRFQ() {
    QUOTATION
 ===================================================== */
 
-export function useQuotations(params?: any) {
+export function useQuotations(params?: any, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['quotations', params],
     queryFn: () => quotationApi.list(params),
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -116,10 +118,11 @@ export function useApproveQuotation() {
    PURCHASE ORDER
 ===================================================== */
 
-export function usePOs(params?: any) {
+export function usePOs(params?: any, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['pos', params],
     queryFn: () => poApi.list(params),
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -146,10 +149,11 @@ export function useCreatePO() {
    PURCHASE BILL
 ===================================================== */
 
-export function usePurchaseBills(params?: any) {
+export function usePurchaseBills(params?: any, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['purchaseBills', params],
     queryFn: () => purchaseBillApi.list(params),
+    enabled: options?.enabled ?? true,
   });
 }
 
