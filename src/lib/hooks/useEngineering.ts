@@ -216,7 +216,7 @@ export function useDrawings(projectId?: string) {
   return useQuery({
     queryKey: ['drawings', projectId].filter(Boolean),
     queryFn: async () => {
-      const response = await drawingsApi.getAll(projectId);
+      const response = await drawingsApi.getByProject(projectId);
       return response.data || [];
     },
   });
@@ -276,22 +276,44 @@ export function useApproveDrawing() {
 }
 
 // ==================== COMPLIANCE ====================
-export function useCompliances(projectId?: string) {
+// export function useCompliances(projectId?: string) {
+//   return useQuery({
+//     queryKey: ['compliances', projectId].filter(Boolean),
+//     queryFn: async () => {
+//       const response = await complianceApi.getAll(projectId);
+//       return response.data || [];
+//     },
+//   });
+// }
+
+// export function useCompliance(id: string) {
+//   return useQuery({
+//     queryKey: ['compliances', id],
+//     queryFn: async () => {
+//       const response = await complianceApi.getById(id);
+//       return response.data;
+//     },
+//     enabled: !!id,
+//   });
+// }
+
+export function useCompliances(projectId?: number) {
   return useQuery({
-    queryKey: ['compliances', projectId].filter(Boolean),
+    queryKey: ['compliances', 'project', projectId],
     queryFn: async () => {
-      const response = await complianceApi.getAll(projectId);
-      return response.data || [];
+      const res = await complianceApi.getByProject(projectId!);
+      return res || [];
     },
+    enabled: !!projectId,
   });
 }
 
-export function useCompliance(id: string) {
+export function useCompliance(id?: number) {
   return useQuery({
-    queryKey: ['compliances', id],
+    queryKey: ['compliance', id], // 🔥 UNIQUE KEY
     queryFn: async () => {
-      const response = await complianceApi.getById(id);
-      return response.data;
+      const res = await complianceApi.getById(id!);
+      return res; // 🔥 NOT res.data
     },
     enabled: !!id,
   });
@@ -311,16 +333,31 @@ export function useCreateCompliance() {
   });
 }
 
+// export function useUpdateCompliance() {
+//   const queryClient = useQueryClient();
+//   return useMutation({
+//     mutationFn: ({ id, data }: { id: string; data: any }) => complianceApi.update(id, data),
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: ['compliances'] });
+//       toast.success('Compliance updated');
+//     },
+//     onError: (error: Error) => {
+//       toast.error(error.message || 'Failed to update compliance');
+//     },
+//   });
+// }
+
 export function useUpdateCompliance() {
   const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => complianceApi.update(id, data),
-    onSuccess: () => {
+    mutationFn: ({ id, data }: { id: number; data: any }) =>
+      complianceApi.update(id, data),
+
+    onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['compliances'] });
+      queryClient.invalidateQueries({ queryKey: ['compliance', id] });
       toast.success('Compliance updated');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update compliance');
     },
   });
 }

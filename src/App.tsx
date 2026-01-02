@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/AppLayout";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
+// import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Forbidden from "./pages/Forbidden";
 import UserProfile from "./pages/profile/UserProfile";
@@ -28,28 +28,28 @@ import ComplianceForm from "./pages/engineering/ComplianceForm";
 
 // Purchase
 import PurchaseIndex from "./pages/purchase/index";
-import SuppliersList from "./pages/purchase/SuppliersList";
-import SupplierForm from "./pages/purchase/SupplierForm";
-import PurchaseOrdersList from "./pages/purchase/PurchaseOrdersList";
-import PODetails from "./pages/purchase/PODetails";
-import POForm from "./pages/purchase/POForm";
+// import SuppliersList from "./pages/purchase/SuppliersList";
+// import SupplierForm from "./pages/purchase/SupplierForm";
+// import PurchaseOrdersList from "./pages/purchase/PurchaseOrdersList";
+// import PODetails from "./pages/purchase/PODetails";
+// import POForm from "./pages/purchase/POForm";
 import MRList from "./pages/purchase/MRList";
-import MRForm from "./pages/purchase/MRForm";
-import MRDetails from "./pages/purchase/MRDetails";
-import RFQList from "./pages/purchase/RFQList";
-import RFQForm from "./pages/purchase/RFQForm";
-import QuotationsList from "./pages/purchase/QuotationsList";
-import QuotationForm from "./pages/purchase/QuotationForm";
-import QuotationDetails from "./pages/purchase/QuotationDetails";
-import ComparativeStatementList from "./pages/purchase/ComparativeStatementList";
-import ComparativeStatementForm from "./pages/purchase/ComparativeStatementForm";
-import ComparativeStatementDetails from "./pages/purchase/ComparativeStatementDetails";
-import PurchaseBillsList from "./pages/purchase/PurchaseBillsList";
-import PurchaseBillForm from "./pages/purchase/PurchaseBillForm";
-import PurchaseBillDetails from "./pages/purchase/PurchaseBillDetails";
-import SupplierDetails from "./pages/purchase/SupplierDetails";
-import RateManagement from "./pages/purchase/RateManagement";
-import RateForm from "./pages/purchase/RateForm";
+// import MRForm from "./pages/purchase/MRForm";
+// import MRDetails from "./pages/purchase/MRDetails";
+// import RFQList from "./pages/purchase/RFQList";
+// import RFQForm from "./pages/purchase/RFQForm";
+// import QuotationsList from "./pages/purchase/QuotationsList";
+// import QuotationForm from "./pages/purchase/QuotationForm";
+// import QuotationDetails from "./pages/purchase/QuotationDetails";
+// import ComparativeStatementList from "./pages/purchase/ComparativeStatementList";
+// import ComparativeStatementForm from "./pages/purchase/ComparativeStatementForm";
+// import ComparativeStatementDetails from "./pages/purchase/ComparativeStatementDetails";
+// import PurchaseBillsList from "./pages/purchase/PurchaseBillsList";
+// import PurchaseBillForm from "./pages/purchase/PurchaseBillForm";
+// import PurchaseBillDetails from "./pages/purchase/PurchaseBillDetails";
+// import SupplierDetails from "./pages/purchase/SupplierDetails";
+// import RateManagement from "./pages/purchase/RateManagement";
+// import RateForm from "./pages/purchase/RateForm";
 
 // Contracts
 import ContractsIndex from "./pages/contracts/index";
@@ -197,8 +197,8 @@ const App = () => (
              * Auth & Dashboard
              * ----------------------------- */}
             <Route path="/login" element={<Login />} />
-            <Route path="/" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute><AppLayout><UserProfile /></AppLayout></ProtectedRoute>} />
+            {/* <Route path="/dashboard" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} /> */}
 
             {/* -----------------------------
              * Engineering
@@ -219,10 +219,8 @@ const App = () => (
             <Route path="/engineering/compliance/new" element={<ProtectedRoute><AppLayout><ComplianceForm /></AppLayout></ProtectedRoute>} />
             <Route path="/engineering/compliance/:id/edit" element={<ProtectedRoute><AppLayout><ComplianceForm /></AppLayout></ProtectedRoute>} />
 
-            {/* -----------------------------
-             * Purchase
-             * ----------------------------- */}
-            <Route path="/purchase" element={<ProtectedRoute><AppLayout><PurchaseIndex /></AppLayout></ProtectedRoute>} />
+
+            {/* <Route path="/purchase" element={<ProtectedRoute><AppLayout><PurchaseIndex /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/suppliers" element={<ProtectedRoute><AppLayout><SuppliersList /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/suppliers/new" element={<ProtectedRoute><AppLayout><SupplierForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/suppliers/:id/view" element={<ProtectedRoute><AppLayout><SupplierDetails /></AppLayout></ProtectedRoute>} />
@@ -252,7 +250,32 @@ const App = () => (
             <Route path="/purchase/bills/:id/edit" element={<ProtectedRoute><AppLayout><PurchaseBillForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/rates" element={<ProtectedRoute><AppLayout><RateManagement /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/rates/new" element={<ProtectedRoute><AppLayout><RateForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/purchase/rates/:id" element={<ProtectedRoute><AppLayout><RateForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/rates/:id" element={<ProtectedRoute><AppLayout><RateForm /></AppLayout></ProtectedRoute>} /> */}
+
+            {/* -----------------------------
+             * Purchase
+             * ----------------------------- */}
+
+            <Route path="/purchase" element={<ProtectedRoute><AppLayout><PurchaseIndex /></AppLayout></ProtectedRoute>} />
+            {/* ===== MATERIAL REQUISITIONS (MR) ===== */}
+            <Route path="/purchase/requisitions" element={<ProtectedRoute><AppLayout><MRList /></AppLayout></ProtectedRoute>} />
+            {/* <Route path="/purchase/requisitions/new" element={<ProtectedRoute><AppLayout><MRForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/requisitions/:id" element={<ProtectedRoute><AppLayout><MRDetails /></AppLayout></ProtectedRoute>} /> */}
+            {/* ===== RFQ ===== */}
+            {/* <Route path="/purchase/rfqs" element={<ProtectedRoute><AppLayout><RFQList /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/rfqs/new" element={<ProtectedRoute><AppLayout><RFQForm /></AppLayout></ProtectedRoute>} /> */}
+            {/* ===== QUOTATIONS ===== */}
+            {/* <Route path="/purchase/quotations" element={<ProtectedRoute><AppLayout><QuotationsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/quotations/new" element={<ProtectedRoute><AppLayout><QuotationForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/quotations/:id" element={<ProtectedRoute><AppLayout><QuotationDetails /></AppLayout></ProtectedRoute>} /> */}
+            {/* ===== PURCHASE ORDERS ===== */}
+            {/* <Route path="/purchase/po" element={<ProtectedRoute><AppLayout><PurchaseOrdersList /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/po/:id" element={<ProtectedRoute><AppLayout><PODetails /></AppLayout></ProtectedRoute>} /> */}
+            {/* ===== PURCHASE BILLS ===== */}
+            {/* <Route path="/purchase/bills" element={<ProtectedRoute><AppLayout><PurchaseBillsList /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/bills/new" element={<ProtectedRoute><AppLayout><PurchaseBillForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/bills/:id" element={<ProtectedRoute><AppLayout><PurchaseBillDetails /></AppLayout></ProtectedRoute>} /> */}
+
 
             {/* -----------------------------
              * Contracts

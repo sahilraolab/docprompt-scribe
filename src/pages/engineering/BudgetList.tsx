@@ -1,143 +1,210 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
-import { Plus, Search, DollarSign, CheckCircle, Lock, Loader2 } from 'lucide-react';
-import { useBudgets, useApproveBudget } from '@/lib/hooks/useEngineering';
-import { useMasterProjects } from '@/lib/hooks/useMasters';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { EmptyState } from '@/components/EmptyState';
-import { formatCurrency } from '@/lib/utils/format';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
+import {
+  CheckCircle,
+  Lock,
+  DollarSign,
+  Loader2
+} from 'lucide-react';
 
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { formatCurrency } from '@/lib/utils/format';
+
+import { useMasterProjects } from '@/lib/hooks/useMasters';
+import { budgetApi } from '@/lib/api/engineeringApi';
+import { useApproveBudget } from '@/lib/hooks/useEngineering';
+
+/* =====================================================
+   STATUS UI MAP
+===================================================== */
 const STATUS_COLORS: Record<string, string> = {
   DRAFT: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
-  APPROVED: 'bg-green-500/10 text-green-600 border-green-500/20',
+  APPROVED: 'bg-green-500/10 text-green-600 border-green-500/20'
 };
 
 export default function BudgetList() {
   const navigate = useNavigate();
-  const { data: budgets = [], isLoading } = useBudgets();
-  const { data: projects = [] } = useMasterProjects();
   const approveBudget = useApproveBudget();
-  const [search, setSearch] = useState('');
-  const [approveId, setApproveId] = useState<string | null>(null);
 
-  const budgetsArray = Array.isArray(budgets) ? budgets : [];
-  const projectsArray = Array.isArray(projects) ? projects : [];
+  const { data: projects = [] } = useMasterProjects();
 
-  // Enrich budgets with project info
-  const enrichedBudgets = budgetsArray.map((budget: any) => {
-    const project = projectsArray.find((p: any) => String(p.id) === String(budget.projectId));
-    return {
-      ...budget,
-      projectName: project?.name || 'Unknown Project',
-      projectCode: project?.code || 'N/A',
-    };
-  });
+  const [loading, setLoading] = useState(false);
+  const [approveId, setApproveId] = useState<number | null>(null);
 
-  const filtered = enrichedBudgets.filter((b: any) =>
-    b.projectName?.toLowerCase().includes(search.toLowerCase()) ||
-    b.projectCode?.toLowerCase().includes(search.toLowerCase())
-  );
+  /**
+   * budgets[projectId] = budget | null
+   */
+  const [budgets, setBudgets] = useState<Record<number, any | null>>({});
 
+  /* =====================================================
+     LOAD BUDGET PER PROJECT
+  ===================================================== */
+  useEffect(() => {
+    if (!projects.length) return;
+
+    (async () => {
+      setLoading(true);
+      const map: Record<number, any | null> = {};
+
+      for (const project of projects) {
+        try {
+          const res = await budgetApi.getByProject(project.id);
+          map[project.id] = res ?? null;
+        } catch {
+          map[project.id] = null;
+        }
+      }
+
+      setBudgets(map);
+      setLoading(false);
+    })();
+  }, [projects]);
+
+  /* =====================================================
+     APPROVE
+  ===================================================== */
   const handleApprove = () => {
-    if (approveId) {
-      approveBudget.mutate(approveId, {
-        onSettled: () => setApproveId(null),
-      });
-    }
+    if (!approveId) return;
+
+    approveBudget.mutate(String(approveId), {
+      onSuccess: () => {
+        toast.success('Budget approved');
+        setApproveId(null);
+
+        setBudgets(prev => {
+          const updated = { ...prev };
+          Object.keys(updated).forEach(pid => {
+            if (updated[Number(pid)]?.id === approveId) {
+              updated[Number(pid)] = {
+                ...updated[Number(pid)],
+                status: 'APPROVED'
+              };
+            }
+          });
+          return updated;
+        });
+      },
+      onError: (err: any) => {
+        toast.error(err.message || 'Failed to approve budget');
+      }
+    });
   };
 
-  if (isLoading) return <LoadingSpinner />;
+  if (loading) return <LoadingSpinner />;
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Project Budgets"
-        description="Manage project budget allocations. Approved budgets are locked."
-        actions={[
-          { label: 'Create Budget', onClick: () => navigate('/engineering/budget/new'), icon: Plus }
-        ]}
+        description="Each project can have one approved budget"
       />
 
       <Card>
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by project name or code..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-          </div>
-        </CardHeader>
         <CardContent className="p-0">
-          {filtered.length === 0 ? (
-            <EmptyState
-              icon={DollarSign}
-              title="No budgets found"
-              description={budgetsArray.length === 0 ? "Create your first project budget" : "No budgets match your search"}
-              action={budgetsArray.length === 0 ? { label: 'Create Budget', onClick: () => navigate('/engineering/budget/new') } : undefined}
-            />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Project Code</TableHead>
-                  <TableHead>Project Name</TableHead>
-                  <TableHead className="text-right">Total Budget</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((budget: any) => {
-                  const isLocked = budget.status === 'APPROVED';
-                  return (
-                    <TableRow key={budget.id} className="cursor-pointer hover:bg-muted/50">
-                      <TableCell className="font-mono text-sm">{budget.projectCode}</TableCell>
-                      <TableCell className="font-medium">{budget.projectName}</TableCell>
-                      <TableCell className="text-right font-semibold">{formatCurrency(budget.totalBudget || 0)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={STATUS_COLORS[budget.status] || STATUS_COLORS.DRAFT}>
-                          {isLocked && <Lock className="h-3 w-3 mr-1" />}
-                          {budget.status || 'DRAFT'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setApproveId(String(budget.id));
-                          }}
-                          disabled={isLocked || approveBudget.isPending}
-                          title={isLocked ? 'Already approved' : 'Approve budget'}
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Project</TableHead>
+                <TableHead>Total Budget</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-[140px] text-right">
+                  Action
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+
+            <TableBody>
+              {projects.map((project: any) => {
+                const budget = budgets[project.id];
+
+                return (
+                  <TableRow key={project.id}>
+                    <TableCell>
+                      <div className="font-medium">{project.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {project.code}
+                      </div>
+                    </TableCell>
+
+                    <TableCell>
+                      {budget
+                        ? formatCurrency(budget.totalBudget)
+                        : '—'}
+                    </TableCell>
+
+                    <TableCell>
+                      {budget ? (
+                        <Badge
+                          variant="outline"
+                          className={STATUS_COLORS[budget.status]}
                         >
-                          {approveBudget.isPending && approveId === String(budget.id) ? (
+                          {budget.status === 'APPROVED' && (
+                            <Lock className="h-3 w-3 mr-1" />
+                          )}
+                          {budget.status}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">
+                          No budget
+                        </span>
+                      )}
+                    </TableCell>
+
+                    <TableCell className="text-right space-x-2">
+                      {!budget && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            navigate(
+                              `/engineering/budget/new?projectId=${project.id}`
+                            )
+                          }
+                        >
+                          <DollarSign className="h-4 w-4 mr-1" />
+                          Create
+                        </Button>
+                      )}
+
+                      {budget?.status === 'DRAFT' && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setApproveId(budget.id)}
+                        >
+                          {approveBudget.isPending &&
+                          approveId === budget.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
-                            <CheckCircle className={`h-4 w-4 ${isLocked ? 'text-muted-foreground' : 'text-green-600'}`} />
+                            <CheckCircle className="h-4 w-4 text-green-600" />
                           )}
                         </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
+                      )}
+
+                      {budget?.status === 'APPROVED' && (
+                        <Lock className="h-4 w-4 text-muted-foreground inline" />
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
@@ -145,10 +212,9 @@ export default function BudgetList() {
         open={!!approveId}
         onOpenChange={() => setApproveId(null)}
         title="Approve Budget"
-        description="Once approved, this budget becomes locked and cannot be modified. Approved budgets are required for creating Material Requisitions in Purchase module. Are you sure you want to approve?"
-        onConfirm={handleApprove}
+        description="Once approved, this budget is locked and used for purchase & accounting controls."
         confirmText="Approve Budget"
-        variant="default"
+        onConfirm={handleApprove}
       />
     </div>
   );

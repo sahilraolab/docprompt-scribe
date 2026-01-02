@@ -1,137 +1,222 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
-} from '@/components/ui/alert-dialog';
-import { Plus, Search, Edit2, Trash2, Shield } from 'lucide-react';
-import { useCompliances, useDeleteCompliance } from '@/lib/hooks/useEngineering';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
+
+import { Shield, Plus, Lock } from 'lucide-react';
+
 import { EmptyState } from '@/components/EmptyState';
-import { format } from 'date-fns';
-import type { Compliance } from '@/types/engineering';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+
+import { useMasterProjects } from '@/lib/hooks/useMasters';
+import { complianceApi } from '@/lib/api/engineeringApi';
+
+/* ================= STATUS STYLES ================= */
+
+const STATUS_COLORS: Record<string, string> = {
+  OPEN: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20',
+  CLOSED: 'bg-green-500/10 text-green-700 border-green-500/20'
+};
 
 export default function ComplianceList() {
   const navigate = useNavigate();
-  const { data: compliances = [], isLoading } = useCompliances();
-  const deleteCompliance = useDeleteCompliance();
-  const [search, setSearch] = useState('');
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { data: projects = [] } = useMasterProjects();
 
-  const filtered = (compliances as Compliance[]).filter((c) =>
-    c.type?.toLowerCase().includes(search.toLowerCase()) ||
-    c.documentRef?.toLowerCase().includes(search.toLowerCase())
-  );
+  const [loading, setLoading] = useState(false);
 
-  const handleDelete = () => {
-    if (deleteId) {
-      deleteCompliance.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
-    }
-  };
+  /**
+   * complianceByProject[projectId] = Compliance[]
+   */
+  const [complianceByProject, setComplianceByProject] =
+    useState<Record<number, any[]>>({});
 
-  if (isLoading) return <LoadingSpinner />;
+  /* ================= LOAD PROJECT-WISE COMPLIANCE ================= */
+
+  useEffect(() => {
+    if (!projects.length) return;
+
+    (async () => {
+      setLoading(true);
+      const map: Record<number, any[]> = {};
+
+      for (const project of projects) {
+        try {
+          const res = await complianceApi.getByProject(project.id);
+          map[project.id] = Array.isArray(res) ? res : [];
+        } catch {
+          map[project.id] = [];
+        }
+      }
+
+      setComplianceByProject(map);
+      setLoading(false);
+    })();
+  }, [projects]);
+
+  if (loading) return <LoadingSpinner />;
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Compliance"
-        description="Manage regulatory compliance documents"
+        description="Project-wise statutory & regulatory compliance"
         actions={[
-          { label: 'Add Compliance', onClick: () => navigate('/engineering/compliance/new'), icon: Plus }
+          {
+            label: 'Add Compliance',
+            icon: Plus,
+            onClick: () => navigate('/engineering/compliance/new')
+          }
         ]}
       />
 
       <Card>
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search compliance..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-          </div>
-        </CardHeader>
         <CardContent className="p-0">
-          {filtered.length === 0 ? (
-            <EmptyState
-              icon={Shield}
-              title="No compliance records found"
-              description="Add your first compliance record"
-              action={{ label: 'Add Compliance', onClick: () => navigate('/engineering/compliance/new') }}
-            />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Document Ref</TableHead>
-                  <TableHead>Valid Till</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((compliance) => (
-                  <TableRow key={compliance.id}>
-                    <TableCell className="font-medium">{compliance.type}</TableCell>
-                    <TableCell>{compliance.documentRef || '-'}</TableCell>
-                    <TableCell>
-                      {compliance.validTill 
-                        ? format(new Date(compliance.validTill), 'dd MMM yyyy')
-                        : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Project</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Document Ref</TableHead>
+                <TableHead>Valid Till</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Blocking</TableHead>
+                <TableHead className="w-[100px] text-right">
+                  Action
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+
+            <TableBody>
+              {projects.map(project => {
+                const list = complianceByProject[project.id] || [];
+
+                /* -------- NO COMPLIANCE -------- */
+                if (list.length === 0) {
+                  return (
+                    <TableRow key={`empty-${project.id}`}>
+                      <TableCell>
+                        <div className="font-medium">
+                          {project.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {project.code}
+                        </div>
+                      </TableCell>
+
+                      <TableCell
+                        colSpan={5}
+                        className="text-muted-foreground"
+                      >
+                        No compliance records
+                      </TableCell>
+
+                      <TableCell className="text-right">
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => navigate(`/engineering/compliance/${compliance.id}/edit`)}
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            navigate(
+                              `/engineering/compliance/new?projectId=${project.id}`
+                            )
+                          }
                         >
-                          <Edit2 className="h-4 w-4" />
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add
                         </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                }
+
+                /* -------- COMPLIANCE ROWS -------- */
+                return list.map(c => {
+                  const isClosed = c.status === 'CLOSED';
+
+                  return (
+                    <TableRow key={c.id}>
+                      <TableCell>
+                        <div className="font-medium">
+                          {project.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {project.code}
+                        </div>
+                      </TableCell>
+
+                      <TableCell>{c.type}</TableCell>
+
+                      <TableCell>
+                        {c.documentRef || '-'}
+                      </TableCell>
+
+                      <TableCell>
+                        {c.validTill
+                          ? format(
+                              new Date(c.validTill),
+                              'dd MMM yyyy'
+                            )
+                          : '-'}
+                      </TableCell>
+
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={STATUS_COLORS[c.status]}
+                        >
+                          {isClosed && (
+                            <Lock className="h-3 w-3 mr-1" />
+                          )}
+                          {c.status}
+                        </Badge>
+                      </TableCell>
+
+                      <TableCell>
+                        {c.blocking ? (
+                          <Badge variant="destructive">
+                            Yes
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">
+                            No
+                          </Badge>
+                        )}
+                      </TableCell>
+
+                      <TableCell className="text-right">
                         <Button
-                          variant="ghost"
                           size="icon"
-                          onClick={() => setDeleteId(String(compliance.id))}
+                          variant="ghost"
+                          disabled={isClosed}
+                          onClick={() =>
+                            navigate(
+                              `/engineering/compliance/${c.id}/edit`
+                            )
+                          }
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <Shield className="h-4 w-4" />
                         </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                });
+              })}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
-
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Compliance Record?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
