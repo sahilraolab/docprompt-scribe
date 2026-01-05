@@ -5,23 +5,13 @@ import { apiClient } from './client';
 ===================================================== */
 
 export const requisitionApi = {
-  list: (params?: {
-    projectId?: number;
-    status?: string;
-  }) => {
-    const qs = new URLSearchParams();
-
-    if (typeof params?.projectId === 'number') {
-      qs.append('projectId', String(params.projectId));
+  list: (params?: { projectId?: number }) => {
+    if (typeof params?.projectId !== 'number') {
+      return Promise.resolve([]); // 🔒 HARD GUARD
     }
 
-    if (typeof params?.status === 'string' && params.status.length > 0) {
-      qs.append('status', params.status);
-    }
-
-    const query = qs.toString();
     return apiClient.request(
-      query ? `/purchase/requisitions?${query}` : `/purchase/requisitions`
+      `/purchase/requisitions?projectId=${params.projectId}`
     );
   },
 
@@ -50,25 +40,24 @@ export const requisitionApi = {
 
 export const rfqApi = {
   list: (params?: { requisitionId?: number }) => {
-    const qs = new URLSearchParams();
-
-    if (typeof params?.requisitionId === 'number') {
-      qs.append('requisitionId', String(params.requisitionId));
+    if (typeof params?.requisitionId !== "number") {
+      return Promise.resolve([]); // 🔒 HARD GUARD
     }
 
-    const query = qs.toString();
     return apiClient.request(
-      query ? `/purchase/rfqs?${query}` : `/purchase/rfqs`
+      `/purchase/rfqs?requisitionId=${params.requisitionId}`
     );
   },
 
-  create: (data: {
-    requisitionId: number;
-    supplierId: number;
-  }) =>
-    apiClient.request('/purchase/rfqs', {
-      method: 'POST',
+  create: (data: { requisitionId: number; supplierId: number }) =>
+    apiClient.request("/purchase/rfqs", {
+      method: "POST",
       body: JSON.stringify(data),
+    }),
+
+  close: (id: number) =>
+    apiClient.request(`/purchase/rfqs/${id}/close`, {
+      method: "PUT",
     }),
 };
 
@@ -77,23 +66,13 @@ export const rfqApi = {
 ===================================================== */
 
 export const quotationApi = {
-  list: (params?: {
-    rfqId?: number;
-    status?: string;
-  }) => {
-    const qs = new URLSearchParams();
-
-    if (typeof params?.rfqId === 'number') {
-      qs.append('rfqId', String(params.rfqId));
+  list: (params?: { rfqId?: number }) => {
+    if (typeof params?.rfqId !== 'number') {
+      return Promise.resolve([]); // 🔒 HARD GUARD
     }
 
-    if (typeof params?.status === 'string' && params.status.length > 0) {
-      qs.append('status', params.status);
-    }
-
-    const query = qs.toString();
     return apiClient.request(
-      query ? `/purchase/quotations?${query}` : `/purchase/quotations`
+      `/purchase/quotations?rfqId=${params.rfqId}`
     );
   },
 
@@ -117,28 +96,13 @@ export const quotationApi = {
 ===================================================== */
 
 export const poApi = {
-  list: (params?: {
-    projectId?: number;
-    supplierId?: number;
-    status?: string;
-  }) => {
-    const qs = new URLSearchParams();
-
-    if (typeof params?.projectId === 'number') {
-      qs.append('projectId', String(params.projectId));
+  list: (params?: { projectId?: number }) => {
+    if (typeof params?.projectId !== 'number') {
+      return Promise.resolve([]); // 🔒 HARD GUARD
     }
 
-    if (typeof params?.supplierId === 'number') {
-      qs.append('supplierId', String(params.supplierId));
-    }
-
-    if (typeof params?.status === 'string' && params.status.length > 0) {
-      qs.append('status', params.status);
-    }
-
-    const query = qs.toString();
     return apiClient.request(
-      query ? `/purchase/po?${query}` : `/purchase/po`
+      `/purchase/po?projectId=${params.projectId}`
     );
   },
 
@@ -157,28 +121,13 @@ export const poApi = {
 ===================================================== */
 
 export const purchaseBillApi = {
-  list: (params?: {
-    poId?: number;
-    supplierId?: number;
-    status?: string;
-  }) => {
-    const qs = new URLSearchParams();
-
-    if (typeof params?.poId === 'number') {
-      qs.append('poId', String(params.poId));
+  list: (params?: { projectId?: number }) => {
+    if (typeof params?.projectId !== 'number') {
+      return Promise.resolve([]); // 🔒 HARD GUARD
     }
 
-    if (typeof params?.supplierId === 'number') {
-      qs.append('supplierId', String(params.supplierId));
-    }
-
-    if (typeof params?.status === 'string' && params.status.length > 0) {
-      qs.append('status', params.status);
-    }
-
-    const query = qs.toString();
     return apiClient.request(
-      query ? `/purchase/bills?${query}` : `/purchase/bills`
+      `/purchase/bills?projectId=${params.projectId}`
     );
   },
 

@@ -23,9 +23,9 @@ import { KPICard } from '@/components/KPICard';
 import { formatCurrency } from '@/lib/utils/format';
 import {
   useRequisitions,
-  useQuotations,
   usePOs,
   usePurchaseBills,
+  useRFQs,
 } from '@/lib/hooks/usePurchase';
 import { useProjects } from '@/lib/hooks/useProjects';
 import { exportToCSV } from '@/lib/utils/export';
@@ -53,7 +53,7 @@ export default function PurchaseIndex() {
     { enabled: !!selectedProjectId }
   );
 
-  const { data: quotations = [], isLoading: loadingQuotations } = useQuotations(
+  const { data: rfqs = [], isLoading: loadingRFQs } = useRFQs(
     selectedProjectId ? { projectId: selectedProjectId } : undefined,
     { enabled: !!selectedProjectId }
   );
@@ -73,6 +73,8 @@ export default function PurchaseIndex() {
   const draftMRs = mrs.filter((m: any) => m.status === 'DRAFT').length;
   const submittedMRs = mrs.filter((m: any) => m.status === 'SUBMITTED').length;
 
+  const openRFQs = rfqs.filter((r: any) => r.status === 'OPEN').length;
+
   const createdPOs = pos.filter((p: any) => p.status === 'CREATED').length;
   const approvedPOs = pos.filter((p: any) => p.status === 'APPROVED').length;
 
@@ -89,28 +91,66 @@ export default function PurchaseIndex() {
   const handleExport = () => {
     exportToCSV(
       [
-        { Module: 'Material Requisitions', Total: mrs.length, Draft: draftMRs, Submitted: submittedMRs },
-        { Module: 'Quotations', Total: quotations.length },
-        { Module: 'Purchase Orders', Total: pos.length, Created: createdPOs, Approved: approvedPOs },
-        { Module: 'Approved PO Value', Amount: totalApprovedPOValue },
-        { Module: 'Purchase Bills', Pending: pendingBills },
+        {
+          Module: 'Material Requisitions',
+          Total: mrs.length,
+          Draft: draftMRs,
+          Submitted: submittedMRs,
+        },
+        {
+          Module: 'RFQs',
+          Open: openRFQs,
+          Total: rfqs.length,
+        },
+        {
+          Module: 'Purchase Orders',
+          Total: pos.length,
+          Created: createdPOs,
+          Approved: approvedPOs,
+        },
+        {
+          Module: 'Approved PO Value',
+          Amount: totalApprovedPOValue,
+        },
+        {
+          Module: 'Purchase Bills',
+          Pending: pendingBills,
+        },
       ],
       `purchase-overview-${new Date().toISOString().split('T')[0]}`
     );
   };
 
-  /* ===================== RECENTS (SORTED) ===================== */
+  /* ===================== RECENTS ===================== */
 
   const recentMRs = [...mrs]
-    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .sort(
+      (a: any, b: any) =>
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime()
+    )
+    .slice(0, 5);
+
+  const recentRFQs = [...rfqs]
+    .sort(
+      (a: any, b: any) =>
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime()
+    )
     .slice(0, 5);
 
   const recentPOs = [...pos]
-    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .sort(
+      (a: any, b: any) =>
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime()
+    )
     .slice(0, 5);
 
   const isLoading =
-    loadingProjects || (selectedProjectId && (loadingMRs || loadingQuotations || loadingPOs || loadingBills));
+    loadingProjects ||
+    (selectedProjectId &&
+      (loadingMRs || loadingRFQs || loadingPOs || loadingBills));
 
   /* ===================== UI ===================== */
 
@@ -124,6 +164,7 @@ export default function PurchaseIndex() {
             End-to-end procurement workflow
           </p>
         </div>
+
         <div className="flex items-center gap-3">
           <div className="w-64">
             <SearchableSelect
@@ -136,7 +177,12 @@ export default function PurchaseIndex() {
               disabled={loadingProjects}
             />
           </div>
-          <Button onClick={handleExport} variant="outline" disabled={!selectedProjectId || !!isLoading}>
+
+          <Button
+            onClick={handleExport}
+            variant="outline"
+            disabled={!selectedProjectId || !!isLoading}
+          >
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
@@ -148,7 +194,8 @@ export default function PurchaseIndex() {
         <Alert>
           <Building2 className="h-4 w-4" />
           <AlertDescription>
-            Please select a project to view purchase data. All purchase operations are project-specific.
+            Please select a project to view purchase data. All purchase
+            operations are project-specific.
           </AlertDescription>
         </Alert>
       )}
@@ -163,10 +210,10 @@ export default function PurchaseIndex() {
             icon={Clock}
           />
           <KPICard
-            title="Open POs"
-            value={createdPOs.toString()}
-            description="Pending approval"
-            icon={ShoppingCart}
+            title="Open RFQs"
+            value={openRFQs.toString()}
+            description="Awaiting quotations"
+            icon={Send}
           />
           <KPICard
             title="Approved POs"
@@ -185,35 +232,56 @@ export default function PurchaseIndex() {
 
       {/* Recent Activity */}
       {selectedProjectId && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent MRs */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Material Requisitions</CardTitle>
-              <CardDescription>Latest requests</CardDescription>
+              <CardTitle>Recent MRs</CardTitle>
             </CardHeader>
             <CardContent>
               {recentMRs.length ? (
-                <div className="space-y-3">
-                  {recentMRs.map((mr: any) => (
-                    <div
-                      key={mr.id}
-                      className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent"
-                      onClick={() => navigate(`/purchase/mrs/${mr.id}/view`)}
-                    >
-                      <div>
-                        <p className="font-medium">{mr.reqNo}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Status: {mr.status}
-                        </p>
-                      </div>
-                      <Badge variant="outline">{mr.status}</Badge>
-                    </div>
-                  ))}
-                </div>
+                recentMRs.map((mr: any) => (
+                  <div
+                    key={mr.id}
+                    className="flex justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent mb-2"
+                    onClick={() =>
+                      navigate(`/purchase/mrs/${mr.id}/view`)
+                    }
+                  >
+                    <span>{mr.reqNo}</span>
+                    <Badge variant="outline">{mr.status}</Badge>
+                  </div>
+                ))
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">
+                <p className="text-sm text-muted-foreground text-center py-4">
                   No MRs found
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recent RFQs */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent RFQs</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {recentRFQs.length ? (
+                recentRFQs.map((rfq: any) => (
+                  <div
+                    key={rfq.id}
+                    className="flex justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent mb-2"
+                    onClick={() =>
+                      navigate(`/purchase/rfqs/${rfq.id}`)
+                    }
+                  >
+                    <span>{rfq.rfqNo}</span>
+                    <Badge variant="outline">{rfq.status}</Badge>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No RFQs found
                 </p>
               )}
             </CardContent>
@@ -222,30 +290,22 @@ export default function PurchaseIndex() {
           {/* Recent POs */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Purchase Orders</CardTitle>
-              <CardDescription>Latest approved & created POs</CardDescription>
+              <CardTitle>Recent POs</CardTitle>
             </CardHeader>
             <CardContent>
               {recentPOs.length ? (
-                <div className="space-y-3">
-                  {recentPOs.map((po: any) => (
-                    <div
-                      key={po.id}
-                      className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent"
-                      onClick={() => navigate(`/purchase/pos/${po.id}`)}
-                    >
-                      <div>
-                        <p className="font-medium">{po.poNo}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatCurrency(po.totalAmount || 0)}
-                        </p>
-                      </div>
-                      <Badge variant="outline">{po.status}</Badge>
-                    </div>
-                  ))}
-                </div>
+                recentPOs.map((po: any) => (
+                  <div
+                    key={po.id}
+                    className="flex justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent mb-2"
+                    onClick={() => navigate(`/purchase/pos/${po.id}`)}
+                  >
+                    <span>{po.poNo}</span>
+                    <Badge variant="outline">{po.status}</Badge>
+                  </div>
+                ))
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">
+                <p className="text-sm text-muted-foreground text-center py-4">
                   No POs found
                 </p>
               )}
@@ -255,13 +315,38 @@ export default function PurchaseIndex() {
       )}
 
       {/* Module Navigation */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         {[
-          { title: 'Material Requisitions', icon: FileText, path: '/purchase/mrs', badge: selectedProjectId ? draftMRs : undefined },
-          { title: 'Quotations', icon: FileCheck, path: '/purchase/quotations' },
-          { title: 'Purchase Orders', icon: ShoppingCart, path: '/purchase/pos', badge: selectedProjectId ? createdPOs : undefined },
-          { title: 'Purchase Bills', icon: Receipt, path: '/purchase/bills', badge: selectedProjectId ? pendingBills : undefined },
-        ].map(m => (
+          {
+            title: 'Material Requisitions',
+            icon: FileText,
+            path: '/purchase/mrs',
+            badge: draftMRs,
+          },
+          {
+            title: 'RFQs',
+            icon: Send,
+            path: '/purchase/rfqs',
+            badge: openRFQs,
+          },
+          {
+            title: 'Quotations',
+            icon: FileCheck,
+            path: '/purchase/quotations',
+          },
+          {
+            title: 'Purchase Orders',
+            icon: ShoppingCart,
+            path: '/purchase/pos',
+            badge: createdPOs,
+          },
+          {
+            title: 'Purchase Bills',
+            icon: Receipt,
+            path: '/purchase/bills',
+            badge: pendingBills,
+          },
+        ].map((m) => (
           <Card
             key={m.path}
             className="cursor-pointer hover:shadow-md transition"
@@ -308,7 +393,8 @@ export default function PurchaseIndex() {
             <Badge variant="outline">5. Bill</Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-3">
-            ⚠️ Purchase is locked by Approved Budget & Final Estimate (Engineering)
+            ⚠️ Purchase is locked by Approved Budget & Final Estimate
+            (Engineering)
           </p>
         </CardContent>
       </Card>

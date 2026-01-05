@@ -34,11 +34,11 @@ import PurchaseIndex from "./pages/purchase/index";
 // import PODetails from "./pages/purchase/PODetails";
 // import POForm from "./pages/purchase/POForm";
 import MRList from "./pages/purchase/MRList";
-// import MRForm from "./pages/purchase/MRForm";
-// import MRDetails from "./pages/purchase/MRDetails";
-// import RFQList from "./pages/purchase/RFQList";
-// import RFQForm from "./pages/purchase/RFQForm";
-// import QuotationsList from "./pages/purchase/QuotationsList";
+import MRForm from "./pages/purchase/MRForm";
+import MRDetails from "./pages/purchase/MRDetails";
+import RFQList from "./pages/purchase/RFQList";
+import RFQForm from "./pages/purchase/RFQForm";
+import QuotationsList from "./pages/purchase/QuotationsList";
 // import QuotationForm from "./pages/purchase/QuotationForm";
 // import QuotationDetails from "./pages/purchase/QuotationDetails";
 // import ComparativeStatementList from "./pages/purchase/ComparativeStatementList";
@@ -145,6 +145,9 @@ import CostCentersList from "./pages/masters/CostCentersList";
 import CostCenterForm from "./pages/masters/CostCenterForm";
 import TaxesList from "./pages/masters/TaxesList";
 import TaxForm from "./pages/masters/TaxForm";
+import SupplierIndex from "./pages/supplier";
+import SupplierRFQList from "./pages/supplier/SupplierRFQList";
+import SupplierQuotationForm from "./pages/supplier/SupplierQuotationForm";
 
 const queryClient = new QueryClient();
 
@@ -258,24 +261,29 @@ const App = () => (
 
             <Route path="/purchase" element={<ProtectedRoute><AppLayout><PurchaseIndex /></AppLayout></ProtectedRoute>} />
             {/* ===== MATERIAL REQUISITIONS (MR) ===== */}
-            <Route path="/purchase/requisitions" element={<ProtectedRoute><AppLayout><MRList /></AppLayout></ProtectedRoute>} />
-            {/* <Route path="/purchase/requisitions/new" element={<ProtectedRoute><AppLayout><MRForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/purchase/requisitions/:id" element={<ProtectedRoute><AppLayout><MRDetails /></AppLayout></ProtectedRoute>} /> */}
+            <Route path="/purchase/mrs" element={<ProtectedRoute><AppLayout><MRList /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/mrs/new" element={<ProtectedRoute><AppLayout><MRForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/mrs/:id/view" element={<ProtectedRoute><AppLayout><MRDetails /></AppLayout></ProtectedRoute>} />
             {/* ===== RFQ ===== */}
-            {/* <Route path="/purchase/rfqs" element={<ProtectedRoute><AppLayout><RFQList /></AppLayout></ProtectedRoute>} />
-            <Route path="/purchase/rfqs/new" element={<ProtectedRoute><AppLayout><RFQForm /></AppLayout></ProtectedRoute>} /> */}
+            <Route path="/purchase/rfqs" element={<ProtectedRoute><AppLayout><RFQList /></AppLayout></ProtectedRoute>} />
+            <Route path="/purchase/rfqs/new" element={<ProtectedRoute><AppLayout><RFQForm /></AppLayout></ProtectedRoute>} />
             {/* ===== QUOTATIONS ===== */}
-            {/* <Route path="/purchase/quotations" element={<ProtectedRoute><AppLayout><QuotationsList /></AppLayout></ProtectedRoute>} />
-            <Route path="/purchase/quotations/new" element={<ProtectedRoute><AppLayout><QuotationForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/purchase/quotations/:id" element={<ProtectedRoute><AppLayout><QuotationDetails /></AppLayout></ProtectedRoute>} /> */}
+            <Route path="/purchase/quotations" element={<ProtectedRoute><AppLayout><QuotationsList /></AppLayout></ProtectedRoute>} />
+            {/* ===== SUPPLIER ===== */}
+            <Route path="/supplier" element={<ProtectedRoute><AppLayout><SupplierIndex /></AppLayout></ProtectedRoute>} />
+            <Route path="/supplier/rfqs" element={<ProtectedRoute><AppLayout><SupplierRFQList /></AppLayout></ProtectedRoute>} />
+            <Route path="/supplier/rfqs/:rfqId/quote" element={<ProtectedRoute><AppLayout><SupplierQuotationForm /></AppLayout></ProtectedRoute>} />
+            {/* <Route path="/supplier/quotations" element={<ProtectedRoute><AppLayout><SupplierQuotationList /></AppLayout></ProtectedRoute>} /> */}
+
+            {/* <Route path="/supplier/quotations" element={<ProtectedRoute><AppLayout><QuotationForm /></AppLayout></ProtectedRoute>} /> */}
+            {/* <Route path="/purchase/quotations/:id" element={<ProtectedRoute><AppLayout><QuotationDetails /></AppLayout></ProtectedRoute>} /> */}
             {/* ===== PURCHASE ORDERS ===== */}
-            {/* <Route path="/purchase/po" element={<ProtectedRoute><AppLayout><PurchaseOrdersList /></AppLayout></ProtectedRoute>} />
-            <Route path="/purchase/po/:id" element={<ProtectedRoute><AppLayout><PODetails /></AppLayout></ProtectedRoute>} /> */}
+            {/* <Route path="/purchase/po" element={<ProtectedRoute><AppLayout><PurchaseOrdersList /></AppLayout></ProtectedRoute>} /> */}
+            {/* <Route path="/purchase/po/:id" element={<ProtectedRoute><AppLayout><PODetails /></AppLayout></ProtectedRoute>} /> */}
             {/* ===== PURCHASE BILLS ===== */}
             {/* <Route path="/purchase/bills" element={<ProtectedRoute><AppLayout><PurchaseBillsList /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/bills/new" element={<ProtectedRoute><AppLayout><PurchaseBillForm /></AppLayout></ProtectedRoute>} />
             <Route path="/purchase/bills/:id" element={<ProtectedRoute><AppLayout><PurchaseBillDetails /></AppLayout></ProtectedRoute>} /> */}
-
 
             {/* -----------------------------
              * Contracts

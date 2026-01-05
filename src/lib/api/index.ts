@@ -16,8 +16,9 @@ export { inventoryApi } from './inventoryApi';
 export { qaqcApi } from './qaqcApi';
 export { partnersApi } from './partnersApi';
 export { materialMasterApi, mrFromBOQApi } from './materialMasterApi';
+export { supplierApi } from './supplierApi';
+
 export { 
-  supplierApi, 
   mrApi, 
   rfqApi,
   quotationApi, 

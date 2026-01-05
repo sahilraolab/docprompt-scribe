@@ -1,15 +1,40 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuotations, useApproveQuotation, useRejectQuotation, useCreatePO } from '@/lib/hooks/usePurchaseBackend';
+
+import { useProjects } from '@/lib/hooks/useProjects';
+import {
+  useRequisitions,
+  useRFQs,
+  useQuotations,
+  useApproveQuotation,
+  useCreatePO,
+} from '@/lib/hooks/usePurchase';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+} from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { formatCurrency, formatDate } from '@/lib/utils/format';
-import { exportData } from '@/lib/utils/export-enhanced';
-import { Plus, Search, FileText, Loader2, Download, Eye, CheckCircle, XCircle, ShoppingCart, Lock } from 'lucide-react';
+import { SearchableSelect } from '@/components/SearchableSelect';
+
+import { formatDate, formatCurrency } from '@/lib/utils/format';
+
+import {
+  Loader2,
+  Search,
+  FileText,
+  Eye,
+  CheckCircle,
+  ShoppingCart,
+  Building2,
+  Lock,
+} from 'lucide-react';
+
 import {
   Table,
   TableBody,
@@ -18,13 +43,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,264 +51,324 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+
 import { MoreHorizontal } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+
+/* =====================================================
+   COMPONENT
+===================================================== */
 
 export default function QuotationsList() {
   const navigate = useNavigate();
-  const { data, isLoading } = useQuotations();
+
+  /* =====================================================
+     PROJECT (MANDATORY)
+  ===================================================== */
+
+  const { data: projects = [], isLoading: loadingProjects } = useProjects();
+  const [projectId, setProjectId] = useState<number | null>(null);
+
+  const projectOptions = projects.map((p: any) => ({
+    value: String(p.id),
+    label: `${p.name} (${p.code})`,
+  }));
+
+  /* =====================================================
+     MATERIAL REQUISITIONS
+  ===================================================== */
+
+  const { data: mrs = [], isLoading: loadingMRs } = useRequisitions(
+    projectId ? { projectId } : undefined,
+    { enabled: !!projectId }
+  );
+
+  const [requisitionId, setRequisitionId] = useState<number | null>(null);
+
+  const mrOptions = mrs.map((mr: any) => ({
+    value: String(mr.id),
+    label: `${mr.reqNo} (${mr.status})`,
+  }));
+
+  /* =====================================================
+     RFQs
+  ===================================================== */
+
+  const { data: rfqs = [], isLoading: loadingRFQs } = useRFQs(
+    requisitionId ? { requisitionId } : undefined,
+    { enabled: !!requisitionId }
+  );
+
+  const [rfqId, setRfqId] = useState<number | null>(null);
+
+  const rfqOptions = rfqs.map((rfq: any) => ({
+    value: String(rfq.id),
+    label: `${rfq.rfqNo} (${rfq.status})`,
+  }));
+
+  /* =====================================================
+     QUOTATIONS (RFQ-SCOPED)
+  ===================================================== */
+
+  const {
+    data: quotations = [],
+    isLoading: loadingQuotations,
+  } = useQuotations(
+    rfqId ? { rfqId } : undefined,
+    { enabled: !!rfqId }
+  );
+
   const approveQuotation = useApproveQuotation();
-  const rejectQuotation = useRejectQuotation();
   const createPO = useCreatePO();
 
-  // Support both wrapped and direct data
-  const quotations = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+  /* =====================================================
+     UI STATE
+  ===================================================== */
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('date');
-  const [approveConfirm, setApproveConfirm] = useState<string | null>(null);
-  const [rejectConfirm, setRejectConfirm] = useState<string | null>(null);
-  const [createPOConfirm, setCreatePOConfirm] = useState<any | null>(null);
+  const [search, setSearch] = useState('');
+  const [approveId, setApproveId] = useState<number | null>(null);
+  const [createPOId, setCreatePOId] = useState<number | null>(null);
 
-  const calculateTotal = (quotation: any) =>
-    quotation.totalAmount ||
-    quotation.items?.reduce((sum: number, item: any) => sum + (item.amount || 0), 0) ||
-    0;
+  /* =====================================================
+     FILTER
+  ===================================================== */
 
-  const filteredQuotations = useMemo(() => {
-    return quotations
-      .map((q: any) => ({
-        ...q,
-        id: q._id || q.id,
-        supplierName: q.supplierId?.name || 'N/A',
-        rfqCode: q.rfqId?.rfqNo || q.mrId?.code || 'N/A',
-        total: calculateTotal(q),
-      }))
-      .filter((q: any) => {
-        const supplier = q.supplierName.toLowerCase();
-        const rfq = q.rfqCode.toLowerCase();
-        const query = searchQuery.toLowerCase();
-        const matchesSearch = supplier.includes(query) || rfq.includes(query) || (q.code || '').toLowerCase().includes(query);
-        const matchesStatus = statusFilter === 'all' || q.status === statusFilter;
-        return matchesSearch && matchesStatus;
-      })
-      .sort((a: any, b: any) => {
-        if (sortBy === 'date') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        if (sortBy === 'supplier') return a.supplierName.localeCompare(b.supplierName);
-        if (sortBy === 'amount') return b.total - a.total;
-        return 0;
-      });
-  }, [quotations, searchQuery, statusFilter, sortBy]);
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return quotations.filter((qt: any) =>
+      String(qt.supplierId).includes(q) ||
+      String(qt.id).includes(q)
+    );
+  }, [quotations, search]);
 
-  const handleExport = () => {
-    if (!filteredQuotations.length) return;
-    const rows = filteredQuotations.map((q: any) => ({
-      'Quotation Code': q.code,
-      'Supplier': q.supplierName,
-      'RFQ/MR Code': q.rfqCode,
-      'Date': formatDate(q.quotationDate || q.createdAt),
-      'Amount': formatCurrency(q.total),
-      'Status': q.status,
-    }));
-    exportData(rows, { filename: 'quotations', format: 'csv' });
-  };
+  /* =====================================================
+     LOADING STATES
+  ===================================================== */
 
-  const handleApprove = (id: string) => {
-    approveQuotation.mutate({ id }, {
-      onSuccess: () => setApproveConfirm(null),
-    });
-  };
+  const initialLoading = loadingProjects;
+  const tableLoading =
+    !!projectId &&
+    !!requisitionId &&
+    !!rfqId &&
+    loadingQuotations;
 
-  const handleReject = (id: string) => {
-    rejectQuotation.mutate({ id }, {
-      onSuccess: () => setRejectConfirm(null),
-    });
-  };
-
-  const handleCreatePO = (quotation: any) => {
-    createPO.mutate({ quotationId: quotation.id }, {
-      onSuccess: () => {
-        setCreatePOConfirm(null);
-        navigate('/purchase/pos');
-      },
-    });
-  };
-
-  const isLocked = (status: string) => status === 'APPROVED' || status === 'REJECTED' || status === 'Selected' || status === 'Rejected';
-
-  if (isLoading)
+  if (initialLoading) {
     return (
-      <div className="flex justify-center py-10">
+      <div className="flex justify-center py-12">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
+  }
+
+  /* =====================================================
+     UI
+  ===================================================== */
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Quotations</h1>
-          <p className="text-muted-foreground">Manage supplier quotations and approvals</p>
-        </div>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" /> Export
-          </Button>
-          <Button onClick={() => navigate('/purchase/quotations/new')}>
-            <Plus className="h-4 w-4 mr-2" /> New Quotation
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold">Quotations</h1>
+        <p className="text-muted-foreground">
+          Supplier quotations received against RFQs
+        </p>
       </div>
 
+      {/* Filters */}
       <Card>
-        <CardHeader>
-          <div className="flex gap-4 flex-wrap">
-            <div className="relative flex-1 min-w-[250px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by supplier, code, or RFQ..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="SUBMITTED">Submitted</SelectItem>
-                <SelectItem value="APPROVED">Approved</SelectItem>
-                <SelectItem value="REJECTED">Rejected</SelectItem>
-                <SelectItem value="Draft">Draft</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="date">Date</SelectItem>
-                <SelectItem value="supplier">Supplier</SelectItem>
-                <SelectItem value="amount">Amount</SelectItem>
-              </SelectContent>
-            </Select>
+        <CardHeader className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <SearchableSelect
+            options={projectOptions}
+            value={projectId ? String(projectId) : undefined}
+            onChange={(val) => {
+              setProjectId(Number(val));
+              setRequisitionId(null);
+              setRfqId(null);
+            }}
+            placeholder="Select Project..."
+          />
+
+          <SearchableSelect
+            options={mrOptions}
+            value={requisitionId ? String(requisitionId) : undefined}
+            onChange={(val) => {
+              setRequisitionId(Number(val));
+              setRfqId(null);
+            }}
+            disabled={!projectId || loadingMRs}
+            placeholder="Select Material Requisition..."
+          />
+
+          <SearchableSelect
+            options={rfqOptions}
+            value={rfqId ? String(rfqId) : undefined}
+            onChange={(val) => setRfqId(Number(val))}
+            disabled={!requisitionId || loadingRFQs}
+            placeholder="Select RFQ..."
+          />
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-10"
+              placeholder="Search quotations..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              disabled={!rfqId}
+            />
           </div>
         </CardHeader>
-        <CardContent>
-          {filteredQuotations.length ? (
-            <div className="border rounded-md overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Supplier</TableHead>
-                    <TableHead>RFQ/MR</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredQuotations.map((q: any) => (
-                    <TableRow key={q.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          {q.code}
-                          {isLocked(q.status) && <Lock className="h-3 w-3 text-muted-foreground" />}
-                        </div>
-                      </TableCell>
-                      <TableCell>{q.supplierName}</TableCell>
-                      <TableCell>{q.rfqCode}</TableCell>
-                      <TableCell>{formatDate(q.quotationDate || q.createdAt)}</TableCell>
-                      <TableCell className="font-medium">{formatCurrency(q.total)}</TableCell>
-                      <TableCell><StatusBadge status={q.status} /></TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => navigate(`/purchase/quotations/${q.id}/view`)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              View Details
-                            </DropdownMenuItem>
-                            
-                            {(q.status === 'SUBMITTED' || q.status === 'Draft') && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => setApproveConfirm(q.id)}>
-                                  <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                                  Approve
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setRejectConfirm(q.id)} className="text-destructive">
-                                  <XCircle className="h-4 w-4 mr-2" />
-                                  Reject
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                            
-                            {(q.status === 'APPROVED' || q.status === 'Selected') && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => setCreatePOConfirm(q)}>
-                                  <ShoppingCart className="h-4 w-4 mr-2 text-primary" />
-                                  Create PO
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <EmptyState
-              icon={FileText}
-              title="No quotations found"
-              description="Create a new quotation to get started."
-            />
-          )}
-        </CardContent>
       </Card>
 
-      {/* Approve Dialog */}
+      {/* Empty States */}
+      {!projectId && (
+        <EmptyState
+          icon={Building2}
+          title="Select a Project"
+          description="Quotations are project-specific"
+        />
+      )}
+
+      {projectId && requisitionId && rfqId && (
+        <Card>
+          <CardContent>
+            {tableLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : filtered.length ? (
+              <div className="border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Supplier</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">
+                        Actions
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+
+                  <TableBody>
+                    {filtered.map((q: any) => (
+                      <TableRow key={q.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            {q.id}
+                            {(q.status === 'APPROVED' ||
+                              q.status === 'REJECTED') && (
+                              <Lock className="h-3 w-3 text-muted-foreground" />
+                            )}
+                          </div>
+                        </TableCell>
+
+                        <TableCell>{q.supplierId}</TableCell>
+                        <TableCell>{formatDate(q.createdAt)}</TableCell>
+                        <TableCell>
+                          {formatCurrency(q.totalAmount)}
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={q.status} />
+                        </TableCell>
+
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  navigate(
+                                    `/purchase/quotations/${q.id}`
+                                  )
+                                }
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                View
+                              </DropdownMenuItem>
+
+                              {q.status === 'SUBMITTED' && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      setApproveId(q.id)
+                                    }
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                                    Approve
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+
+                              {q.status === 'APPROVED' && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      setCreatePOId(q.id)
+                                    }
+                                  >
+                                    <ShoppingCart className="h-4 w-4 mr-2 text-primary" />
+                                    Create PO
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <EmptyState
+                icon={FileText}
+                title="No quotations found"
+                description="Suppliers have not submitted quotations yet"
+              />
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Approve */}
       <ConfirmDialog
-        open={!!approveConfirm}
-        onOpenChange={() => setApproveConfirm(null)}
+        open={!!approveId}
+        onOpenChange={() => setApproveId(null)}
         title="Approve Quotation"
-        description="This will approve the quotation and close the associated RFQ. You can then create a Purchase Order from this quotation."
+        description="Approving will close the RFQ and lock this quotation."
         confirmText="Approve"
-        onConfirm={() => approveConfirm && handleApprove(approveConfirm)}
+        onConfirm={() =>
+          approveId &&
+          approveQuotation.mutate(approveId, {
+            onSuccess: () => setApproveId(null),
+          })
+        }
       />
 
-      {/* Reject Dialog */}
+      {/* Create PO */}
       <ConfirmDialog
-        open={!!rejectConfirm}
-        onOpenChange={() => setRejectConfirm(null)}
-        title="Reject Quotation"
-        description="Are you sure you want to reject this quotation? This action cannot be undone."
-        confirmText="Reject"
-        variant="destructive"
-        onConfirm={() => rejectConfirm && handleReject(rejectConfirm)}
-      />
-
-      {/* Create PO Dialog */}
-      <ConfirmDialog
-        open={!!createPOConfirm}
-        onOpenChange={() => setCreatePOConfirm(null)}
+        open={!!createPOId}
+        onOpenChange={() => setCreatePOId(null)}
         title="Create Purchase Order"
-        description={`Create a Purchase Order from quotation ${createPOConfirm?.code || ''}? This will generate a new PO with the quoted items and prices.`}
+        description="Create PO from this approved quotation?"
         confirmText="Create PO"
-        onConfirm={() => createPOConfirm && handleCreatePO(createPOConfirm)}
+        onConfirm={() =>
+          createPOId &&
+          createPO.mutate(createPOId, {
+            onSuccess: () => {
+              setCreatePOId(null);
+              navigate('/purchase/pos');
+            },
+          })
+        }
       />
     </div>
   );

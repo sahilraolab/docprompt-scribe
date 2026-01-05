@@ -1,18 +1,41 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/SearchableSelect';
-import { useCreateRFQ, useMRs, useSuppliers, useRFQ, useUpdateRFQ } from '@/lib/hooks/usePurchaseBackend';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+
 import { ArrowLeft, Loader2, Save } from 'lucide-react';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+
+import { useProjects } from '@/lib/hooks/useProjects';
+import { useRequisitions, useCreateRFQ } from '@/lib/hooks/usePurchase';
+import { useMasterSuppliers } from '@/lib/hooks/useMasters';
+
+import { toast } from 'sonner';
+
+/* =====================================================
+   VALIDATION
+===================================================== */
 
 const rfqSchema = z.object({
+  projectId: z.string().min(1, 'Project is required'),
   requisitionId: z.string().min(1, 'Material Requisition is required'),
   supplierId: z.string().min(1, 'Supplier is required'),
   closingDate: z.string().optional(),
@@ -20,71 +43,93 @@ const rfqSchema = z.object({
 
 type RFQFormData = z.infer<typeof rfqSchema>;
 
+/* =====================================================
+   COMPONENT
+===================================================== */
+
 export default function RFQForm() {
-  const { id } = useParams();
   const navigate = useNavigate();
-  const isEditing = Boolean(id);
 
-  const { data: rfqData, isLoading: loadingRFQ } = useRFQ(id || '');
-  const { data: mrs = [], isLoading: loadingMRs } = useMRs();
-  const { data: suppliers = [], isLoading: loadingSuppliers } = useSuppliers();
+  /* ===================== DATA ===================== */
+
+  const { data: projects = [], isLoading: loadingProjects } = useProjects();
+  const { data: suppliers = [], isLoading: loadingSuppliers } =
+    useMasterSuppliers();
+
   const createRFQ = useCreateRFQ();
-  const updateRFQ = useUpdateRFQ();
 
-  // Filter MRs that are SUBMITTED or APPROVED (eligible for RFQ)
-  const eligibleMRs = mrs.filter((mr: any) => 
-    mr.status === 'SUBMITTED' || mr.status === 'APPROVED' || mr.status === 'Approved'
-  );
-
-  const mrOptions = eligibleMRs.map((mr: any) => ({
-    value: mr._id || mr.id,
-    label: `${mr.code} - ${mr.projectId?.name || 'N/A'}`,
-  }));
-
-  const supplierOptions = suppliers.map((s: any) => ({
-    value: s._id || s.id,
-    label: s.name,
-  }));
+  /* ===================== FORM ===================== */
 
   const form = useForm<RFQFormData>({
     resolver: zodResolver(rfqSchema),
     defaultValues: {
+      projectId: '',
       requisitionId: '',
       supplierId: '',
       closingDate: '',
     },
   });
 
-  useEffect(() => {
-    if (rfqData && isEditing) {
-      const rfq = rfqData.data || rfqData;
-      form.reset({
-        requisitionId: rfq.requisitionId?._id || rfq.requisitionId || '',
-        supplierId: rfq.supplierId?._id || rfq.supplierId || '',
-        closingDate: rfq.closingDate?.slice(0, 10) || '',
-      });
-    }
-  }, [rfqData, isEditing, form]);
+  const projectId = form.watch('projectId');
+
+  /* ===================== MRs (PROJECT-SCOPED) ===================== */
+
+  const { data: mrs = [], isLoading: loadingMRs } = useRequisitions(
+    projectId ? { projectId: Number(projectId) } : undefined,
+    { enabled: !!projectId }
+  );
+
+  /* ===================== FILTER ELIGIBLE MRs ===================== */
+
+  const eligibleMRs = useMemo(
+    () =>
+      mrs.filter(
+        (mr: any) =>
+          mr.status === 'SUBMITTED' || mr.status === 'APPROVED'
+      ),
+    [mrs]
+  );
+
+  /* ===================== OPTIONS ===================== */
+
+  const projectOptions = projects.map((p: any) => ({
+    value: String(p.id),
+    label: `${p.name} (${p.code})`,
+  }));
+
+  const mrOptions = eligibleMRs.map((mr: any) => ({
+    value: String(mr.id),
+    label: `${mr.reqNo} (${mr.status})`,
+  }));
+
+  const supplierOptions = suppliers.map((s: any) => ({
+    value: String(s.id),
+    label: s.name,
+  }));
+
+  /* ===================== SUBMIT ===================== */
 
   const onSubmit = (data: RFQFormData) => {
-    const payload = {
-      ...data,
-      closingDate: data.closingDate || undefined,
-    };
-
-    if (isEditing) {
-      updateRFQ.mutate({ id: id!, data: payload }, {
-        onSuccess: () => navigate('/purchase/rfqs'),
-      });
-    } else {
-      createRFQ.mutate(payload, {
-        onSuccess: () => navigate('/purchase/rfqs'),
-      });
-    }
+    createRFQ.mutate(
+      {
+        requisitionId: Number(data.requisitionId),
+        supplierId: Number(data.supplierId),
+        closingDate: data.closingDate || undefined,
+      },
+      {
+        onSuccess: () => {
+          toast.success('RFQ created successfully');
+          navigate('/purchase/rfqs');
+        },
+      }
+    );
   };
 
-  const isLoading = loadingMRs || loadingSuppliers || (isEditing && loadingRFQ);
-  const isSaving = createRFQ.isPending || updateRFQ.isPending;
+  /* ===================== LOADING ===================== */
+
+  const isLoading =
+    loadingProjects || loadingSuppliers || (projectId && loadingMRs);
+  const isSaving = createRFQ.isPending;
 
   if (isLoading) {
     return (
@@ -94,28 +139,65 @@ export default function RFQForm() {
     );
   }
 
+  /* ===================== UI ===================== */
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/purchase/rfqs')}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/purchase/rfqs')}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
+
         <div>
-          <h1 className="text-3xl font-bold">{isEditing ? 'Edit RFQ' : 'Create RFQ'}</h1>
+          <h1 className="text-3xl font-bold">Create RFQ</h1>
           <p className="text-muted-foreground">
-            {isEditing ? 'Update RFQ details' : 'Send request for quotation to a supplier'}
+            Send request for quotation to supplier
           </p>
         </div>
       </div>
 
+      {/* Form */}
       <Card>
         <CardHeader>
           <CardTitle>RFQ Details</CardTitle>
         </CardHeader>
+
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-6"
+            >
               <div className="grid gap-6 md:grid-cols-2">
+                {/* Project */}
+                <FormField
+                  control={form.control}
+                  name="projectId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project *</FormLabel>
+                      <FormControl>
+                        <SearchableSelect
+                          options={projectOptions}
+                          value={field.value}
+                          onChange={(val) => {
+                            field.onChange(val);
+                            form.setValue('requisitionId', '');
+                          }}
+                          placeholder="Select project..."
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* MR */}
                 <FormField
                   control={form.control}
                   name="requisitionId"
@@ -127,9 +209,13 @@ export default function RFQForm() {
                           options={mrOptions}
                           value={field.value}
                           onChange={field.onChange}
-                          placeholder="Select MR..."
-                          emptyMessage="No eligible MRs (must be SUBMITTED)"
-                          disabled={isEditing}
+                          placeholder={
+                            projectId
+                              ? 'Select MR...'
+                              : 'Select project first'
+                          }
+                          disabled={!projectId}
+                          emptyMessage="No SUBMITTED / APPROVED MRs"
                         />
                       </FormControl>
                       <FormMessage />
@@ -137,6 +223,7 @@ export default function RFQForm() {
                   )}
                 />
 
+                {/* Supplier */}
                 <FormField
                   control={form.control}
                   name="supplierId"
@@ -149,7 +236,6 @@ export default function RFQForm() {
                           value={field.value}
                           onChange={field.onChange}
                           placeholder="Select supplier..."
-                          emptyMessage="No suppliers found"
                         />
                       </FormControl>
                       <FormMessage />
@@ -157,6 +243,7 @@ export default function RFQForm() {
                   )}
                 />
 
+                {/* Closing Date */}
                 <FormField
                   control={form.control}
                   name="closingDate"
@@ -172,13 +259,21 @@ export default function RFQForm() {
                 />
               </div>
 
+              {/* Actions */}
               <div className="flex gap-4">
                 <Button type="submit" disabled={isSaving}>
-                  {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {isSaving && (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  )}
                   <Save className="h-4 w-4 mr-2" />
-                  {isEditing ? 'Update RFQ' : 'Create RFQ'}
+                  Create RFQ
                 </Button>
-                <Button type="button" variant="outline" onClick={() => navigate('/purchase/rfqs')}>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate('/purchase/rfqs')}
+                >
                   Cancel
                 </Button>
               </div>
@@ -187,14 +282,15 @@ export default function RFQForm() {
         </CardContent>
       </Card>
 
-      {/* Info Card */}
+      {/* Info */}
       <Card>
         <CardContent className="pt-6">
           <p className="text-sm text-muted-foreground">
-            <strong>Note:</strong> RFQs can only be created for Material Requisitions with status 
-            <span className="font-medium text-foreground"> SUBMITTED</span> or 
-            <span className="font-medium text-foreground"> APPROVED</span>. 
-            Once an RFQ is created, suppliers can submit their quotations.
+            <strong>Note:</strong> RFQs can only be created for Material
+            Requisitions with status{' '}
+            <span className="font-medium text-foreground">SUBMITTED</span>{' '}
+            or{' '}
+            <span className="font-medium text-foreground">APPROVED</span>.
           </p>
         </CardContent>
       </Card>

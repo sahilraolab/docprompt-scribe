@@ -56,6 +56,14 @@ const MAIN_NAV = [
     icon: ShoppingCart,
     permissions: ['purchase.view'],
   },
+
+  {
+    title: 'Supplier',
+    url: '/supplier',
+    icon: FileText,
+    permissions: ['supplier.view'],
+  },
+
   {
     title: 'Inventory',
     url: '/inventory',

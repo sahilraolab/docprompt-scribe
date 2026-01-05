@@ -1,28 +1,33 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   requisitionApi,
   rfqApi,
   quotationApi,
   poApi,
   purchaseBillApi,
-} from '@/lib/api/purchaseApi';
-import { toast } from 'sonner';
+} from "@/lib/api/purchaseApi";
+import { toast } from "sonner";
 
 /* =====================================================
    REQUISITION
 ===================================================== */
 
-export function useRequisitions(params?: any, options?: { enabled?: boolean }) {
+export function useRequisitions(
+  params?: { projectId?: number },
+  options?: { enabled?: boolean }
+) {
+  const enabled = options?.enabled ?? Boolean(params?.projectId);
+
   return useQuery({
-    queryKey: ['requisitions', params],
+    queryKey: ["requisitions", params?.projectId],
     queryFn: () => requisitionApi.list(params),
-    enabled: options?.enabled ?? true,
+    enabled,
   });
 }
 
 export function useRequisition(id?: number) {
   return useQuery({
-    queryKey: ['requisition', id],
+    queryKey: ["requisition", id],
     queryFn: () => requisitionApi.getById(id!),
     enabled: !!id,
   });
@@ -33,8 +38,8 @@ export function useCreateRequisition() {
   return useMutation({
     mutationFn: requisitionApi.create,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['requisitions'] });
-      toast.success('Requisition created');
+      qc.invalidateQueries({ queryKey: ["requisitions"] });
+      toast.success("Requisition created");
     },
   });
 }
@@ -44,8 +49,8 @@ export function useSubmitRequisition() {
   return useMutation({
     mutationFn: requisitionApi.submit,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['requisitions'] });
-      toast.success('Requisition submitted');
+      qc.invalidateQueries({ queryKey: ["requisitions"] });
+      toast.success("Requisition submitted");
     },
   });
 }
@@ -54,10 +59,16 @@ export function useSubmitRequisition() {
    RFQ
 ===================================================== */
 
-export function useRFQs(params?: any) {
+export function useRFQs(
+  params?: { requisitionId?: number },
+  options?: { enabled?: boolean }
+) {
+  const enabled = options?.enabled ?? Boolean(params?.requisitionId);
+
   return useQuery({
-    queryKey: ['rfqs', params],
+    queryKey: ["rfqs", params?.requisitionId],
     queryFn: () => rfqApi.list(params),
+    enabled,
   });
 }
 
@@ -66,27 +77,48 @@ export function useCreateRFQ() {
   return useMutation({
     mutationFn: rfqApi.create,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['rfqs'] });
-      toast.success('RFQ created');
+      qc.invalidateQueries({ queryKey: ["rfqs"] });
+      toast.success("RFQ created");
     },
   });
 }
+
+export function useCloseRFQ() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => rfqApi.close(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['rfqs'] });
+      toast.success('RFQ closed successfully');
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Failed to close RFQ');
+    },
+  });
+}
+
 
 /* =====================================================
    QUOTATION
 ===================================================== */
 
-export function useQuotations(params?: any, options?: { enabled?: boolean }) {
+export function useQuotations(
+  params?: { rfqId?: number },
+  options?: { enabled?: boolean }
+) {
+  const enabled = options?.enabled ?? Boolean(params?.rfqId);
+
   return useQuery({
-    queryKey: ['quotations', params],
+    queryKey: ["quotations", params?.rfqId],
     queryFn: () => quotationApi.list(params),
-    enabled: options?.enabled ?? true,
+    enabled,
   });
 }
 
 export function useQuotation(id?: number) {
   return useQuery({
-    queryKey: ['quotation', id],
+    queryKey: ["quotation", id],
     queryFn: () => quotationApi.getById(id!),
     enabled: !!id,
   });
@@ -97,8 +129,8 @@ export function useCreateQuotation() {
   return useMutation({
     mutationFn: quotationApi.create,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['quotations'] });
-      toast.success('Quotation submitted');
+      qc.invalidateQueries({ queryKey: ["quotations"] });
+      toast.success("Quotation submitted");
     },
   });
 }
@@ -108,8 +140,8 @@ export function useApproveQuotation() {
   return useMutation({
     mutationFn: quotationApi.approve,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['quotations'] });
-      toast.success('Quotation approved');
+      qc.invalidateQueries({ queryKey: ["quotations"] });
+      toast.success("Quotation approved");
     },
   });
 }
@@ -118,17 +150,22 @@ export function useApproveQuotation() {
    PURCHASE ORDER
 ===================================================== */
 
-export function usePOs(params?: any, options?: { enabled?: boolean }) {
+export function usePOs(
+  params?: { projectId?: number },
+  options?: { enabled?: boolean }
+) {
+  const enabled = options?.enabled ?? Boolean(params?.projectId);
+
   return useQuery({
-    queryKey: ['pos', params],
+    queryKey: ["pos", params?.projectId],
     queryFn: () => poApi.list(params),
-    enabled: options?.enabled ?? true,
+    enabled,
   });
 }
 
 export function usePO(id?: number) {
   return useQuery({
-    queryKey: ['po', id],
+    queryKey: ["po", id],
     queryFn: () => poApi.getById(id!),
     enabled: !!id,
   });
@@ -139,8 +176,8 @@ export function useCreatePO() {
   return useMutation({
     mutationFn: poApi.create,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['pos'] });
-      toast.success('PO created & sent for approval');
+      qc.invalidateQueries({ queryKey: ["pos"] });
+      toast.success("PO created & sent for approval");
     },
   });
 }
@@ -149,17 +186,22 @@ export function useCreatePO() {
    PURCHASE BILL
 ===================================================== */
 
-export function usePurchaseBills(params?: any, options?: { enabled?: boolean }) {
+export function usePurchaseBills(
+  params?: { projectId?: number },
+  options?: { enabled?: boolean }
+) {
+  const enabled = options?.enabled ?? Boolean(params?.projectId);
+
   return useQuery({
-    queryKey: ['purchaseBills', params],
+    queryKey: ["purchaseBills", params?.projectId],
     queryFn: () => purchaseBillApi.list(params),
-    enabled: options?.enabled ?? true,
+    enabled,
   });
 }
 
 export function usePurchaseBill(id?: number) {
   return useQuery({
-    queryKey: ['purchaseBill', id],
+    queryKey: ["purchaseBill", id],
     queryFn: () => purchaseBillApi.getById(id!),
     enabled: !!id,
   });
@@ -170,8 +212,8 @@ export function useCreatePurchaseBill() {
   return useMutation({
     mutationFn: purchaseBillApi.create,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['purchaseBills'] });
-      toast.success('Purchase bill created');
+      qc.invalidateQueries({ queryKey: ["purchaseBills"] });
+      toast.success("Purchase bill created");
     },
   });
 }
@@ -181,8 +223,8 @@ export function usePostPurchaseBill() {
   return useMutation({
     mutationFn: purchaseBillApi.postToAccounts,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['purchaseBills'] });
-      toast.success('Bill posted to accounts');
+      qc.invalidateQueries({ queryKey: ["purchaseBills"] });
+      toast.success("Bill posted to accounts");
     },
   });
 }
