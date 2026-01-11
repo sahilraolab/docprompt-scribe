@@ -54,7 +54,7 @@ export default function ComplianceList() {
 
       for (const project of projects) {
         try {
-          const res = await complianceApi.getByProject(project.id);
+          const res = await complianceApi.list(project.id);
           map[project.id] = Array.isArray(res) ? res : [];
         } catch {
           map[project.id] = [];

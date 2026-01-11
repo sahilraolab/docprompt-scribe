@@ -38,8 +38,9 @@ const versionSchema = z.object({
   amount: z.string().min(1, 'Amount is required')
 });
 
-
-type FormData = z.infer<typeof schema>;
+type CreateFormData = z.infer<typeof createSchema>;
+type VersionFormData = z.infer<typeof versionSchema>;
+type FormData = CreateFormData & Partial<VersionFormData>;
 
 export default function EstimateForm() {
   const navigate = useNavigate();

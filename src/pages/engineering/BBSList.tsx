@@ -84,7 +84,7 @@ export default function BBSList() {
     (async () => {
       try {
         setLoading(true);
-        const data = await bbsApi.getByProject(projectId);
+        const data = await bbsApi.list(projectId);
         setBBSList(Array.isArray(data) ? data : []);
       } catch {
         toast.error('Failed to load BBS records');

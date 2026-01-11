@@ -63,7 +63,7 @@ export default function DrawingsList() {
 
       for (const project of projects) {
         try {
-          const res = await drawingsApi.getByProject(project.id);
+          const res = await drawingsApi.list(project.id);
           map[project.id] = Array.isArray(res) ? res : [];
         } catch {
           map[project.id] = [];
@@ -80,7 +80,7 @@ export default function DrawingsList() {
   const handleApprove = () => {
     if (!approveId) return;
 
-    approveDrawing.mutate(String(approveId), {
+    approveDrawing.mutate(approveId, {
       onSuccess: () => {
         toast.success('Drawing approved');
         setApproveId(null);
@@ -231,10 +231,9 @@ export default function DrawingsList() {
                         )}
 
                         {isApproved && (
-                          <Lock
-                            className="h-4 w-4 text-muted-foreground inline"
-                            title="Approved & Locked"
-                          />
+                          <span title="Approved & Locked">
+                            <Lock className="h-4 w-4 text-muted-foreground inline" />
+                          </span>
                         )}
                       </TableCell>
                     </TableRow>

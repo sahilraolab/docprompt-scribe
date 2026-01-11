@@ -77,7 +77,7 @@ export default function EstimatesList() {
     (async () => {
       try {
         setLoading(true);
-        const data = await estimatesApi.getByProject(projectId);
+        const data = await estimatesApi.list(projectId);
         setEstimates(Array.isArray(data) ? data : []);
       } catch {
         toast.error('Failed to load estimates');

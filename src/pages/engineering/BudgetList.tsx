@@ -81,7 +81,7 @@ export default function BudgetList() {
   const handleApprove = () => {
     if (!approveId) return;
 
-    approveBudget.mutate(String(approveId), {
+    approveBudget.mutate(approveId, {
       onSuccess: () => {
         toast.success('Budget approved');
         setApproveId(null);

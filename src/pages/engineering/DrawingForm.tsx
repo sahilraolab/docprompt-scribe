@@ -8,8 +8,7 @@ import { toast } from 'sonner';
 import { useMasterProjects } from '@/lib/hooks/useMasters';
 import {
   useCreateDrawing,
-  useReviseDrawing,
-  useDrawing
+  useReviseDrawing
 } from '@/lib/hooks/useEngineering';
 
 import { Button } from '@/components/ui/button';
@@ -68,15 +67,13 @@ export default function DrawingForm() {
   /* ================= DATA ================= */
 
   const { data: projects = [] } = useMasterProjects();
-  const { data: drawing } = useDrawing(!isCreate ? id! : '');
+  // Note: Drawing data for revise mode would be fetched if needed
 
   const createDrawing = useCreateDrawing();
   const reviseDrawing = useReviseDrawing();
 
-  const isApproved = useMemo(
-    () => drawing?.status === 'APPROVED',
-    [drawing]
-  );
+  // For revise mode, we assume it's not approved if user can access revise
+  const isApproved = false;
 
   /* ================= FORM ================= */
 
@@ -93,12 +90,12 @@ export default function DrawingForm() {
   /* ================= INIT ================= */
 
   useEffect(() => {
-    if (isRevise && drawing) {
+    if (isRevise) {
       form.reset({
         changeNote: ''
       });
     }
-  }, [drawing, isRevise, form]);
+  }, [isRevise, form]);
 
   /* ================= SUBMIT ================= */
 

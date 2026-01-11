@@ -46,7 +46,7 @@ export default function BudgetForm() {
   const onSubmit = async (data: BudgetFormData) => {
     try {
       // 🔒 Prevent duplicate budget creation
-      const existing = await budgetApi.getByProject(data.projectId);
+      const existing = await budgetApi.getByProject(Number(data.projectId));
       if (existing) {
         toast.error('Budget already exists for selected project');
         return;
