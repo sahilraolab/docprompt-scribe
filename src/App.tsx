@@ -71,16 +71,27 @@ import DCNotesList from "./pages/contracts/DCNotesList";
 import SiteIndex from "./pages/site/index";
 import ItemsList from "./pages/site/ItemsList";
 import ItemForm from "./pages/site/ItemForm";
-import StockList from "./pages/site/StockList";
-import GRNList from "./pages/site/GRNList";
-import GRNForm from "./pages/site/GRNForm";
-import IssuesList from "./pages/site/IssuesList";
-import IssueForm from "./pages/site/IssueForm";
-import TransfersList from "./pages/site/TransfersList";
-import TransferForm from "./pages/site/TransferForm";
+import SiteStockList from "./pages/site/StockList";
+import SiteGRNList from "./pages/site/GRNList";
+import SiteGRNForm from "./pages/site/GRNForm";
+import SiteIssuesList from "./pages/site/IssuesList";
+import SiteIssueForm from "./pages/site/IssueForm";
+import SiteTransfersList from "./pages/site/TransfersList";
+import SiteTransferForm from "./pages/site/TransferForm";
 import QCList from "./pages/site/QCList";
 import QCForm from "./pages/site/QCForm";
 import ItemDetails from "./pages/site/ItemDetails";
+
+// Inventory
+import InventoryIndex from "./pages/inventory/index";
+import InventoryGRNList from "./pages/inventory/GRNList";
+import InventoryGRNForm from "./pages/inventory/GRNForm";
+import InventoryIssuesList from "./pages/inventory/IssuesList";
+import InventoryIssueForm from "./pages/inventory/IssueForm";
+import InventoryTransfersList from "./pages/inventory/TransfersList";
+import InventoryTransferForm from "./pages/inventory/TransferForm";
+import InventoryStockList from "./pages/inventory/StockList";
+import InventoryStockLedger from "./pages/inventory/StockLedger";
 
 // Other modules
 import Notifications from "./pages/notifications/index";
@@ -315,19 +326,35 @@ const App = () => (
             <Route path="/site/items/new" element={<ProtectedRoute><AppLayout><ItemForm /></AppLayout></ProtectedRoute>} />
             <Route path="/site/items/:id/view" element={<ProtectedRoute><AppLayout><ItemDetails /></AppLayout></ProtectedRoute>} />
             <Route path="/site/items/:id" element={<ProtectedRoute><AppLayout><ItemForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/site/stock" element={<ProtectedRoute><AppLayout><StockList /></AppLayout></ProtectedRoute>} />
-            <Route path="/site/grn" element={<ProtectedRoute><AppLayout><GRNList /></AppLayout></ProtectedRoute>} />
-            <Route path="/site/grn/new" element={<ProtectedRoute><AppLayout><GRNForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/site/grn/:id" element={<ProtectedRoute><AppLayout><GRNForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/site/issues" element={<ProtectedRoute><AppLayout><IssuesList /></AppLayout></ProtectedRoute>} />
-            <Route path="/site/issues/new" element={<ProtectedRoute><AppLayout><IssueForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/site/issues/:id" element={<ProtectedRoute><AppLayout><IssueForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/site/transfers" element={<ProtectedRoute><AppLayout><TransfersList /></AppLayout></ProtectedRoute>} />
-            <Route path="/site/transfers/new" element={<ProtectedRoute><AppLayout><TransferForm /></AppLayout></ProtectedRoute>} />
-            <Route path="/site/transfers/:id" element={<ProtectedRoute><AppLayout><TransferForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/stock" element={<ProtectedRoute><AppLayout><SiteStockList /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/grn" element={<ProtectedRoute><AppLayout><SiteGRNList /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/grn/new" element={<ProtectedRoute><AppLayout><SiteGRNForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/grn/:id" element={<ProtectedRoute><AppLayout><SiteGRNForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/issues" element={<ProtectedRoute><AppLayout><SiteIssuesList /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/issues/new" element={<ProtectedRoute><AppLayout><SiteIssueForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/issues/:id" element={<ProtectedRoute><AppLayout><SiteIssueForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/transfers" element={<ProtectedRoute><AppLayout><SiteTransfersList /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/transfers/new" element={<ProtectedRoute><AppLayout><SiteTransferForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/site/transfers/:id" element={<ProtectedRoute><AppLayout><SiteTransferForm /></AppLayout></ProtectedRoute>} />
             <Route path="/site/qc" element={<ProtectedRoute><AppLayout><QCList /></AppLayout></ProtectedRoute>} />
             <Route path="/site/qc/new" element={<ProtectedRoute><AppLayout><QCForm /></AppLayout></ProtectedRoute>} />
             <Route path="/site/qc/:id" element={<ProtectedRoute><AppLayout><QCForm /></AppLayout></ProtectedRoute>} />
+
+            {/* -----------------------------
+             * Inventory
+             * ----------------------------- */}
+            <Route path="/inventory" element={<ProtectedRoute><AppLayout><InventoryIndex /></AppLayout></ProtectedRoute>} />
+            <Route path="/inventory/grn" element={<ProtectedRoute><AppLayout><InventoryGRNList /></AppLayout></ProtectedRoute>} />
+            <Route path="/inventory/grn/new" element={<ProtectedRoute><AppLayout><InventoryGRNForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/inventory/grn/:id" element={<ProtectedRoute><AppLayout><InventoryGRNForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/inventory/issues" element={<ProtectedRoute><AppLayout><InventoryIssuesList /></AppLayout></ProtectedRoute>} />
+            <Route path="/inventory/issues/new" element={<ProtectedRoute><AppLayout><InventoryIssueForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/inventory/issues/:id" element={<ProtectedRoute><AppLayout><InventoryIssueForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/inventory/transfers" element={<ProtectedRoute><AppLayout><InventoryTransfersList /></AppLayout></ProtectedRoute>} />
+            <Route path="/inventory/transfers/new" element={<ProtectedRoute><AppLayout><InventoryTransferForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/inventory/transfers/:id" element={<ProtectedRoute><AppLayout><InventoryTransferForm /></AppLayout></ProtectedRoute>} />
+            <Route path="/inventory/stock" element={<ProtectedRoute><AppLayout><InventoryStockList /></AppLayout></ProtectedRoute>} />
+            <Route path="/inventory/ledger" element={<ProtectedRoute><AppLayout><InventoryStockLedger /></AppLayout></ProtectedRoute>} />
 
             {/* -----------------------------
              * Accounts
