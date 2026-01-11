@@ -9,22 +9,25 @@ import {
 import { toast } from 'sonner';
 
 // ==================== BUDGET ====================
-export function useBudgets() {
+
+/** List all budgets with optional filters */
+export function useBudgets(params?: { projectId?: number; status?: string }) {
   return useQuery({
-    queryKey: ['budgets'],
+    queryKey: ['budgets', params],
     queryFn: async () => {
-      const response = await budgetApi.getAll();
-      return response.data || [];
+      const response = await budgetApi.list(params);
+      return response || [];
     },
   });
 }
 
-export function useBudget(projectId: string) {
+/** Get budget for a specific project */
+export function useBudget(projectId?: number) {
   return useQuery({
-    queryKey: ['budgets', projectId],
+    queryKey: ['budgets', 'project', projectId],
     queryFn: async () => {
-      const response = await budgetApi.getByProject(projectId);
-      return response.data;
+      const response = await budgetApi.getByProject(projectId!);
+      return response;
     },
     enabled: !!projectId,
   });
@@ -33,7 +36,8 @@ export function useBudget(projectId: string) {
 export function useCreateBudget() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: budgetApi.create,
+    mutationFn: (data: { projectId: number; totalBudget: number }) => 
+      budgetApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
       toast.success('Budget created successfully');
@@ -47,7 +51,7 @@ export function useCreateBudget() {
 export function useApproveBudget() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: budgetApi.approve,
+    mutationFn: (id: number) => budgetApi.approve(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
       toast.success('Budget approved successfully');
@@ -58,34 +62,29 @@ export function useApproveBudget() {
   });
 }
 
+export function useImportBudget() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => budgetApi.import(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      toast.success('Budget imported successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to import budget');
+    },
+  });
+}
+
 // ==================== ESTIMATES ====================
-export function useEstimates(projectId?: string) {
-  return useQuery({
-    queryKey: ['estimates', projectId].filter(Boolean),
-    queryFn: async () => {
-      const response = await estimatesApi.getAll(projectId);
-      return response.data || [];
-    },
-  });
-}
 
-export function useEstimate(id: string) {
-  return useQuery({
-    queryKey: ['estimates', id],
-    queryFn: async () => {
-      const response = await estimatesApi.getById(id);
-      return response.data;
-    },
-    enabled: !!id,
-  });
-}
-
-export function useEstimatesByProject(projectId: string) {
+/** List estimates for a project */
+export function useEstimates(projectId?: number) {
   return useQuery({
     queryKey: ['estimates', 'project', projectId],
     queryFn: async () => {
-      const response = await estimatesApi.getByProject(projectId);
-      return response.data || [];
+      const response = await estimatesApi.list(projectId!);
+      return response || [];
     },
     enabled: !!projectId,
   });
@@ -94,7 +93,8 @@ export function useEstimatesByProject(projectId: string) {
 export function useCreateEstimate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: estimatesApi.create,
+    mutationFn: (data: { projectId: number; name: string; baseAmount: number }) =>
+      estimatesApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
       toast.success('Estimate created successfully');
@@ -108,7 +108,8 @@ export function useCreateEstimate() {
 export function useAddEstimateVersion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: estimatesApi.addVersion,
+    mutationFn: (data: { estimateId: number; amount: number }) =>
+      estimatesApi.addVersion(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
       toast.success('Estimate version added');
@@ -122,7 +123,7 @@ export function useAddEstimateVersion() {
 export function useApproveEstimate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: estimatesApi.approve,
+    mutationFn: (id: number) => estimatesApi.approve(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
       toast.success('Estimate finalized successfully');
@@ -133,32 +134,45 @@ export function useApproveEstimate() {
   });
 }
 
-// ==================== BBS ====================
-export function useBBSList(projectId?: string) {
-  return useQuery({
-    queryKey: ['bbs', projectId].filter(Boolean),
-    queryFn: async () => {
-      const response = await bbsApi.getAll(projectId);
-      return response.data || [];
+export function useImportEstimates() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => estimatesApi.import(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['estimates'] });
+      toast.success('Estimates imported successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to import estimates');
     },
   });
 }
 
-export function useBBS(id: string) {
+// ==================== BBS (BOQ) ====================
+
+/** List BBS for a project */
+export function useBBSList(projectId?: number) {
   return useQuery({
-    queryKey: ['bbs', id],
+    queryKey: ['bbs', 'project', projectId],
     queryFn: async () => {
-      const response = await bbsApi.getById(id);
-      return response.data;
+      const response = await bbsApi.list(projectId!);
+      return response || [];
     },
-    enabled: !!id,
+    enabled: !!projectId,
   });
 }
 
 export function useCreateBBS() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: bbsApi.create,
+    mutationFn: (data: {
+      projectId: number;
+      estimateId: number;
+      description?: string;
+      quantity: number;
+      uomId: number;
+      rate: number;
+    }) => bbsApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bbs'] });
       toast.success('BBS created successfully');
@@ -169,38 +183,10 @@ export function useCreateBBS() {
   });
 }
 
-export function useUpdateBBS() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => bbsApi.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bbs'] });
-      toast.success('BBS updated successfully');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update BBS');
-    },
-  });
-}
-
-export function useDeleteBBS() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: bbsApi.delete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bbs'] });
-      toast.success('BBS deleted successfully');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete BBS');
-    },
-  });
-}
-
 export function useApproveBBS() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: bbsApi.approve,
+    mutationFn: (id: number) => bbsApi.approve(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bbs'] });
       toast.success('BBS approved successfully');
@@ -211,32 +197,43 @@ export function useApproveBBS() {
   });
 }
 
-// ==================== DRAWINGS ====================
-export function useDrawings(projectId?: string) {
-  return useQuery({
-    queryKey: ['drawings', projectId].filter(Boolean),
-    queryFn: async () => {
-      const response = await drawingsApi.getByProject(projectId);
-      return response.data || [];
+export function useImportBBS() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => bbsApi.import(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bbs'] });
+      toast.success('BBS imported successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to import BBS');
     },
   });
 }
 
-export function useDrawing(id: string) {
+// ==================== DRAWINGS ====================
+
+/** List drawings for a project */
+export function useDrawings(projectId?: number) {
   return useQuery({
-    queryKey: ['drawings', id],
+    queryKey: ['drawings', 'project', projectId],
     queryFn: async () => {
-      const response = await drawingsApi.getById(id);
-      return response.data;
+      const response = await drawingsApi.list(projectId!);
+      return response || [];
     },
-    enabled: !!id,
+    enabled: !!projectId,
   });
 }
 
 export function useCreateDrawing() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: drawingsApi.create,
+    mutationFn: (data: {
+      projectId: number;
+      title: string;
+      discipline?: string;
+      file?: File;
+    }) => drawingsApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drawings'] });
       toast.success('Drawing created successfully');
@@ -250,7 +247,8 @@ export function useCreateDrawing() {
 export function useReviseDrawing() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: drawingsApi.revise,
+    mutationFn: (data: { drawingId: number; changeNote: string }) =>
+      drawingsApi.revise(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drawings'] });
       toast.success('Drawing revision added');
@@ -264,7 +262,7 @@ export function useReviseDrawing() {
 export function useApproveDrawing() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: drawingsApi.approve,
+    mutationFn: (id: number) => drawingsApi.approve(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drawings'] });
       toast.success('Drawing approved');
@@ -275,45 +273,41 @@ export function useApproveDrawing() {
   });
 }
 
+export function useApproveDrawingRevision() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => drawingsApi.approveRevision(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drawings'] });
+      toast.success('Drawing revision approved');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to approve revision');
+    },
+  });
+}
+
 // ==================== COMPLIANCE ====================
-// export function useCompliances(projectId?: string) {
-//   return useQuery({
-//     queryKey: ['compliances', projectId].filter(Boolean),
-//     queryFn: async () => {
-//       const response = await complianceApi.getAll(projectId);
-//       return response.data || [];
-//     },
-//   });
-// }
 
-// export function useCompliance(id: string) {
-//   return useQuery({
-//     queryKey: ['compliances', id],
-//     queryFn: async () => {
-//       const response = await complianceApi.getById(id);
-//       return response.data;
-//     },
-//     enabled: !!id,
-//   });
-// }
-
+/** List compliances for a project */
 export function useCompliances(projectId?: number) {
   return useQuery({
     queryKey: ['compliances', 'project', projectId],
     queryFn: async () => {
-      const res = await complianceApi.getByProject(projectId!);
-      return res || [];
+      const response = await complianceApi.list(projectId!);
+      return response || [];
     },
     enabled: !!projectId,
   });
 }
 
+/** Get single compliance by ID */
 export function useCompliance(id?: number) {
   return useQuery({
-    queryKey: ['compliance', id], // 🔥 UNIQUE KEY
+    queryKey: ['compliance', id],
     queryFn: async () => {
-      const res = await complianceApi.getById(id!);
-      return res; // 🔥 NOT res.data
+      const response = await complianceApi.getById(id!);
+      return response;
     },
     enabled: !!id,
   });
@@ -322,7 +316,14 @@ export function useCompliance(id?: number) {
 export function useCreateCompliance() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: complianceApi.create,
+    mutationFn: (data: {
+      projectId: number;
+      type: string;
+      documentRef?: string | null;
+      validTill?: string | null;
+      blocking?: boolean;
+      file?: File;
+    }) => complianceApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['compliances'] });
       toast.success('Compliance record created');
@@ -333,71 +334,65 @@ export function useCreateCompliance() {
   });
 }
 
-// export function useUpdateCompliance() {
-//   const queryClient = useQueryClient();
-//   return useMutation({
-//     mutationFn: ({ id, data }: { id: string; data: any }) => complianceApi.update(id, data),
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ['compliances'] });
-//       toast.success('Compliance updated');
-//     },
-//     onError: (error: Error) => {
-//       toast.error(error.message || 'Failed to update compliance');
-//     },
-//   });
-// }
-
 export function useUpdateCompliance() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) =>
-      complianceApi.update(id, data),
-
+    mutationFn: ({ id, data }: { 
+      id: number; 
+      data: {
+        type: string;
+        documentRef?: string | null;
+        validTill?: string | null;
+        blocking?: boolean;
+      }
+    }) => complianceApi.update(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['compliances'] });
       queryClient.invalidateQueries({ queryKey: ['compliance', id] });
       toast.success('Compliance updated');
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update compliance');
+    },
   });
 }
 
-export function useDeleteCompliance() {
+export function useCloseCompliance() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: complianceApi.delete,
+    mutationFn: (id: number) => complianceApi.close(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['compliances'] });
-      toast.success('Compliance deleted');
+      toast.success('Compliance closed');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete compliance');
+      toast.error(error.message || 'Failed to close compliance');
     },
   });
 }
 
 // ==================== HELPER HOOKS FOR PURCHASE MODULE ====================
-// Get only APPROVED budgets for Purchase module
+
+/** Get only APPROVED budgets */
 export function useApprovedBudgets() {
   return useQuery({
     queryKey: ['budgets', 'approved'],
     queryFn: async () => {
-      const response = await budgetApi.getAll();
-      const budgets = Array.isArray(response.data) ? response.data : [];
-      return budgets.filter((b: any) => b.status === 'APPROVED');
+      const response = await budgetApi.list({ status: 'APPROVED' });
+      return response || [];
     },
   });
 }
 
-// Get only FINAL estimates for Purchase module
-export function useFinalEstimates(projectId?: string) {
+/** Get only FINAL estimates for a project */
+export function useFinalEstimates(projectId?: number) {
   return useQuery({
-    queryKey: ['estimates', 'final', projectId].filter(Boolean),
+    queryKey: ['estimates', 'final', projectId],
     queryFn: async () => {
-      const response = await estimatesApi.getAll(projectId);
-      const estimates = Array.isArray(response.data) ? response.data : [];
+      const response = await estimatesApi.list(projectId!);
+      const estimates = Array.isArray(response) ? response : [];
       return estimates.filter((e: any) => e.status === 'FINAL');
     },
-    enabled: projectId ? !!projectId : true,
+    enabled: !!projectId,
   });
 }

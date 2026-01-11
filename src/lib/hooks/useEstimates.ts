@@ -2,31 +2,22 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { estimatesApi } from '@/lib/api/engineeringApi';
 import { toast } from 'sonner';
 
-export function useEstimates(projectId?: string) {
+export function useEstimates(projectId?: number) {
   return useQuery({
-    queryKey: ['estimates', projectId].filter(Boolean),
+    queryKey: ['estimates', 'project', projectId],
     queryFn: async () => {
-      const response = await estimatesApi.getAll(projectId);
-      return response.data;
+      const response = await estimatesApi.list(projectId!);
+      return response || [];
     },
-  });
-}
-
-export function useEstimate(id: string) {
-  return useQuery({
-    queryKey: ['estimates', id],
-    queryFn: async () => {
-      const response = await estimatesApi.getById(id);
-      return response.data;
-    },
-    enabled: !!id,
+    enabled: !!projectId,
   });
 }
 
 export function useCreateEstimate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => estimatesApi.create(data),
+    mutationFn: (data: { projectId: number; name: string; baseAmount: number }) =>
+      estimatesApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
       toast.success('Estimate created successfully');
@@ -40,7 +31,8 @@ export function useCreateEstimate() {
 export function useAddEstimateVersion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => estimatesApi.addVersion(data),
+    mutationFn: (data: { estimateId: number; amount: number }) =>
+      estimatesApi.addVersion(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
       toast.success('Estimate version added successfully');
@@ -54,7 +46,7 @@ export function useAddEstimateVersion() {
 export function useApproveEstimate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => estimatesApi.approve(id),
+    mutationFn: (id: number) => estimatesApi.approve(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
       toast.success('Estimate approved successfully');

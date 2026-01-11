@@ -90,9 +90,9 @@ export default function EngineeringIndex() {
           draw,
           bud
         ] = await Promise.all([
-          estimatesApi.getByProject(projectId),
-          bbsApi.getByProject(projectId),
-          drawingsApi.getByProject(projectId),
+          estimatesApi.list(projectId),
+          bbsApi.list(projectId),
+          drawingsApi.list(projectId),
           budgetApi.getByProject(projectId)
         ]);
 
