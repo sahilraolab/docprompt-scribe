@@ -6,6 +6,7 @@ import {
   poApi,
   purchaseBillApi,
 } from "@/lib/api/purchaseApi";
+import { apiClient } from "@/lib/api/client";
 import { toast } from "sonner";
 
 /* =====================================================
@@ -226,5 +227,28 @@ export function usePostPurchaseBill() {
       qc.invalidateQueries({ queryKey: ["purchaseBills"] });
       toast.success("Bill posted to accounts");
     },
+  });
+}
+
+/* =====================================================
+   SUPPLIER (for Dashboard)
+===================================================== */
+
+export function useMRs(params?: { projectId?: number }) {
+  return useQuery({
+    queryKey: ["mrs-all", params?.projectId],
+    queryFn: () => {
+      const url = params?.projectId
+        ? `/purchase/requisitions?projectId=${params.projectId}`
+        : "/purchase/requisitions";
+      return apiClient.request(url);
+    },
+  });
+}
+
+export function useSuppliers() {
+  return useQuery({
+    queryKey: ["suppliers-all"],
+    queryFn: () => apiClient.request("/masters/suppliers"),
   });
 }
