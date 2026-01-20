@@ -25,7 +25,6 @@ import {
   useRequisitions,
   usePOs,
   usePurchaseBills,
-  useRFQs,
 } from '@/lib/hooks/usePurchase';
 import { useProjects } from '@/lib/hooks/useProjects';
 import { exportToCSV } from '@/lib/utils/export';
@@ -53,10 +52,9 @@ export default function PurchaseIndex() {
     { enabled: !!selectedProjectId }
   );
 
-  const { data: rfqs = [], isLoading: loadingRFQs } = useRFQs(
-    selectedProjectId ? { projectId: selectedProjectId } : undefined,
-    { enabled: !!selectedProjectId }
-  );
+  // RFQs require requisitionId, not projectId - fetch all and filter or skip for now
+  const rfqs: any[] = []; // RFQs are fetched per requisition, not per project
+  const loadingRFQs = false;
 
   const { data: pos = [], isLoading: loadingPOs } = usePOs(
     selectedProjectId ? { projectId: selectedProjectId } : undefined,

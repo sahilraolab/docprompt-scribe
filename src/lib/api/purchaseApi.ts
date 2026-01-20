@@ -34,6 +34,26 @@ export const requisitionApi = {
     }),
 };
 
+// Alias for mrApi
+export const mrApi = {
+  list: (params?: { projectId?: number }) => {
+    const url = params?.projectId
+      ? `/purchase/requisitions?projectId=${params.projectId}`
+      : '/purchase/requisitions';
+    return apiClient.request(url);
+  },
+  getById: (id: number) => apiClient.request(`/purchase/requisitions/${id}`),
+  create: (data: any) =>
+    apiClient.request('/purchase/requisitions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  submit: (id: number) =>
+    apiClient.request(`/purchase/requisitions/${id}/submit`, {
+      method: 'PUT',
+    }),
+};
+
 /* =====================================================
    RFQ
 ===================================================== */
@@ -49,7 +69,7 @@ export const rfqApi = {
     );
   },
 
-  create: (data: { requisitionId: number; supplierId: number }) =>
+  create: (data: { requisitionId: number; supplierId: number; closingDate?: string }) =>
     apiClient.request("/purchase/rfqs", {
       method: "POST",
       body: JSON.stringify(data),
@@ -149,4 +169,52 @@ export const purchaseBillApi = {
     apiClient.request(`/purchase/bills/${id}/post`, {
       method: 'PUT',
     }),
+};
+
+/* =====================================================
+   COMPARATIVE STATEMENT
+===================================================== */
+
+export const comparativeStatementApi = {
+  list: () => apiClient.request('/purchase/comparative-statements'),
+  getById: (id: number | string) =>
+    apiClient.request(`/purchase/comparative-statements/${id}`),
+  create: (data: any) =>
+    apiClient.request('/purchase/comparative-statements', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+};
+
+/* =====================================================
+   MATERIAL RATE
+===================================================== */
+
+export const materialRateApi = {
+  list: () => apiClient.request('/purchase/rates'),
+  getById: (id: number | string) =>
+    apiClient.request(`/purchase/rates/${id}`),
+  create: (data: any) =>
+    apiClient.request('/purchase/rates', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  update: (id: number | string, data: any) =>
+    apiClient.request(`/purchase/rates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+};
+
+/* =====================================================
+   PURCHASE DASHBOARD
+===================================================== */
+
+export const purchaseDashboardApi = {
+  getStats: (projectId?: number) => {
+    const url = projectId
+      ? `/purchase/dashboard?projectId=${projectId}`
+      : '/purchase/dashboard';
+    return apiClient.request(url);
+  },
 };
